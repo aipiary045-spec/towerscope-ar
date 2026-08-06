@@ -147,93 +147,131 @@
         android:background="@color/hud_panel"
         android:orientation="vertical"
         android:paddingHorizontal="10dp"
-        android:paddingTop="8dp"
+        android:paddingTop="6dp"
         android:paddingBottom="8dp">
-
-        <TextView
-            android:id="@+id/visibleCount"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Visible 0 / 0"
-            android:textColor="@color/text_primary"
-            android:textSize="11sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/searchField"
-            android:layout_width="match_parent"
-            android:layout_height="34dp"
-            android:layout_marginTop="6dp"
-            android:background="@drawable/bg_hud_input"
-            android:hint="Search by name"
-            android:imeOptions="actionSearch"
-            android:importantForAutofill="no"
-            android:inputType="text"
-            android:paddingHorizontal="10dp"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_muted"
-            android:textSize="12sp" />
-
-        <TextView
-            android:id="@+id/distanceLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:letterSpacing="0.04"
-            android:text="RANGE  —"
-            android:textColor="@color/accent_yellow"
-            android:textSize="10sp" />
-
-        <SeekBar
-            android:id="@+id/distanceSlider"
-            android:layout_width="match_parent"
-            android:layout_height="28dp"
-            android:layout_marginTop="0dp"
-            android:max="9900"
-            android:progress="1900"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/dataButton"
-                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+            <TextView
+                android:id="@+id/visibleCount"
                 android:layout_width="0dp"
-                android:layout_height="34dp"
-                android:layout_marginEnd="6dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minHeight="0dp"
-                android:text="Tower data"
-                android:textAllCaps="false"
-                android:textColor="#0B1C2C"
-                android:textSize="12sp"
-                app:backgroundTint="@color/accent_yellow"
-                app:cornerRadius="6dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/showHiddenButton"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="34dp"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minHeight="0dp"
-                android:text="Show hidden"
-                android:textAllCaps="false"
+                android:text="Visible 0 / 0"
                 android:textColor="@color/text_primary"
                 android:textSize="11sp"
-                android:visibility="gone"
-                app:cornerRadius="6dp"
-                app:strokeColor="#66FFFFFF"
-                app:strokeWidth="1dp" />
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/altitudeModeButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_hud_ghost_button"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:text="Ground"
+                android:textColor="@color/text_muted"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/hudExpandButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_hud_ghost_button"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:text="Less"
+                android:textColor="@color/accent_cyan"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/bottomExtras"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <EditText
+                android:id="@+id/searchField"
+                android:layout_width="match_parent"
+                android:layout_height="34dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_hud_input"
+                android:hint="Search by name"
+                android:imeOptions="actionSearch"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:paddingHorizontal="10dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_muted"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/distanceLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:letterSpacing="0.04"
+                android:text="RANGE  —"
+                android:textColor="@color/accent_yellow"
+                android:textSize="10sp" />
+
+            <SeekBar
+                android:id="@+id/distanceSlider"
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:layout_marginTop="0dp"
+                android:max="9900"
+                android:progress="1900"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/dataButton"
+                    style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="34dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="0dp"
+                    android:text="Tower data"
+                    android:textAllCaps="false"
+                    android:textColor="#0B1C2C"
+                    android:textSize="12sp"
+                    app:backgroundTint="@color/accent_yellow"
+                    app:cornerRadius="6dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/showHiddenButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="0dp"
+                    android:text="Show hidden"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp"
+                    android:visibility="gone"
+                    app:cornerRadius="6dp"
+                    app:strokeColor="#66FFFFFF"
+                    app:strokeWidth="1dp" />
+            </LinearLayout>
         </LinearLayout>
 
         <TextView

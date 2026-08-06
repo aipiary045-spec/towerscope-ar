@@ -98,10 +98,10 @@ class TowerArSceneBinding(
     private fun earthMaterial(): MaterialInstance {
         earthReadyMaterial?.let { return it }
         return view.materialLoader.createColorInstance(
-            color = 0xFFFFD60A.toInt(),
-            metallic = 0.05f,
-            roughness = 0.35f,
-            reflectance = 0.45f
+            color = 0xFFFFE066.toInt(),
+            metallic = 0.0f,
+            roughness = 0.22f,
+            reflectance = 0.85f
         ).also { earthReadyMaterial = it }
     }
 
@@ -109,10 +109,10 @@ class TowerArSceneBinding(
         gpsFallbackMaterial?.let { return it }
         // Semi-transparent amber — reads as approximate / GPS-only.
         return view.materialLoader.createColorInstance(
-            color = 0xAAFFB020.toInt(),
-            metallic = 0.05f,
-            roughness = 0.45f,
-            reflectance = 0.3f
+            color = 0xBBFFB020.toInt(),
+            metallic = 0.0f,
+            roughness = 0.3f,
+            reflectance = 0.7f
         ).also { gpsFallbackMaterial = it }
     }
 
@@ -166,7 +166,8 @@ class TowerArSceneBinding(
         val synced = markerController.syncAnchors(
             earth = earth,
             visibleTowers = visibleTowers,
-            earthHorizontalAccuracyMeters = accuracy
+            earthHorizontalAccuracyMeters = accuracy,
+            useKmlAltitude = uiState.useKmlAltitude
         )
 
         geoMarkers.keys.filter { id ->

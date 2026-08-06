@@ -48,14 +48,22 @@ data class TowerUiState(
     val earthCameraPose: EarthCameraPose? = null,
     val cameraHeadingDegrees: Double? = null,
     val deviceHeadingDegrees: Double? = null,
+    val compassSensorAccuracy: Int = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM,
     val earthTracking: Boolean = false,
     val earthTrackingQuality: EarthTrackingQuality = EarthTrackingQuality.NONE,
     val hudTheme: HudTheme = HudTheme.NIGHT,
+    /** When true, Geospatial anchors use KML altitudes; otherwise ground stubs. */
+    val useKmlAltitude: Boolean = false,
+    /** Bottom HUD search/range/controls expanded. */
+    val hudExpanded: Boolean = true,
     val sourceName: String? = null,
     val statusMessage: String? = null,
     val errorMessage: String? = null,
     val isLoadingFile: Boolean = false
 ) {
+    val needsCompassCalibration: Boolean
+        get() = compassSensorAccuracy <= android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW
+
     /**
      * Prefer accurate Earth camera lat/lng for distance/bearing so overlays match AR anchors.
      * Falls back to fused GPS when Earth is weak or off.
@@ -185,7 +193,11 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private val fileStore = TowerFileStore(application)
     private val prefs = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private val _uiState = MutableStateFlow(
-        TowerUiState(hudTheme = loadHudTheme())
+        TowerUiState(
+            hudTheme = loadHudTheme(),
+            useKmlAltitude = prefs.getBoolean(KEY_USE_KML_ALTITUDE, false),
+            hudExpanded = prefs.getBoolean(KEY_HUD_EXPANDED, true)
+        )
     )
     val uiState: StateFlow<TowerUiState> = _uiState.asStateFlow()
 
@@ -239,7 +251,12 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         if (headingJob?.isActive == true) return
         headingJob = viewModelScope.launch {
             headingClient.headingUpdates { _uiState.value.userLocation }.collect { heading ->
-                _uiState.update { it.copy(deviceHeadingDegrees = heading) }
+                _uiState.update {
+                    it.copy(
+                        deviceHeadingDegrees = heading.degrees,
+                        compassSensorAccuracy = heading.sensorAccuracy
+                    )
+                }
             }
         }
     }
@@ -276,6 +293,35 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             prefs.edit().putString(KEY_HUD_THEME, next.name).apply()
             state.copy(hudTheme = next)
         }
+    }
+
+    fun toggleHudExpanded() {
+        _uiState.update { state ->
+            val next = !state.hudExpanded
+            prefs.edit().putBoolean(KEY_HUD_EXPANDED, next).apply()
+            state.copy(hudExpanded = next)
+        }
+    }
+
+    fun toggleUseKmlAltitude() {
+        _uiState.update { state ->
+            val next = !state.useKmlAltitude
+            prefs.edit().putBoolean(KEY_USE_KML_ALTITUDE, next).apply()
+            state.copy(
+                useKmlAltitude = next,
+                statusMessage = if (next) {
+                    "Using KML altitudes when present"
+                } else {
+                    "Using ground-level tower stubs"
+                }
+            )
+        }
+    }
+
+    fun hasCompletedOnboarding(): Boolean = prefs.getBoolean(KEY_ONBOARDING_DONE, false)
+
+    fun markOnboardingComplete() {
+        prefs.edit().putBoolean(KEY_ONBOARDING_DONE, true).apply()
     }
 
     fun setEarthTracking(tracking: Boolean) {
@@ -454,6 +500,9 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     companion object {
         private const val PREFS = "towerscope_prefs"
         private const val KEY_HUD_THEME = "hud_theme"
+        private const val KEY_USE_KML_ALTITUDE = "use_kml_altitude"
+        private const val KEY_HUD_EXPANDED = "hud_expanded"
+        private const val KEY_ONBOARDING_DONE = "onboarding_done"
 
         private fun earthPoseEquivalent(a: EarthCameraPose?, b: EarthCameraPose?): Boolean {
             if (a === b) return true

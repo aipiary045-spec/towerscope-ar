@@ -3,6 +3,7 @@ package com.towerscope.ar.ar
 import com.google.ar.core.Anchor
 import com.google.ar.core.Earth
 import com.google.ar.core.TrackingState
+import com.towerscope.ar.data.AltitudeMode
 import com.towerscope.ar.data.Tower
 import kotlin.math.abs
 
@@ -20,10 +21,11 @@ class TowerMarkerController {
 
     private val anchorsByTowerId = linkedMapOf<String, CachedAnchor>()
 
-        fun syncAnchors(
+    fun syncAnchors(
         earth: Earth?,
         visibleTowers: List<Tower>,
-        earthHorizontalAccuracyMeters: Double?
+        earthHorizontalAccuracyMeters: Double?,
+        useKmlAltitude: Boolean = false
     ): Map<String, Anchor> {
         val accuracy = earthHorizontalAccuracyMeters
         if (
@@ -44,7 +46,7 @@ class TowerMarkerController {
         }
 
         visibleTowers.forEach { tower ->
-            val altitude = resolveAltitudeMeters(tower, cameraAltitude)
+            val altitude = resolveAltitudeMeters(tower, cameraAltitude, useKmlAltitude)
             val existing = anchorsByTowerId[tower.id]
             if (existing != null) {
                 val accuracyImproved =
@@ -83,11 +85,27 @@ class TowerMarkerController {
     }
 
     /**
-     * Pin anchors at estimated ground level (camera altitude minus typical phone
-     * height) so the visual tower rises from the ground, not from eye height.
+     * Ground stub (default): camera altitude minus phone height.
+     * KML mode: absolute / relative altitudes from the file when present.
      */
-    internal fun resolveAltitudeMeters(tower: Tower, cameraAltitudeMeters: Double): Double {
-        return cameraAltitudeMeters - DEVICE_HEIGHT_ABOVE_GROUND_METERS
+    internal fun resolveAltitudeMeters(
+        tower: Tower,
+        cameraAltitudeMeters: Double,
+        useKmlAltitude: Boolean
+    ): Double {
+        val ground = cameraAltitudeMeters - DEVICE_HEIGHT_ABOVE_GROUND_METERS
+        if (!useKmlAltitude) return ground
+
+        val kmlAlt = tower.altitudeMeters
+        return when (tower.altitudeMode) {
+            AltitudeMode.ABSOLUTE -> {
+                if (kmlAlt != null && abs(kmlAlt) > 0.01) kmlAlt else ground
+            }
+            AltitudeMode.RELATIVE_TO_GROUND -> {
+                ground + (kmlAlt ?: 0.0)
+            }
+            AltitudeMode.CLAMP_TO_GROUND -> ground
+        }
     }
 
     companion object {

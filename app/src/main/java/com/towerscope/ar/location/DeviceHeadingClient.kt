@@ -10,6 +10,13 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 
+data class DeviceHeading(
+    /** Degrees clockwise from true north when declination is available. */
+    val degrees: Double,
+    /** [SensorManager] accuracy: UNRELIABLE / LOW / MEDIUM / HIGH. */
+    val sensorAccuracy: Int
+)
+
 /**
  * Device heading in degrees clockwise from true north, via rotation vector
  * (works while stationary — unlike GPS bearing). Magnetic azimuth is corrected
@@ -20,7 +27,7 @@ class DeviceHeadingClient(context: Context) {
     private val sensorManager =
         context.applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
-    fun headingUpdates(locationProvider: () -> UserLocation? = { null }): Flow<Double> =
+    fun headingUpdates(locationProvider: () -> UserLocation? = { null }): Flow<DeviceHeading> =
         callbackFlow {
             val rotation = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
                 ?: sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
@@ -32,12 +39,12 @@ class DeviceHeadingClient(context: Context) {
 
             val rotationMatrix = FloatArray(9)
             val orientation = FloatArray(3)
+            var latestAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
 
             val listener = object : SensorEventListener {
                 override fun onSensorChanged(event: SensorEvent) {
                     SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
                     SensorManager.getOrientation(rotationMatrix, orientation)
-                    // azimuth: radians, -π..π, 0 = magnetic north
                     var degrees = Math.toDegrees(orientation[0].toDouble())
                     degrees = (degrees + 360.0) % 360.0
 
@@ -52,10 +59,12 @@ class DeviceHeadingClient(context: Context) {
                         degrees = (degrees + field.declination + 360.0) % 360.0
                     }
 
-                    trySend(degrees)
+                    trySend(DeviceHeading(degrees = degrees, sensorAccuracy = latestAccuracy))
                 }
 
-                override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+                override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+                    latestAccuracy = accuracy
+                }
             }
 
             sensorManager.registerListener(listener, rotation, SensorManager.SENSOR_DELAY_UI)

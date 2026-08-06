@@ -37,6 +37,7 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
     )
 
     private var indicators: List<Indicator> = emptyList()
+    private var focusTowerId: String? = null
     private val hitTargets = mutableListOf<HitTarget>()
     private var onTowerSelected: ((String) -> Unit)? = null
     private var pressedTowerId: String? = null
@@ -76,8 +77,9 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
         onTowerSelected = listener
     }
 
-    fun setIndicators(items: List<Indicator>) {
-        indicators = items
+    fun setIndicators(items: List<Indicator>, focusTowerId: String? = null) {
+        indicators = items.take(MAX_INDICATORS)
+        this.focusTowerId = focusTowerId
         invalidate()
     }
 
@@ -120,7 +122,12 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
         val maxX = width - pad
         val maxY = height - pad
 
-        indicators.take(10).forEach { indicator ->
+        val nearestAheadId = indicators
+            .filter { abs(it.relativeBearingDegrees) <= HALF_FOV_DEGREES }
+            .minByOrNull { it.distanceMeters }
+            ?.towerId
+
+        indicators.forEach { indicator ->
             val rad = Math.toRadians(indicator.relativeBearingDegrees)
             val dirX = sin(rad).toFloat()
             val dirY = -cos(rad).toFloat()
@@ -132,7 +139,12 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
                 val x = cx + (edge.first - cx) * t
                 val y = cy + (edge.second - cy) * t
                 canvas.drawCircle(x, y, 18f, aheadRingPaint)
-                drawLabel(canvas, x, y, dirX, dirY, indicator)
+                // In-view: label only focus / nearest ahead to cut clutter.
+                val labeled = indicator.towerId == focusTowerId ||
+                    indicator.towerId == nearestAheadId
+                if (labeled) {
+                    drawLabel(canvas, x, y, dirX, dirY, indicator)
+                }
             } else {
                 val edge = projectToEdge(cx, cy, dirX, dirY, pad, maxX, maxY)
                 drawArrow(canvas, edge.first, edge.second, dirX, dirY)
@@ -203,5 +215,6 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
     companion object {
         /** Approx half horizontal FOV; within this cone cues sit in-view. */
         const val HALF_FOV_DEGREES = 28.0
+        private const val MAX_INDICATORS = 5
     }
 }

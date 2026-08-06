@@ -35,6 +35,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            // Sideloadable release APK for field devices (replace with your keystore for Play).
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

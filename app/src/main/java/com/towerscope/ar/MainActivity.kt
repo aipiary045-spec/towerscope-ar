@@ -56,6 +56,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var focusTowerLabel: TextView
     private lateinit var messageBanner: TextView
     private lateinit var visibleCount: TextView
+    private lateinit var bottomExtras: View
+    private lateinit var hudExpandButton: TextView
+    private lateinit var altitudeModeButton: TextView
     private lateinit var searchField: EditText
     private lateinit var distanceLabel: TextView
     private lateinit var distanceSlider: SeekBar
@@ -70,6 +73,7 @@ class MainActivity : AppCompatActivity() {
     private var topChromeBasePadding = 0
 
     private var suppressSearchCallback = false
+    private var onboardingShownThisSession = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -113,6 +117,9 @@ class MainActivity : AppCompatActivity() {
         focusTowerLabel = findViewById(R.id.focusTowerLabel)
         messageBanner = findViewById(R.id.messageBanner)
         visibleCount = findViewById(R.id.visibleCount)
+        bottomExtras = findViewById(R.id.bottomExtras)
+        hudExpandButton = findViewById(R.id.hudExpandButton)
+        altitudeModeButton = findViewById(R.id.altitudeModeButton)
         searchField = findViewById(R.id.searchField)
         distanceLabel = findViewById(R.id.distanceLabel)
         distanceSlider = findViewById(R.id.distanceSlider)
@@ -149,6 +156,8 @@ class MainActivity : AppCompatActivity() {
     private fun wireActions() {
         findViewById<MaterialButton>(R.id.grantPermissionsButton).setOnClickListener { requestPermissions() }
         themeButton.setOnClickListener { viewModel.cycleHudTheme() }
+        hudExpandButton.setOnClickListener { viewModel.toggleHudExpanded() }
+        altitudeModeButton.setOnClickListener { viewModel.toggleUseKmlAltitude() }
         dataButton.setOnClickListener {
             startActivity(Intent(this, DataMenuActivity::class.java))
         }
@@ -284,7 +293,10 @@ class MainActivity : AppCompatActivity() {
                 distanceMeters = distance
             )
         }
-        directionOverlay.setIndicators(items)
+        directionOverlay.setIndicators(
+            items = items,
+            focusTowerId = state.focusTower()?.id
+        )
     }
 
     private fun renderTrackingChips(state: TowerUiState) {
@@ -325,7 +337,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     ""
                 }
-                "Earth · Ready$accText" to R.color.chip_good
+                "Earth · Ready$accText · approx" to R.color.chip_good
             }
             EarthTrackingQuality.LIMITED -> {
                 val accText = if (earthAcc != null && earthAcc.isFinite()) {
@@ -342,19 +354,25 @@ class MainActivity : AppCompatActivity() {
         earthChip.setTextColor(earthColor)
         earthChip.background = HudThemeApplier.statusChipBackground(earthChip, earthColor)
 
-        val gpsWeak = gpsTier == null || gpsTier == "Poor" || gpsTier == "Fair" || gpsTier == "Coarse"
+        val compassHint = state.needsCompassCalibration &&
+            state.cameraHeadingDegrees == null &&
+            state.towers.isNotEmpty()
         val earthWeak = state.earthTrackingQuality != EarthTrackingQuality.TRACKING
-        trackingWarning.isVisible = earthWeak && state.towers.isNotEmpty()
+        trackingWarning.isVisible = (earthWeak || compassHint) && state.towers.isNotEmpty()
         if (trackingWarning.isVisible) {
             trackingWarning.text = when {
+                compassHint ->
+                    "Compass needs calibration — figure-8 the phone slowly"
                 state.earthTrackingQuality == EarthTrackingQuality.LIMITED ->
-                    "Approx GPS towers — wait for Earth ≤25 m for pinned markers"
-                gpsWeak ->
-                    "GPS towers (approx) — walk outdoors for Earth lock"
+                    "Outdoors + sky: walk slowly until Earth ≤25 m (GPS towers are approx)"
                 else ->
-                    "Showing GPS-approx towers until Earth is Ready"
+                    "Outdoors with clear sky — GPS towers approx until Earth is Ready"
             }
         }
+
+        bottomExtras.isVisible = state.hudExpanded
+        hudExpandButton.text = if (state.hudExpanded) "Less" else "More"
+        altitudeModeButton.text = if (state.useKmlAltitude) "KML alt" else "Ground"
     }
 
     private fun renderCompass(state: TowerUiState) {
@@ -455,6 +473,27 @@ class MainActivity : AppCompatActivity() {
             arContainer.addView(binding.view)
             binding.onResume()
         }
+        maybeShowOnboarding()
+    }
+
+    private fun maybeShowOnboarding() {
+        if (onboardingShownThisSession || viewModel.hasCompletedOnboarding()) return
+        onboardingShownThisSession = true
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("TowerScope field tips")
+            .setMessage(
+                "1. Load your KML/KMZ from Tower data.\n" +
+                    "2. Go outdoors with a clear view of the sky.\n" +
+                    "3. Walk slowly until Earth shows Ready (± meters).\n" +
+                    "4. Yellow towers are Earth-pinned; amber ones are GPS-approx.\n" +
+                    "5. Tap NEARBY chips to hide or show only one tower.\n\n" +
+                    "Markers are approximate — not survey-grade."
+            )
+            .setPositiveButton("Got it") { _, _ ->
+                viewModel.markOnboardingComplete()
+            }
+            .setCancelable(false)
+            .show()
     }
 
     override fun onResume() {
