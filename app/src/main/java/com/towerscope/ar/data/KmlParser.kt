@@ -97,8 +97,9 @@ object KmlParser {
     }
 
     /**
-     * Explicit KML mode wins. Otherwise non-zero altitudes are treated as absolute
-     * (common in tower datasets); missing/zero altitudes clamp to ground.
+     * Explicit KML mode wins. Missing mode defaults to [AltitudeMode.CLAMP_TO_GROUND]
+     * (OGC KML default). Non-zero Z without a mode is usually tower height AGL or noise —
+     * never promote it to absolute WGS84 (that put markers tens of meters in the air).
      */
     internal fun resolveAltitudeMode(raw: String?, altitudeMeters: Double?): AltitudeMode {
         when (raw?.trim()?.lowercase()) {
@@ -106,8 +107,9 @@ object KmlParser {
             "clamptoground", "clamp_to_ground" -> return AltitudeMode.CLAMP_TO_GROUND
             "relativetoground", "relative_to_ground" -> return AltitudeMode.RELATIVE_TO_GROUND
         }
+        // Spec default. If a Z is present without a mode, treat as height above ground.
         return if (altitudeMeters != null && abs(altitudeMeters) > 0.01) {
-            AltitudeMode.ABSOLUTE
+            AltitudeMode.RELATIVE_TO_GROUND
         } else {
             AltitudeMode.CLAMP_TO_GROUND
         }

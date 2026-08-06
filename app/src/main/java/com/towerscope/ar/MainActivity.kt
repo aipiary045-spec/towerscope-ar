@@ -337,7 +337,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     ""
                 }
-                "Earth · Ready$accText · approx" to R.color.chip_good
+                "Earth · Ready$accText" to R.color.chip_good
             }
             EarthTrackingQuality.LIMITED -> {
                 val accText = if (earthAcc != null && earthAcc.isFinite()) {
@@ -364,9 +364,9 @@ class MainActivity : AppCompatActivity() {
                 compassHint ->
                     "Compass needs calibration — figure-8 the phone slowly"
                 state.earthTrackingQuality == EarthTrackingQuality.LIMITED ->
-                    "Outdoors + sky: walk slowly until Earth ≤25 m (GPS towers are approx)"
+                    "Walk slowly outdoors until Earth ≤12 m (towers pinned, still refining)"
                 else ->
-                    "Outdoors with clear sky — GPS towers approx until Earth is Ready"
+                    "Outdoors with clear sky — wait for Earth lock for precise towers"
             }
         }
 
@@ -484,10 +484,11 @@ class MainActivity : AppCompatActivity() {
             .setMessage(
                 "1. Load your KML/KMZ from Tower data.\n" +
                     "2. Go outdoors with a clear view of the sky.\n" +
-                    "3. Walk slowly until Earth shows Ready (± meters).\n" +
-                    "4. Yellow towers are Earth-pinned; amber ones are GPS-approx.\n" +
-                    "5. Tap NEARBY chips to hide or show only one tower.\n\n" +
-                    "Markers are approximate — not survey-grade."
+                    "3. Walk slowly until Earth shows Ready (≤12 m).\n" +
+                    "4. Labels mark Earth/terrain pins; GPS labels are last-resort only.\n" +
+                    "5. Keep Ground mode unless your KML altitudes are true WGS84 HAE.\n" +
+                    "6. Tap NEARBY chips to hide or show only one tower.\n\n" +
+                    "Precision needs Earth Ready — GPS-only markers can be far off."
             )
             .setPositiveButton("Got it") { _, _ ->
                 viewModel.markOnboardingComplete()

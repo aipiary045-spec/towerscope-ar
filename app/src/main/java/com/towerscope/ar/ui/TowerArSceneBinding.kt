@@ -2,7 +2,6 @@ package com.towerscope.ar.ui
 
 import android.content.Context
 import android.widget.TextView
-import com.google.android.filament.MaterialInstance
 import com.google.ar.core.Config
 import com.google.ar.core.Frame
 import com.google.ar.core.Session
@@ -19,7 +18,6 @@ import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.ar.node.AnchorNode
 import io.github.sceneview.math.Position
 import io.github.sceneview.math.Scale
-import io.github.sceneview.node.CylinderNode
 import io.github.sceneview.node.Node
 import io.github.sceneview.node.ViewNode
 import java.util.concurrent.ConcurrentHashMap
@@ -55,8 +53,6 @@ class TowerArSceneBinding(
     private var onEarthCameraPoseChanged: (EarthCameraPose?) -> Unit = {}
     private var onCameraHeadingChanged: (Double?) -> Unit = {}
     private var onTowerTapped: (Tower) -> Unit = {}
-    private var earthReadyMaterial: MaterialInstance? = null
-    private var gpsFallbackMaterial: MaterialInstance? = null
 
     val view: ARSceneView = ARSceneView(context).apply {
         planeRenderer.isEnabled = false
@@ -95,27 +91,6 @@ class TowerArSceneBinding(
         this.onTowerTapped = onTowerTapped
     }
 
-    private fun earthMaterial(): MaterialInstance {
-        earthReadyMaterial?.let { return it }
-        return view.materialLoader.createColorInstance(
-            color = 0xFFFFE066.toInt(),
-            metallic = 0.0f,
-            roughness = 0.22f,
-            reflectance = 0.85f
-        ).also { earthReadyMaterial = it }
-    }
-
-    private fun gpsMaterial(): MaterialInstance {
-        gpsFallbackMaterial?.let { return it }
-        // Semi-transparent amber — reads as approximate / GPS-only.
-        return view.materialLoader.createColorInstance(
-            color = 0xBBFFB020.toInt(),
-            metallic = 0.0f,
-            roughness = 0.3f,
-            reflectance = 0.7f
-        ).also { gpsFallbackMaterial = it }
-    }
-
     private fun sync(session: Session) {
         val earth = session.earth
         val tracking = earth?.trackingState == TrackingState.TRACKING
@@ -128,6 +103,7 @@ class TowerArSceneBinding(
                     altitudeMeters = geo.altitude,
                     headingDegrees = geo.heading,
                     horizontalAccuracyMeters = geo.horizontalAccuracy,
+                    verticalAccuracyMeters = geo.verticalAccuracy,
                     headingAccuracyDegrees = geo.headingAccuracy
                 )
             } catch (_: Exception) {
@@ -139,23 +115,25 @@ class TowerArSceneBinding(
 
         val quality = when {
             !tracking || pose == null -> EarthTrackingQuality.NONE
-            pose.horizontalAccuracyMeters <= GeospatialAccuracy.MARKER_HORIZONTAL_METERS ->
-                EarthTrackingQuality.TRACKING
-            else -> EarthTrackingQuality.LIMITED
+            pose.isAccurateForMarkers -> EarthTrackingQuality.TRACKING
+            pose.isGoodEnoughToPlace -> EarthTrackingQuality.LIMITED
+            else -> EarthTrackingQuality.NONE
         }
         onEarthTrackingQualityChanged(quality)
         onEarthCameraPoseChanged(pose)
 
+        // Trust Geospatial heading whenever Earth reports a tight yaw — even before Ready.
         val headingTrusted = pose != null &&
-            quality == EarthTrackingQuality.TRACKING &&
+            pose.isGoodEnoughToPlace &&
             pose.headingAccuracyDegrees.isFinite() &&
             pose.headingAccuracyDegrees <= GeospatialAccuracy.HEADING_ACCURACY_DEGREES
         onCameraHeadingChanged(if (headingTrusted) pose!!.headingDegrees else null)
 
-        val earthReady = quality == EarthTrackingQuality.TRACKING
-        if (earthReady) {
+        // Prefer Geospatial/terrain anchors whenever Earth can place — never demote a
+        // 30–50 m Earth solution to compass theater.
+        if (pose != null && pose.isGoodEnoughToPlace) {
             clearGpsMarkers()
-            syncGeospatialMarkers(earth, pose?.horizontalAccuracyMeters)
+            syncGeospatialMarkers(earth, pose.horizontalAccuracyMeters)
         } else {
             clearGeoMarkers()
             syncGpsFallbackMarkers()
@@ -194,18 +172,8 @@ class TowerArSceneBinding(
                     true
                 }
             }
-            val height = TOWER_MARKER_HEIGHT_METERS
-            anchorNode.addChildNode(
-                CylinderNode(
-                    engine = view.engine,
-                    radius = TOWER_MARKER_RADIUS_METERS,
-                    height = height,
-                    center = Position(y = height / 2f),
-                    materialInstance = earthMaterial()
-                )
-            )
             val marker = GeoMarker(anchorNode = anchorNode)
-            attachLabel(anchorNode, height) { nameView, distanceView ->
+            attachLabel(anchorNode) { nameView, distanceView ->
                 marker.nameView = nameView
                 marker.distanceView = distanceView
                 updateLabelText(nameView, distanceView, towerId)
@@ -218,7 +186,13 @@ class TowerArSceneBinding(
     private fun syncGpsFallbackMarkers() {
         val heading = uiState.effectiveHeadingDegrees()
         val location = uiState.userLocation
-        if (heading == null || location == null) {
+        val gpsOk = location != null &&
+            location.accuracyMeters.isFinite() &&
+            location.accuracyMeters <= GeospatialAccuracy.GPS_FALLBACK_MAX_ACCURACY_METERS
+        val compassOk = !uiState.needsCompassCalibration &&
+            uiState.compassSensorAccuracy >= android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
+        // GPS path is camera-relative theater — only show when GPS + compass are trustworthy.
+        if (heading == null || !gpsOk || !compassOk) {
             clearGpsMarkers()
             return
         }
@@ -240,7 +214,6 @@ class TowerArSceneBinding(
             }
         }
 
-        val height = TOWER_MARKER_HEIGHT_METERS
         targets.forEach { (tower, distance, bearing) ->
             val relative = GeoUtils.relativeBearingDegrees(heading, bearing)
             val rad = Math.toRadians(relative)
@@ -262,17 +235,8 @@ class TowerArSceneBinding(
                     true
                 }
             }
-            root.addChildNode(
-                CylinderNode(
-                    engine = view.engine,
-                    radius = TOWER_MARKER_RADIUS_METERS,
-                    height = height,
-                    center = Position(y = height / 2f),
-                    materialInstance = gpsMaterial()
-                )
-            )
             val created = GpsMarker(root = root)
-            attachLabel(root, height) { nameView, distanceView ->
+            attachLabel(root) { nameView, distanceView ->
                 created.nameView = nameView
                 created.distanceView = distanceView
                 updateLabelText(nameView, distanceView, tower.id)
@@ -284,11 +248,10 @@ class TowerArSceneBinding(
 
     private fun attachLabel(
         parent: Node,
-        towerHeightMeters: Float,
         onReady: (TextView, TextView) -> Unit
     ) {
         val labelNode = ViewNode(view.engine, view.modelLoader, viewAttachmentManager)
-        labelNode.position = Position(y = towerHeightMeters + LABEL_HEIGHT_OFFSET_METERS)
+        labelNode.position = Position(y = LABEL_HEIGHT_METERS)
         // Flip Y so the Android view faces the camera correctly in Filament.
         labelNode.scale = Scale(LABEL_SCALE, -LABEL_SCALE, LABEL_SCALE)
         labelNode.loadView(
@@ -334,17 +297,12 @@ class TowerArSceneBinding(
     fun destroy() {
         clearGeoMarkers()
         clearGpsMarkers()
-        earthReadyMaterial?.let { view.materialLoader.destroyMaterialInstance(it) }
-        gpsFallbackMaterial?.let { view.materialLoader.destroyMaterialInstance(it) }
-        earthReadyMaterial = null
-        gpsFallbackMaterial = null
         view.destroy()
     }
 
     companion object {
-        private const val TOWER_MARKER_HEIGHT_METERS = 55f
-        private const val TOWER_MARKER_RADIUS_METERS = 4f
-        private const val LABEL_HEIGHT_OFFSET_METERS = 3f
+        /** Float name/distance labels just above ground — no 3D column mesh. */
+        private const val LABEL_HEIGHT_METERS = 2.5f
         private const val LABEL_SCALE = 1.2f
         private const val MAX_GPS_FALLBACK_MARKERS = 8
     }

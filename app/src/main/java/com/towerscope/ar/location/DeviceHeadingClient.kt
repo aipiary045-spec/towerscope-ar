@@ -18,9 +18,15 @@ data class DeviceHeading(
 )
 
 /**
- * Device heading in degrees clockwise from true north, via rotation vector
- * (works while stationary — unlike GPS bearing). Magnetic azimuth is corrected
- * with [GeomagneticField] declination when a location is available.
+ * Device heading in degrees clockwise from true north for upright AR (camera into world).
+ *
+ * [SensorManager.getOrientation] azimuth is relative to the device Y axis projected on the
+ * ground — useless when Y is vertical. We remap so azimuth follows the back-camera look
+ * direction ([AXIS_X] / [AXIS_MINUS_Z]).
+ *
+ * Magnetic azimuth is corrected with [GeomagneticField] declination when using
+ * [Sensor.TYPE_ROTATION_VECTOR]. [Sensor.TYPE_GAME_ROTATION_VECTOR] has no geomagnetic
+ * reference, so declination is not applied there.
  */
 class DeviceHeadingClient(context: Context) {
 
@@ -37,26 +43,38 @@ class DeviceHeadingClient(context: Context) {
                 return@callbackFlow
             }
 
+            val usesGeomagneticNorth = rotation.type == Sensor.TYPE_ROTATION_VECTOR
             val rotationMatrix = FloatArray(9)
+            val remappedMatrix = FloatArray(9)
             val orientation = FloatArray(3)
             var latestAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
 
             val listener = object : SensorEventListener {
                 override fun onSensorChanged(event: SensorEvent) {
                     SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                    SensorManager.getOrientation(rotationMatrix, orientation)
+                    // Portrait AR: screen toward user, camera into world along -Z.
+                    val remapped = SensorManager.remapCoordinateSystem(
+                        rotationMatrix,
+                        SensorManager.AXIS_X,
+                        SensorManager.AXIS_MINUS_Z,
+                        remappedMatrix
+                    )
+                    val matrixForOrientation = if (remapped) remappedMatrix else rotationMatrix
+                    SensorManager.getOrientation(matrixForOrientation, orientation)
                     var degrees = Math.toDegrees(orientation[0].toDouble())
                     degrees = (degrees + 360.0) % 360.0
 
-                    val location = locationProvider()
-                    if (location != null) {
-                        val field = GeomagneticField(
-                            location.latitude.toFloat(),
-                            location.longitude.toFloat(),
-                            (location.altitudeMeters ?: 0.0).toFloat(),
-                            System.currentTimeMillis()
-                        )
-                        degrees = (degrees + field.declination + 360.0) % 360.0
+                    if (usesGeomagneticNorth) {
+                        val location = locationProvider()
+                        if (location != null) {
+                            val field = GeomagneticField(
+                                location.latitude.toFloat(),
+                                location.longitude.toFloat(),
+                                (location.altitudeMeters ?: 0.0).toFloat(),
+                                System.currentTimeMillis()
+                            )
+                            degrees = (degrees + field.declination + 360.0) % 360.0
+                        }
                     }
 
                     trySend(DeviceHeading(degrees = degrees, sensorAccuracy = latestAccuracy))

@@ -31,11 +31,20 @@ data class EarthCameraPose(
     val altitudeMeters: Double,
     val headingDegrees: Double,
     val horizontalAccuracyMeters: Double,
+    val verticalAccuracyMeters: Double,
     val headingAccuracyDegrees: Double
 ) {
+    /** True when Earth localization is tight enough to call markers "Ready". */
     val isAccurateForMarkers: Boolean
         get() = horizontalAccuracyMeters.isFinite() &&
-            horizontalAccuracyMeters <= GeospatialAccuracy.MARKER_HORIZONTAL_METERS
+            horizontalAccuracyMeters <= GeospatialAccuracy.MARKER_HORIZONTAL_METERS &&
+            verticalAccuracyMeters.isFinite() &&
+            verticalAccuracyMeters <= GeospatialAccuracy.MARKER_VERTICAL_METERS
+
+    /** True when Earth is good enough to place Geospatial/terrain anchors (vs GPS theater). */
+    val isGoodEnoughToPlace: Boolean
+        get() = horizontalAccuracyMeters.isFinite() &&
+            horizontalAccuracyMeters <= GeospatialAccuracy.PLACE_HORIZONTAL_METERS
 }
 
 data class TowerUiState(
@@ -65,12 +74,12 @@ data class TowerUiState(
         get() = compassSensorAccuracy <= android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW
 
     /**
-     * Prefer accurate Earth camera lat/lng for distance/bearing so overlays match AR anchors.
-     * Falls back to fused GPS when Earth is weak or off.
+     * Prefer Earth camera lat/lng whenever Geospatial is placing anchors so HUD/overlays
+     * match marker origins. Falls back to fused GPS only when Earth is off / too weak.
      */
     fun positioningLocation(): UserLocation? {
         val earth = earthCameraPose
-        if (earth != null && earth.isAccurateForMarkers) {
+        if (earth != null && earth.isGoodEnoughToPlace) {
             return UserLocation(
                 latitude = earth.latitude,
                 longitude = earth.longitude,
@@ -82,10 +91,12 @@ data class TowerUiState(
         return userLocation
     }
 
+    /**
+     * Camera look heading. Never uses GPS course — that is travel direction, not facing,
+     * and caused large angular marker errors when stationary.
+     */
     fun effectiveHeadingDegrees(): Double? =
-        cameraHeadingDegrees
-            ?: deviceHeadingDegrees
-            ?: userLocation?.bearingDegrees?.toDouble()
+        cameraHeadingDegrees ?: deviceHeadingDegrees
 
     /** Direction cues for the AR overlay (in-range towers with known distance/bearing). */
     fun directionIndicators(): List<Triple<Tower, Double, Double>> {
@@ -330,14 +341,13 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
 
     fun setEarthTrackingQuality(quality: EarthTrackingQuality) {
         _uiState.update {
-            if (it.earthTrackingQuality == quality &&
-                it.earthTracking == (quality == EarthTrackingQuality.TRACKING)
-            ) {
+            val tracking = quality != EarthTrackingQuality.NONE
+            if (it.earthTrackingQuality == quality && it.earthTracking == tracking) {
                 it
             } else {
                 it.copy(
                     earthTrackingQuality = quality,
-                    earthTracking = quality == EarthTrackingQuality.TRACKING
+                    earthTracking = tracking
                 )
             }
         }
@@ -512,6 +522,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 kotlin.math.abs(a.altitudeMeters - b.altitudeMeters) < 0.75 &&
                 kotlin.math.abs(a.headingDegrees - b.headingDegrees) < 1.5 &&
                 kotlin.math.abs(a.horizontalAccuracyMeters - b.horizontalAccuracyMeters) < 1.0 &&
+                kotlin.math.abs(a.verticalAccuracyMeters - b.verticalAccuracyMeters) < 1.0 &&
                 kotlin.math.abs(a.headingAccuracyDegrees - b.headingAccuracyDegrees) < 2.0
         }
     }
