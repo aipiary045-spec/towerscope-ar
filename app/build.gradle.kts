@@ -26,6 +26,10 @@ android {
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["ARCORE_API_KEY"] = arcoreApiKey
+        // 16 KB page-size requirement applies to 64-bit ABIs; drop 32-bit natives.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
 
     buildTypes {
@@ -48,10 +52,17 @@ android {
     }
 
     packaging {
+        jniLibs {
+            // Align uncompressed native libs to 16 KB for Android 15+ devices.
+            useLegacyPackaging = false
+        }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    // Ensure packaged .so ELF segments use 16 KB page alignment when AGP can.
+    experimentalProperties["android.nativeLibraryAlignmentPageSize"] = "16k"
 }
 
 kotlin {
@@ -70,8 +81,9 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("androidx.fragment:fragment-ktx:1.8.6")
 
-    implementation("io.github.sceneview:arsceneview:2.2.1")
-    implementation("com.google.ar:core:1.48.0")
+    // 2.3.x ships Filament natives rebuilt for 16 KB page alignment.
+    implementation("io.github.sceneview:arsceneview:2.3.3")
+    implementation("com.google.ar:core:1.52.0")
 
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.android.gms:play-services-base:18.5.0")
