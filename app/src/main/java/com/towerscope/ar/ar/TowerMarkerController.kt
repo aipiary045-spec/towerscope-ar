@@ -4,37 +4,60 @@ import com.google.ar.core.Anchor
 import com.google.ar.core.Earth
 import com.google.ar.core.TrackingState
 import com.towerscope.ar.data.Tower
+import kotlin.math.abs
 
 /**
  * Creates and caches Geospatial [Anchor]s for visible towers.
- * Detaches anchors when towers leave the distance filter or are hidden.
+ * Recreates anchors when Earth localization or altitude resolution improves.
  */
 class TowerMarkerController {
 
-    private val anchorsByTowerId = linkedMapOf<String, Anchor>()
+    private data class CachedAnchor(
+        val anchor: Anchor,
+        val altitudeUsed: Double,
+        val accuracyAtCreate: Float
+    )
 
-    fun syncAnchors(
+    private val anchorsByTowerId = linkedMapOf<String, CachedAnchor>()
+
+        fun syncAnchors(
         earth: Earth?,
         visibleTowers: List<Tower>,
-        fallbackAltitudeMeters: Double?
+        earthHorizontalAccuracyMeters: Double?
     ): Map<String, Anchor> {
-        if (earth == null || earth.trackingState != TrackingState.TRACKING) {
+        val accuracy = earthHorizontalAccuracyMeters
+        if (
+            earth == null ||
+            earth.trackingState != TrackingState.TRACKING ||
+            accuracy == null ||
+            !accuracy.isFinite() ||
+            accuracy > GeospatialAccuracy.MARKER_HORIZONTAL_METERS
+        ) {
             detachAll()
             return emptyMap()
         }
 
+        val cameraAltitude = earth.cameraGeospatialPose.altitude
         val visibleIds = visibleTowers.map { it.id }.toSet()
-        val toRemove = anchorsByTowerId.keys.filter { it !in visibleIds }
-        toRemove.forEach { id ->
-            anchorsByTowerId.remove(id)?.detach()
+        anchorsByTowerId.keys.filter { it !in visibleIds }.forEach { id ->
+            anchorsByTowerId.remove(id)?.anchor?.detach()
         }
 
-        val cameraAltitude = earth.cameraGeospatialPose.altitude
         visibleTowers.forEach { tower ->
-            if (anchorsByTowerId.containsKey(tower.id)) return@forEach
-            val altitude = tower.altitudeMeters
-                ?: fallbackAltitudeMeters
-                ?: (cameraAltitude - 1.0)
+            val altitude = resolveAltitudeMeters(tower, cameraAltitude)
+            val existing = anchorsByTowerId[tower.id]
+            if (existing != null) {
+                val accuracyImproved =
+                    existing.accuracyAtCreate - accuracy >=
+                        GeospatialAccuracy.ANCHOR_REFRESH_IMPROVEMENT_METERS
+                val altitudeChanged =
+                    abs(existing.altitudeUsed - altitude) >=
+                        GeospatialAccuracy.ALTITUDE_REFRESH_METERS
+                if (!accuracyImproved && !altitudeChanged) return@forEach
+                existing.anchor.detach()
+                anchorsByTowerId.remove(tower.id)
+            }
+
             val anchor = earth.createAnchor(
                 tower.latitude,
                 tower.longitude,
@@ -44,13 +67,26 @@ class TowerMarkerController {
                 0f,
                 1f
             )
-            anchorsByTowerId[tower.id] = anchor
+            anchorsByTowerId[tower.id] = CachedAnchor(
+                anchor = anchor,
+                altitudeUsed = altitude,
+                accuracyAtCreate = accuracy.toFloat()
+            )
         }
-        return anchorsByTowerId.toMap()
+
+        return anchorsByTowerId.mapValues { it.value.anchor }
     }
 
     fun detachAll() {
-        anchorsByTowerId.values.forEach { it.detach() }
+        anchorsByTowerId.values.forEach { it.anchor.detach() }
         anchorsByTowerId.clear()
+    }
+
+    /**
+     * All towers are treated as zero height (ground-level) so markers share the
+     * camera altitude and sit on a flat horizon instead of stacking by KML height.
+     */
+    internal fun resolveAltitudeMeters(tower: Tower, cameraAltitudeMeters: Double): Double {
+        return cameraAltitudeMeters
     }
 }

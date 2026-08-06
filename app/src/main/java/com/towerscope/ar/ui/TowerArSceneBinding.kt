@@ -5,8 +5,10 @@ import com.google.ar.core.Config
 import com.google.ar.core.Frame
 import com.google.ar.core.Session
 import com.google.ar.core.TrackingState
+import com.towerscope.ar.ar.GeospatialAccuracy
 import com.towerscope.ar.ar.TowerMarkerController
 import com.towerscope.ar.data.Tower
+import com.towerscope.ar.viewmodel.EarthCameraPose
 import com.towerscope.ar.viewmodel.TowerUiState
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.ar.node.AnchorNode
@@ -25,8 +27,8 @@ class TowerArSceneBinding(
     private val markerNodes = ConcurrentHashMap<String, AnchorNode>()
     private var visibleTowers: List<Tower> = emptyList()
     private var towersById: Map<String, Tower> = emptyMap()
-    private var fallbackAltitude: Double? = null
     private var onEarthTrackingQualityChanged: (EarthTrackingQuality) -> Unit = {}
+    private var onEarthCameraPoseChanged: (EarthCameraPose?) -> Unit = {}
     private var onCameraHeadingChanged: (Double?) -> Unit = {}
     private var onTowerTapped: (Tower) -> Unit = {}
 
@@ -44,40 +46,65 @@ class TowerArSceneBinding(
     fun update(
         uiState: TowerUiState,
         onEarthTrackingQualityChanged: (EarthTrackingQuality) -> Unit,
+        onEarthCameraPoseChanged: (EarthCameraPose?) -> Unit,
         onCameraHeadingChanged: (Double?) -> Unit,
         onTowerTapped: (Tower) -> Unit
     ) {
         this.visibleTowers = uiState.visibleTowers()
         this.towersById = uiState.towers.associateBy { it.id }
-        this.fallbackAltitude = uiState.userLocation?.altitudeMeters
         this.onEarthTrackingQualityChanged = onEarthTrackingQualityChanged
+        this.onEarthCameraPoseChanged = onEarthCameraPoseChanged
         this.onCameraHeadingChanged = onCameraHeadingChanged
         this.onTowerTapped = onTowerTapped
     }
 
     private fun sync(session: Session) {
         val earth = session.earth
-        val quality = when (earth?.trackingState) {
-            TrackingState.TRACKING -> EarthTrackingQuality.TRACKING
-            TrackingState.PAUSED -> EarthTrackingQuality.LIMITED
-            else -> EarthTrackingQuality.NONE
-        }
-        onEarthTrackingQualityChanged(quality)
-
-        val heading = if (quality == EarthTrackingQuality.TRACKING) {
+        val tracking = earth?.trackingState == TrackingState.TRACKING
+        val pose = if (tracking) {
             try {
-                earth?.cameraGeospatialPose?.heading
+                val geo = earth!!.cameraGeospatialPose
+                EarthCameraPose(
+                    latitude = geo.latitude,
+                    longitude = geo.longitude,
+                    altitudeMeters = geo.altitude,
+                    headingDegrees = geo.heading,
+                    horizontalAccuracyMeters = geo.horizontalAccuracy,
+                    headingAccuracyDegrees = geo.headingAccuracy
+                )
             } catch (_: Exception) {
                 null
             }
         } else {
             null
         }
-        onCameraHeadingChanged(heading)
 
-        val synced = markerController.syncAnchors(earth, visibleTowers, fallbackAltitude)
+        val quality = when {
+            !tracking || pose == null -> EarthTrackingQuality.NONE
+            pose.horizontalAccuracyMeters <= GeospatialAccuracy.MARKER_HORIZONTAL_METERS ->
+                EarthTrackingQuality.TRACKING
+            else -> EarthTrackingQuality.LIMITED
+        }
+        onEarthTrackingQualityChanged(quality)
+        onEarthCameraPoseChanged(pose)
 
-        markerNodes.keys.filter { it !in synced.keys }.forEach { id ->
+        val headingTrusted = pose != null &&
+            quality == EarthTrackingQuality.TRACKING &&
+            pose.headingAccuracyDegrees.isFinite() &&
+            pose.headingAccuracyDegrees <= GeospatialAccuracy.HEADING_ACCURACY_DEGREES
+        onCameraHeadingChanged(if (headingTrusted) pose!!.headingDegrees else null)
+
+        val synced = markerController.syncAnchors(
+            earth = earth,
+            visibleTowers = visibleTowers,
+            earthHorizontalAccuracyMeters = pose?.horizontalAccuracyMeters
+        )
+
+        markerNodes.keys.filter { id ->
+            val expected = synced[id]
+            val node = markerNodes[id] ?: return@filter true
+            expected == null || node.anchor !== expected
+        }.forEach { id ->
             markerNodes.remove(id)?.let { node ->
                 view.childNodes -= node
                 node.destroy()
@@ -98,8 +125,9 @@ class TowerArSceneBinding(
             anchorNode.addChildNode(
                 CubeNode(
                     engine = view.engine,
-                    size = Size(0.6f, 2.4f, 0.6f),
-                    center = Position(y = 1.2f)
+                    // Compact ground marker — towers are treated as zero height.
+                    size = Size(0.8f, 0.8f, 0.8f),
+                    center = Position(y = 0f)
                 )
             )
 

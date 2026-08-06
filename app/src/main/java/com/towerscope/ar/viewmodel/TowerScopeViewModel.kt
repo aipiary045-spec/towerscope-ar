@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.towerscope.ar.ar.GeospatialAccuracy
 import com.towerscope.ar.data.KmlParser
 import com.towerscope.ar.data.Tower
 import com.towerscope.ar.data.TowerFileStore
@@ -23,6 +24,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** Latest ARCore Geospatial camera pose (may be tracking but not yet accurate enough for markers). */
+data class EarthCameraPose(
+    val latitude: Double,
+    val longitude: Double,
+    val altitudeMeters: Double,
+    val headingDegrees: Double,
+    val horizontalAccuracyMeters: Double,
+    val headingAccuracyDegrees: Double
+) {
+    val isAccurateForMarkers: Boolean
+        get() = horizontalAccuracyMeters.isFinite() &&
+            horizontalAccuracyMeters <= GeospatialAccuracy.MARKER_HORIZONTAL_METERS
+}
+
 data class TowerUiState(
     val towers: List<Tower> = emptyList(),
     val hiddenTowerIds: Set<String> = emptySet(),
@@ -30,6 +45,7 @@ data class TowerUiState(
     val searchQuery: String = "",
     val selectedTowerId: String? = null,
     val userLocation: UserLocation? = null,
+    val earthCameraPose: EarthCameraPose? = null,
     val cameraHeadingDegrees: Double? = null,
     val deviceHeadingDegrees: Double? = null,
     val earthTracking: Boolean = false,
@@ -40,6 +56,24 @@ data class TowerUiState(
     val errorMessage: String? = null,
     val isLoadingFile: Boolean = false
 ) {
+    /**
+     * Prefer accurate Earth camera lat/lng for distance/bearing so overlays match AR anchors.
+     * Falls back to fused GPS when Earth is weak or off.
+     */
+    fun positioningLocation(): UserLocation? {
+        val earth = earthCameraPose
+        if (earth != null && earth.isAccurateForMarkers) {
+            return UserLocation(
+                latitude = earth.latitude,
+                longitude = earth.longitude,
+                altitudeMeters = earth.altitudeMeters,
+                accuracyMeters = earth.horizontalAccuracyMeters.toFloat(),
+                bearingDegrees = earth.headingDegrees.toFloat()
+            )
+        }
+        return userLocation
+    }
+
     fun effectiveHeadingDegrees(): Double? =
         cameraHeadingDegrees
             ?: deviceHeadingDegrees
@@ -57,7 +91,7 @@ data class TowerUiState(
     }
 
     fun visibleTowers(): List<Tower> {
-        val location = userLocation
+        val location = positioningLocation()
         val query = searchQuery.trim()
         return towers.filter { tower ->
             if (tower.id in hiddenTowerIds) return@filter false
@@ -76,7 +110,7 @@ data class TowerUiState(
     }
 
     fun distanceTo(tower: Tower): Double? {
-        val location = userLocation ?: return null
+        val location = positioningLocation() ?: return null
         return GeoUtils.haversineMeters(
             location.latitude,
             location.longitude,
@@ -86,7 +120,7 @@ data class TowerUiState(
     }
 
     fun bearingTo(tower: Tower): Double? {
-        val location = userLocation ?: return null
+        val location = positioningLocation() ?: return null
         return GeoUtils.bearingDegrees(
             location.latitude,
             location.longitude,
@@ -96,7 +130,7 @@ data class TowerUiState(
     }
 
     fun nearestVisibleTower(): Tower? {
-        val location = userLocation ?: return visibleTowers().firstOrNull()
+        val location = positioningLocation() ?: return visibleTowers().firstOrNull()
         return visibleTowers().minByOrNull { tower ->
             GeoUtils.haversineMeters(
                 location.latitude,
@@ -121,7 +155,7 @@ data class TowerUiState(
     fun towerById(id: String): Tower? = towers.firstOrNull { it.id == id }
 
     fun nearestMatches(limit: Int = 5): List<Tower> {
-        val location = userLocation
+        val location = positioningLocation()
         val visible = visibleTowers()
         if (location == null) return visible.take(limit)
         return visible
@@ -188,6 +222,11 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             }
             return
         }
+        if (!locationClient.hasFineLocationPermission()) {
+            _uiState.update {
+                it.copy(statusMessage = "Fine location improves tower positioning — enable Precise location.")
+            }
+        }
         locationJob = viewModelScope.launch {
             locationClient.locationUpdates().collect { location ->
                 _uiState.update { it.copy(userLocation = location) }
@@ -199,7 +238,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     fun startDeviceHeadingUpdates() {
         if (headingJob?.isActive == true) return
         headingJob = viewModelScope.launch {
-            headingClient.headingUpdates().collect { heading ->
+            headingClient.headingUpdates { _uiState.value.userLocation }.collect { heading ->
                 _uiState.update { it.copy(deviceHeadingDegrees = heading) }
             }
         }
@@ -250,6 +289,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 earthTracking = quality == EarthTrackingQuality.TRACKING
             )
         }
+    }
+
+    fun setEarthCameraPose(pose: EarthCameraPose?) {
+        _uiState.update { it.copy(earthCameraPose = pose) }
     }
 
     fun setCameraHeadingDegrees(heading: Double?) {

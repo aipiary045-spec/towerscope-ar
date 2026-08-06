@@ -243,6 +243,7 @@ class MainActivity : AppCompatActivity() {
         arBinding?.update(
             uiState = state,
             onEarthTrackingQualityChanged = viewModel::setEarthTrackingQuality,
+            onEarthCameraPoseChanged = viewModel::setEarthCameraPose,
             onCameraHeadingChanged = viewModel::setCameraHeadingDegrees,
             onTowerTapped = { tower -> openTowerDetails(tower.id) }
         )
@@ -263,30 +264,52 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderTrackingChips(state: TowerUiState) {
         val accuracy = state.userLocation?.accuracyMeters
+        val hasFine = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
         val gpsTier = when {
+            !hasFine -> "Coarse"
             accuracy == null || !accuracy.isFinite() -> null
-            accuracy <= 10f -> "Good"
-            accuracy <= 30f -> "Fair"
+            accuracy <= 8f -> "Good"
+            accuracy <= 20f -> "Fair"
             else -> "Poor"
         }
-        gpsChip.text = if (gpsTier != null && accuracy != null) {
+        gpsChip.text = if (gpsTier != null && accuracy != null && accuracy.isFinite()) {
             "GPS · $gpsTier ±${accuracy.toInt()}m"
+        } else if (gpsTier == "Coarse") {
+            "GPS · Coarse"
         } else {
             "GPS · —"
         }
         val gpsColorRes = when (gpsTier) {
             "Good" -> R.color.chip_good
             "Fair" -> R.color.chip_fair
-            "Poor" -> R.color.chip_poor
+            "Poor", "Coarse" -> R.color.chip_poor
             else -> R.color.chip_off
         }
         val gpsColor = ContextCompat.getColor(this, gpsColorRes)
         gpsChip.setTextColor(gpsColor)
         gpsChip.background = HudThemeApplier.statusChipBackground(gpsChip, gpsColor)
 
+        val earthAcc = state.earthCameraPose?.horizontalAccuracyMeters
         val (earthLabel, earthColorRes) = when (state.earthTrackingQuality) {
-            EarthTrackingQuality.TRACKING -> "Earth · Tracking" to R.color.chip_good
-            EarthTrackingQuality.LIMITED -> "Earth · Limited" to R.color.chip_fair
+            EarthTrackingQuality.TRACKING -> {
+                val accText = if (earthAcc != null && earthAcc.isFinite()) {
+                    " ±${earthAcc.toInt()}m"
+                } else {
+                    ""
+                }
+                "Earth · Ready$accText" to R.color.chip_good
+            }
+            EarthTrackingQuality.LIMITED -> {
+                val accText = if (earthAcc != null && earthAcc.isFinite()) {
+                    " ±${earthAcc.toInt()}m"
+                } else {
+                    ""
+                }
+                "Earth · Weak$accText" to R.color.chip_fair
+            }
             EarthTrackingQuality.NONE -> "Earth · Off" to R.color.chip_off
         }
         earthChip.text = earthLabel
@@ -294,9 +317,17 @@ class MainActivity : AppCompatActivity() {
         earthChip.setTextColor(earthColor)
         earthChip.background = HudThemeApplier.statusChipBackground(earthChip, earthColor)
 
-        val gpsWeak = gpsTier == null || gpsTier == "Poor" || gpsTier == "Fair"
+        val gpsWeak = gpsTier == null || gpsTier == "Poor" || gpsTier == "Fair" || gpsTier == "Coarse"
         val earthWeak = state.earthTrackingQuality != EarthTrackingQuality.TRACKING
         trackingWarning.isVisible = gpsWeak && earthWeak && state.towers.isNotEmpty()
+        if (trackingWarning.isVisible) {
+            trackingWarning.text = when {
+                state.earthTrackingQuality == EarthTrackingQuality.LIMITED ->
+                    "Earth localizing — markers wait for ≤15 m accuracy"
+                else ->
+                    "Tracking weak — markers may drift"
+            }
+        }
     }
 
     private fun renderCompass(state: TowerUiState) {

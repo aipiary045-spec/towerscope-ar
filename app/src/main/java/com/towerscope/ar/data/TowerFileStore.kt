@@ -62,6 +62,7 @@ class TowerFileStore(context: Context) {
                     .put("lat", tower.latitude)
                     .put("lng", tower.longitude)
                     .put("alt", tower.altitudeMeters)
+                    .put("altitudeMode", tower.altitudeMode.name)
             )
         }
         File(towersDir, META_FILE).writeText(
@@ -78,13 +79,20 @@ class TowerFileStore(context: Context) {
         return buildList {
             for (i in 0 until array.length()) {
                 val obj = array.getJSONObject(i)
+                val alt = if (obj.isNull("alt")) null else obj.getDouble("alt")
+                val mode = if (obj.has("altitudeMode") && !obj.isNull("altitudeMode")) {
+                    runCatching { AltitudeMode.valueOf(obj.getString("altitudeMode")) }.getOrNull()
+                } else {
+                    null
+                } ?: KmlParser.resolveAltitudeMode(null, alt)
                 add(
                     Tower(
                         id = obj.getString("id"),
                         name = obj.getString("name"),
                         latitude = obj.getDouble("lat"),
                         longitude = obj.getDouble("lng"),
-                        altitudeMeters = if (obj.isNull("alt")) null else obj.getDouble("alt")
+                        altitudeMeters = alt,
+                        altitudeMode = mode
                     )
                 )
             }

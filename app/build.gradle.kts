@@ -83,7 +83,7 @@ dependencies {
 
     // 2.3.x ships Filament natives rebuilt for 16 KB page alignment.
     implementation("io.github.sceneview:arsceneview:2.3.3")
-    implementation("com.google.ar:core:1.52.0")
+    implementation("com.google.ar:core:1.54.0")
 
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.android.gms:play-services-base:18.5.0")

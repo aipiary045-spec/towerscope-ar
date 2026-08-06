@@ -79,17 +79,38 @@ object KmlParser {
             val name = firstChildText(placemark, "name")?.takeIf { it.isNotBlank() }
                 ?: "Unnamed tower"
             val coordinatesText = firstDescendantText(placemark, "coordinates") ?: continue
+            val altitudeModeRaw = firstDescendantText(placemark, "altitudeMode")
+                ?: firstDescendantText(placemark, "gx:altitudeMode")
             parsePoint(coordinatesText)?.let { (lon, lat, alt) ->
+                val mode = resolveAltitudeMode(altitudeModeRaw, alt)
                 towers += Tower(
                     id = "${lat}_${lon}_${towers.size}",
                     name = name,
                     latitude = lat,
                     longitude = lon,
-                    altitudeMeters = alt
+                    altitudeMeters = alt,
+                    altitudeMode = mode
                 )
             }
         }
         return towers
+    }
+
+    /**
+     * Explicit KML mode wins. Otherwise non-zero altitudes are treated as absolute
+     * (common in tower datasets); missing/zero altitudes clamp to ground.
+     */
+    internal fun resolveAltitudeMode(raw: String?, altitudeMeters: Double?): AltitudeMode {
+        when (raw?.trim()?.lowercase()) {
+            "absolute" -> return AltitudeMode.ABSOLUTE
+            "clamptoground", "clamp_to_ground" -> return AltitudeMode.CLAMP_TO_GROUND
+            "relativetoground", "relative_to_ground" -> return AltitudeMode.RELATIVE_TO_GROUND
+        }
+        return if (altitudeMeters != null && abs(altitudeMeters) > 0.01) {
+            AltitudeMode.ABSOLUTE
+        } else {
+            AltitudeMode.CLAMP_TO_GROUND
+        }
     }
 
     private fun NodeList.ifEmpty(fallback: () -> NodeList): NodeList =
@@ -107,8 +128,11 @@ object KmlParser {
     }
 
     private fun firstDescendantText(parent: Element, localName: String): String? {
-        val matches = parent.getElementsByTagNameNS("*", localName).ifEmpty {
-            parent.getElementsByTagName(localName)
+        val bare = localName.substringAfterLast(':')
+        val matches = parent.getElementsByTagNameNS("*", bare).ifEmpty {
+            parent.getElementsByTagName(localName).ifEmpty {
+                parent.getElementsByTagName(bare)
+            }
         }
         if (matches.length == 0) return null
         return matches.item(0)?.textContent?.trim()

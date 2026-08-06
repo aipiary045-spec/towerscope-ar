@@ -32,16 +32,20 @@ class HighAccuracyLocationClient(context: Context) {
     private val appContext = context.applicationContext
     private val fusedClient = LocationServices.getFusedLocationProviderClient(appContext)
 
-    fun hasLocationPermission(): Boolean {
-        val fine = ContextCompat.checkSelfPermission(
+    fun hasFineLocationPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
             appContext,
             Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun hasLocationPermission(): Boolean {
+        if (hasFineLocationPermission()) return true
         val coarse = ContextCompat.checkSelfPermission(
             appContext,
             Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
-        return fine || coarse
+        return coarse
     }
 
     @SuppressLint("MissingPermission")
