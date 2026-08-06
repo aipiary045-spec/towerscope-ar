@@ -1,6 +1,7 @@
 package com.towerscope.ar.viewmodel
 
 import android.app.Application
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,6 +10,8 @@ import com.towerscope.ar.data.Tower
 import com.towerscope.ar.data.TowerFileStore
 import com.towerscope.ar.location.HighAccuracyLocationClient
 import com.towerscope.ar.location.UserLocation
+import com.towerscope.ar.ui.EarthTrackingQuality
+import com.towerscope.ar.ui.HudTheme
 import com.towerscope.ar.util.GeoUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -23,18 +26,29 @@ data class TowerUiState(
     val towers: List<Tower> = emptyList(),
     val hiddenTowerIds: Set<String> = emptySet(),
     val maxDistanceMeters: Float = DEFAULT_MAX_DISTANCE_METERS,
+    val searchQuery: String = "",
+    val selectedTowerId: String? = null,
     val userLocation: UserLocation? = null,
     val cameraHeadingDegrees: Double? = null,
     val earthTracking: Boolean = false,
+    val earthTrackingQuality: EarthTrackingQuality = EarthTrackingQuality.NONE,
+    val hudTheme: HudTheme = HudTheme.NIGHT,
     val sourceName: String? = null,
     val statusMessage: String? = null,
     val errorMessage: String? = null,
     val isLoadingFile: Boolean = false
 ) {
+    fun effectiveHeadingDegrees(): Double? =
+        cameraHeadingDegrees ?: userLocation?.bearingDegrees?.toDouble()
+
     fun visibleTowers(): List<Tower> {
         val location = userLocation
+        val query = searchQuery.trim()
         return towers.filter { tower ->
             if (tower.id in hiddenTowerIds) return@filter false
+            if (query.isNotEmpty() && !tower.name.contains(query, ignoreCase = true)) {
+                return@filter false
+            }
             if (location == null) return@filter true
             val distance = GeoUtils.haversineMeters(
                 location.latitude,
@@ -56,6 +70,57 @@ data class TowerUiState(
         )
     }
 
+    fun bearingTo(tower: Tower): Double? {
+        val location = userLocation ?: return null
+        return GeoUtils.bearingDegrees(
+            location.latitude,
+            location.longitude,
+            tower.latitude,
+            tower.longitude
+        )
+    }
+
+    fun nearestVisibleTower(): Tower? {
+        val location = userLocation ?: return visibleTowers().firstOrNull()
+        return visibleTowers().minByOrNull { tower ->
+            GeoUtils.haversineMeters(
+                location.latitude,
+                location.longitude,
+                tower.latitude,
+                tower.longitude
+            )
+        }
+    }
+
+    fun focusTower(): Tower? {
+        val selected = selectedTowerId?.let { id -> towers.firstOrNull { it.id == id } }
+        if (selected != null && selected.id !in hiddenTowerIds) {
+            val query = searchQuery.trim()
+            if (query.isEmpty() || selected.name.contains(query, ignoreCase = true)) {
+                return selected
+            }
+        }
+        return nearestVisibleTower()
+    }
+
+    fun towerById(id: String): Tower? = towers.firstOrNull { it.id == id }
+
+    fun nearestMatches(limit: Int = 5): List<Tower> {
+        val location = userLocation
+        val visible = visibleTowers()
+        if (location == null) return visible.take(limit)
+        return visible
+            .sortedBy {
+                GeoUtils.haversineMeters(
+                    location.latitude,
+                    location.longitude,
+                    it.latitude,
+                    it.longitude
+                )
+            }
+            .take(limit)
+    }
+
     companion object {
         const val MIN_DISTANCE_METERS = 100f
         /** 10 miles in meters. */
@@ -68,13 +133,21 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
 
     private val locationClient = HighAccuracyLocationClient(application)
     private val fileStore = TowerFileStore(application)
-    private val _uiState = MutableStateFlow(TowerUiState())
+    private val prefs = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val _uiState = MutableStateFlow(
+        TowerUiState(hudTheme = loadHudTheme())
+    )
     val uiState: StateFlow<TowerUiState> = _uiState.asStateFlow()
 
     private var locationJob: Job? = null
 
     init {
         restorePersistedTowers()
+    }
+
+    private fun loadHudTheme(): HudTheme {
+        val raw = prefs.getString(KEY_HUD_THEME, HudTheme.NIGHT.name) ?: HudTheme.NIGHT.name
+        return runCatching { HudTheme.valueOf(raw) }.getOrDefault(HudTheme.NIGHT)
     }
 
     private fun restorePersistedTowers() {
@@ -121,8 +194,33 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    fun setSearchQuery(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    fun selectTower(towerId: String?) {
+        _uiState.update { it.copy(selectedTowerId = towerId) }
+    }
+
+    fun cycleHudTheme() {
+        _uiState.update { state ->
+            val next = state.hudTheme.next()
+            prefs.edit().putString(KEY_HUD_THEME, next.name).apply()
+            state.copy(hudTheme = next)
+        }
+    }
+
     fun setEarthTracking(tracking: Boolean) {
         _uiState.update { it.copy(earthTracking = tracking) }
+    }
+
+    fun setEarthTrackingQuality(quality: EarthTrackingQuality) {
+        _uiState.update {
+            it.copy(
+                earthTrackingQuality = quality,
+                earthTracking = quality == EarthTrackingQuality.TRACKING
+            )
+        }
     }
 
     fun setCameraHeadingDegrees(heading: Double?) {
@@ -133,6 +231,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update {
             it.copy(
                 hiddenTowerIds = it.hiddenTowerIds + towerId,
+                selectedTowerId = if (it.selectedTowerId == towerId) null else it.selectedTowerId,
                 statusMessage = "Tower filtered out of the scene"
             )
         }
@@ -165,6 +264,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                     it.copy(
                         towers = towers,
                         hiddenTowerIds = emptySet(),
+                        selectedTowerId = null,
                         sourceName = "sample_towers.kml",
                         statusMessage = "Loaded ${towers.size} sample towers (saved)",
                         isLoadingFile = false
@@ -212,6 +312,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                         it.copy(
                             towers = towers,
                             hiddenTowerIds = emptySet(),
+                            selectedTowerId = null,
                             sourceName = name,
                             statusMessage = "Loaded ${towers.size} towers from $name (saved)",
                             isLoadingFile = false
@@ -236,8 +337,41 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 it.copy(
                     towers = emptyList(),
                     hiddenTowerIds = emptySet(),
+                    selectedTowerId = null,
                     sourceName = null,
                     statusMessage = "Cleared saved tower data"
+                )
+            }
+        }
+    }
+
+    /** Called when returning from DataMenuActivity so imports are reflected. */
+    fun syncFromFileStore() {
+        viewModelScope.launch {
+            val restored = withContext(Dispatchers.IO) { fileStore.loadPersistedTowers() }
+            if (restored == null) {
+                if (!fileStore.hasPersistedImport()) {
+                    _uiState.update {
+                        if (it.towers.isEmpty() && it.sourceName == null) it
+                        else it.copy(
+                            towers = emptyList(),
+                            hiddenTowerIds = emptySet(),
+                            selectedTowerId = null,
+                            sourceName = null
+                        )
+                    }
+                }
+                return@launch
+            }
+            val (name, towers) = restored
+            _uiState.update { state ->
+                if (state.sourceName == name && state.towers == towers) state
+                else state.copy(
+                    towers = towers,
+                    sourceName = name,
+                    hiddenTowerIds = emptySet(),
+                    selectedTowerId = null,
+                    statusMessage = "Loaded ${towers.size} towers from $name"
                 )
             }
         }
@@ -246,5 +380,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     override fun onCleared() {
         stopLocationUpdates()
         super.onCleared()
+    }
+
+    companion object {
+        private const val PREFS = "towerscope_prefs"
+        private const val KEY_HUD_THEME = "hud_theme"
     }
 }

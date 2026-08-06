@@ -26,7 +26,8 @@ class TowerArSceneBinding(
     private var visibleTowers: List<Tower> = emptyList()
     private var towersById: Map<String, Tower> = emptyMap()
     private var fallbackAltitude: Double? = null
-    private var onEarthTrackingChanged: (Boolean) -> Unit = {}
+    private var onEarthTrackingQualityChanged: (EarthTrackingQuality) -> Unit = {}
+    private var onCameraHeadingChanged: (Double?) -> Unit = {}
     private var onTowerTapped: (Tower) -> Unit = {}
 
     val view: ARSceneView = ARSceneView(context).apply {
@@ -42,20 +43,37 @@ class TowerArSceneBinding(
 
     fun update(
         uiState: TowerUiState,
-        onEarthTrackingChanged: (Boolean) -> Unit,
+        onEarthTrackingQualityChanged: (EarthTrackingQuality) -> Unit,
+        onCameraHeadingChanged: (Double?) -> Unit,
         onTowerTapped: (Tower) -> Unit
     ) {
         this.visibleTowers = uiState.visibleTowers()
         this.towersById = uiState.towers.associateBy { it.id }
         this.fallbackAltitude = uiState.userLocation?.altitudeMeters
-        this.onEarthTrackingChanged = onEarthTrackingChanged
+        this.onEarthTrackingQualityChanged = onEarthTrackingQualityChanged
+        this.onCameraHeadingChanged = onCameraHeadingChanged
         this.onTowerTapped = onTowerTapped
     }
 
     private fun sync(session: Session) {
         val earth = session.earth
-        val tracking = earth?.trackingState == TrackingState.TRACKING
-        onEarthTrackingChanged(tracking)
+        val quality = when (earth?.trackingState) {
+            TrackingState.TRACKING -> EarthTrackingQuality.TRACKING
+            TrackingState.PAUSED -> EarthTrackingQuality.LIMITED
+            else -> EarthTrackingQuality.NONE
+        }
+        onEarthTrackingQualityChanged(quality)
+
+        val heading = if (quality == EarthTrackingQuality.TRACKING) {
+            try {
+                earth?.cameraGeospatialPose?.heading
+            } catch (_: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+        onCameraHeadingChanged(heading)
 
         val synced = markerController.syncAnchors(earth, visibleTowers, fallbackAltitude)
 
@@ -85,7 +103,6 @@ class TowerArSceneBinding(
                 )
             )
 
-            // Tower name is shown on the outdoor HUD chips; cube marks the geospatial anchor.
             view.addChildNode(anchorNode)
             markerNodes[towerId] = anchorNode
         }

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#0B1C2C"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/detailName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FFD60A"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/detailDistance"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/detailBearing"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="#00E5FF"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/detailCoords"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textColor="#E6FFFFFF"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/detailAltitude"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="#E6FFFFFF"
+        android:textSize="14sp" />
+
+    <Button
+        android:id="@+id/openMapsButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="18dp"
+        android:backgroundTint="#00E5FF"
+        android:text="Open in Maps"
+        android:textColor="#0B1C2C"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/copyCoordsButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="#FFD60A"
+        android:text="Copy coords"
+        android:textColor="#0B1C2C"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/hideTowerButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="#FFFFFF"
+        android:text="Hide tower"
+        android:textColor="#0B1C2C"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/closeSheetButton"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="#334155"
+        android:text="Close"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold" />
+</LinearLayout>

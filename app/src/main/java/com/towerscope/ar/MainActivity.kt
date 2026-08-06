@@ -1,17 +1,19 @@
 package com.towerscope.ar
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -19,7 +21,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.towerscope.ar.ui.EarthTrackingQuality
+import com.towerscope.ar.ui.HudThemeApplier
 import com.towerscope.ar.ui.TowerArSceneBinding
+import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
@@ -31,15 +36,28 @@ class MainActivity : AppCompatActivity() {
     private var arBinding: TowerArSceneBinding? = null
 
     private lateinit var permissionGate: View
+    private lateinit var topBar: View
+    private lateinit var compassStrip: View
+    private lateinit var bottomPanel: View
+    private lateinit var trackingWarning: TextView
+    private lateinit var appTitle: TextView
+    private lateinit var themeButton: Button
     private lateinit var gpsChip: TextView
     private lateinit var earthChip: TextView
+    private lateinit var headingLabel: TextView
+    private lateinit var focusTowerLabel: TextView
     private lateinit var messageBanner: TextView
     private lateinit var visibleCount: TextView
+    private lateinit var searchField: EditText
     private lateinit var distanceLabel: TextView
     private lateinit var distanceSlider: SeekBar
+    private lateinit var dataButton: Button
     private lateinit var showHiddenButton: Button
+    private lateinit var nearestHeader: TextView
     private lateinit var towerChips: LinearLayout
     private lateinit var arContainer: FrameLayout
+
+    private var suppressSearchCallback = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -54,12 +72,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val filePickerLauncher = registerForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        uri?.let(viewModel::loadTowersFromUri)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -72,13 +84,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun bindViews() {
         permissionGate = findViewById(R.id.permissionGate)
+        topBar = findViewById(R.id.topBar)
+        compassStrip = findViewById(R.id.compassStrip)
+        bottomPanel = findViewById(R.id.bottomPanel)
+        trackingWarning = findViewById(R.id.trackingWarning)
+        appTitle = findViewById(R.id.appTitle)
+        themeButton = findViewById(R.id.themeButton)
         gpsChip = findViewById(R.id.gpsChip)
         earthChip = findViewById(R.id.earthChip)
+        headingLabel = findViewById(R.id.headingLabel)
+        focusTowerLabel = findViewById(R.id.focusTowerLabel)
         messageBanner = findViewById(R.id.messageBanner)
         visibleCount = findViewById(R.id.visibleCount)
+        searchField = findViewById(R.id.searchField)
         distanceLabel = findViewById(R.id.distanceLabel)
         distanceSlider = findViewById(R.id.distanceSlider)
+        dataButton = findViewById(R.id.dataButton)
         showHiddenButton = findViewById(R.id.showHiddenButton)
+        nearestHeader = findViewById(R.id.nearestHeader)
         towerChips = findViewById(R.id.towerChips)
         arContainer = findViewById(R.id.arContainer)
 
@@ -89,19 +112,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun wireActions() {
         findViewById<Button>(R.id.grantPermissionsButton).setOnClickListener { requestPermissions() }
-        findViewById<Button>(R.id.loadKmlButton).setOnClickListener {
-            filePickerLauncher.launch(
-                arrayOf(
-                    "application/vnd.google-earth.kml+xml",
-                    "application/vnd.google-earth.kmz",
-                    "application/xml",
-                    "text/xml",
-                    "application/zip",
-                    "*/*"
-                )
-            )
+        themeButton.setOnClickListener { viewModel.cycleHudTheme() }
+        dataButton.setOnClickListener {
+            startActivity(Intent(this, DataMenuActivity::class.java))
         }
-        findViewById<Button>(R.id.sampleButton).setOnClickListener { viewModel.loadSampleTowers() }
         showHiddenButton.setOnClickListener { viewModel.clearHiddenTowers() }
         distanceSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -110,6 +124,14 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+        searchField.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: Editable?) {
+                if (suppressSearchCallback) return
+                viewModel.setSearchQuery(s?.toString().orEmpty())
+            }
         })
     }
 
@@ -123,19 +145,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun render(state: TowerUiState) {
         val visible = state.visibleTowers()
-        val accuracy = state.userLocation?.accuracyMeters
-        gpsChip.text = if (accuracy != null && accuracy.isFinite()) {
-            "GPS ±${accuracy.toInt()}m"
-        } else {
-            "GPS…"
-        }
-        earthChip.text = if (state.earthTracking) "EARTH OK" else "EARTH…"
-        earthChip.setBackgroundColor(
-            ContextCompat.getColor(
-                this,
-                if (state.earthTracking) android.R.color.holo_green_light else android.R.color.holo_orange_light
-            )
-        )
+        renderTrackingChips(state)
+        renderCompass(state)
+        renderTheme(state)
+
         visibleCount.text = buildString {
             append("Visible ${visible.size} / ${state.towers.size}")
             if (state.hiddenTowerIds.isNotEmpty()) {
@@ -146,45 +159,149 @@ class MainActivity : AppCompatActivity() {
             "Max distance  ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}"
         showHiddenButton.isVisible = state.hiddenTowerIds.isNotEmpty()
 
+        if (searchField.text.toString() != state.searchQuery) {
+            suppressSearchCallback = true
+            searchField.setText(state.searchQuery)
+            searchField.setSelection(state.searchQuery.length)
+            suppressSearchCallback = false
+        }
+
         val message = state.errorMessage ?: state.statusMessage
         messageBanner.isVisible = message != null
         messageBanner.text = message.orEmpty()
         messageBanner.setTextColor(
-            ContextCompat.getColor(
-                this,
-                if (state.errorMessage != null) android.R.color.holo_red_light
-                else android.R.color.holo_blue_light
-            )
+            if (state.errorMessage != null) {
+                ContextCompat.getColor(this, R.color.chip_poor)
+            } else {
+                HudThemeApplier.colorsFor(state.hudTheme, messageBanner).secondary
+            }
         )
 
         towerChips.removeAllViews()
-        visible.take(3).forEach { tower ->
+        val chipColors = HudThemeApplier.colorsFor(state.hudTheme, towerChips)
+        state.nearestMatches(5).forEach { tower ->
+            val distance = state.distanceTo(tower)
+            val label = if (distance != null) {
+                "${tower.name} · ${GeoUtils.formatDistance(distance)}"
+            } else {
+                tower.name
+            }
             val chip = Button(this).apply {
-                text = tower.name
-                setTextColor(0xFFFFD60A.toInt())
+                text = label
+                setTextColor(chipColors.accent)
                 setBackgroundColor(0x00000000)
-                setOnClickListener { confirmHide(tower.id, tower.name, state.distanceTo(tower)) }
+                setOnClickListener { openTowerDetails(tower.id) }
             }
             towerChips.addView(chip)
         }
 
         arBinding?.update(
             uiState = state,
-            onEarthTrackingChanged = viewModel::setEarthTracking,
-            onTowerTapped = { tower ->
-                confirmHide(tower.id, tower.name, state.distanceTo(tower))
-            }
+            onEarthTrackingQualityChanged = viewModel::setEarthTrackingQuality,
+            onCameraHeadingChanged = viewModel::setCameraHeadingDegrees,
+            onTowerTapped = { tower -> openTowerDetails(tower.id) }
         )
     }
 
-    private fun confirmHide(towerId: String, name: String, distance: Double?) {
-        val distanceText = distance?.let { "\n\nDistance: ${GeoUtils.formatDistance(it)}" }.orEmpty()
-        AlertDialog.Builder(this)
-            .setTitle(name)
-            .setMessage("Filter this tower out of the AR scene?$distanceText")
-            .setPositiveButton("Hide tower") { _, _ -> viewModel.hideTower(towerId) }
-            .setNegativeButton("Cancel", null)
-            .show()
+    private fun renderTrackingChips(state: TowerUiState) {
+        val accuracy = state.userLocation?.accuracyMeters
+        val gpsTier = when {
+            accuracy == null || !accuracy.isFinite() -> null
+            accuracy <= 10f -> "Good"
+            accuracy <= 30f -> "Fair"
+            else -> "Poor"
+        }
+        gpsChip.text = if (gpsTier != null && accuracy != null) {
+            "GPS $gpsTier ±${accuracy.toInt()}m"
+        } else {
+            "GPS…"
+        }
+        val gpsColor = when (gpsTier) {
+            "Good" -> R.color.chip_good
+            "Fair" -> R.color.chip_fair
+            "Poor" -> R.color.chip_poor
+            else -> R.color.chip_off
+        }
+        gpsChip.setBackgroundColor(ContextCompat.getColor(this, gpsColor))
+        gpsChip.setTextColor(0xFF0B1C2C.toInt())
+
+        when (state.earthTrackingQuality) {
+            EarthTrackingQuality.TRACKING -> {
+                earthChip.text = "EARTH OK"
+                earthChip.setBackgroundColor(ContextCompat.getColor(this, R.color.chip_good))
+            }
+            EarthTrackingQuality.LIMITED -> {
+                earthChip.text = "EARTH…"
+                earthChip.setBackgroundColor(ContextCompat.getColor(this, R.color.chip_fair))
+            }
+            EarthTrackingQuality.NONE -> {
+                earthChip.text = "EARTH OFF"
+                earthChip.setBackgroundColor(ContextCompat.getColor(this, R.color.chip_off))
+            }
+        }
+        earthChip.setTextColor(0xFF0B1C2C.toInt())
+
+        val gpsWeak = gpsTier == null || gpsTier == "Poor" || gpsTier == "Fair"
+        val earthWeak = state.earthTrackingQuality != EarthTrackingQuality.TRACKING
+        trackingWarning.isVisible = gpsWeak && earthWeak && state.towers.isNotEmpty()
+    }
+
+    private fun renderCompass(state: TowerUiState) {
+        val heading = state.effectiveHeadingDegrees()
+        headingLabel.text = if (heading != null) {
+            "Heading  ${GeoUtils.formatBearing(heading)}"
+        } else {
+            "Heading  —"
+        }
+
+        val focus = state.focusTower()
+        focusTowerLabel.text = if (focus == null) {
+            "No tower in range"
+        } else {
+            val distance = state.distanceTo(focus)
+            val bearing = state.bearingTo(focus)
+            val turn = if (heading != null && bearing != null) {
+                GeoUtils.formatRelativeTurn(GeoUtils.relativeBearingDegrees(heading, bearing))
+            } else {
+                null
+            }
+            buildString {
+                append(focus.name)
+                if (distance != null) append("  ·  ").append(GeoUtils.formatDistance(distance))
+                if (bearing != null) append("  ·  ").append(GeoUtils.formatBearing(bearing))
+                if (turn != null) append("  ·  ").append(turn)
+            }
+        }
+    }
+
+    private fun renderTheme(state: TowerUiState) {
+        HudThemeApplier.apply(
+            theme = state.hudTheme,
+            topBar = topBar,
+            compassStrip = compassStrip,
+            bottomPanel = bottomPanel,
+            trackingWarning = trackingWarning,
+            messageBanner = messageBanner,
+            appTitle = appTitle,
+            headingLabel = headingLabel,
+            focusTowerLabel = focusTowerLabel,
+            visibleCount = visibleCount,
+            distanceLabel = distanceLabel,
+            nearestHeader = nearestHeader,
+            searchField = searchField,
+            themeButton = themeButton,
+            dataButton = dataButton
+        )
+    }
+
+    private fun openTowerDetails(towerId: String) {
+        viewModel.selectTower(towerId)
+        val existing = supportFragmentManager.findFragmentByTag(TowerDetailsBottomSheet.TAG)
+        if (existing is TowerDetailsBottomSheet) {
+            existing.dismissAllowingStateLoss()
+        }
+        TowerDetailsBottomSheet.newInstance(towerId)
+            .show(supportFragmentManager, TowerDetailsBottomSheet.TAG)
     }
 
     private fun ensurePermissions() {
@@ -224,6 +341,11 @@ class MainActivity : AppCompatActivity() {
             arContainer.removeAllViews()
             arContainer.addView(binding.view)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.syncFromFileStore()
     }
 
     override fun onDestroy() {

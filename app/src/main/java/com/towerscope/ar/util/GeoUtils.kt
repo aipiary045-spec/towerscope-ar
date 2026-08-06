@@ -61,4 +61,27 @@ object GeoUtils {
             else -> String.format(Locale.US, "%.1f m", meters)
         }
     }
+
+    fun cardinalFromDegrees(degrees: Double): String {
+        val normalized = ((degrees % 360.0) + 360.0) % 360.0
+        val index = ((normalized + 22.5) / 45.0).toInt() % 8
+        return CARDINALS[index]
+    }
+
+    fun formatBearing(degrees: Double): String {
+        val normalized = ((degrees % 360.0) + 360.0) % 360.0
+        return String.format(Locale.US, "%s %.0f°", cardinalFromDegrees(normalized), normalized)
+    }
+
+    /** Relative turn cue: ahead / L xx° / R xx°. */
+    fun formatRelativeTurn(relativeBearingDegrees: Double): String {
+        val abs = kotlin.math.abs(relativeBearingDegrees)
+        return when {
+            abs <= 12.0 -> "ahead"
+            relativeBearingDegrees < 0 -> String.format(Locale.US, "L %.0f°", abs)
+            else -> String.format(Locale.US, "R %.0f°", abs)
+        }
+    }
+
+    private val CARDINALS = arrayOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
 }
