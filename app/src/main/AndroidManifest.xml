@@ -22,10 +22,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TowerScopeAR">
 
-        <!-- Replace YOUR_API_KEY with an ARCore API key from Google Cloud -->
+        <!-- Set ARCORE_API_KEY in local.properties (gitignored) -->
         <meta-data
             android:name="com.google.android.ar.API_KEY"
-            android:value="YOUR_API_KEY" />
+            android:value="${ARCORE_API_KEY}" />
 
         <meta-data
             android:name="com.google.ar.core"

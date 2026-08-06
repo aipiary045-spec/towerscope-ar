@@ -1,7 +1,18 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        FileInputStream(file).use { load(it) }
+    }
+}
+val arcoreApiKey: String = localProperties.getProperty("ARCORE_API_KEY") ?: "YOUR_API_KEY"
 
 android {
     namespace = "com.towerscope.ar"
@@ -14,6 +25,7 @@ android {
         versionCode = 1
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["ARCORE_API_KEY"] = arcoreApiKey
     }
 
     buildTypes {
