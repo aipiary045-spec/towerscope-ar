@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
-import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -21,6 +20,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.ui.EarthTrackingQuality
 import com.towerscope.ar.ui.HudThemeApplier
 import com.towerscope.ar.ui.TowerArSceneBinding
@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bottomPanel: View
     private lateinit var trackingWarning: TextView
     private lateinit var appTitle: TextView
-    private lateinit var themeButton: Button
+    private lateinit var themeButton: TextView
     private lateinit var gpsChip: TextView
     private lateinit var earthChip: TextView
     private lateinit var headingLabel: TextView
@@ -51,8 +51,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchField: EditText
     private lateinit var distanceLabel: TextView
     private lateinit var distanceSlider: SeekBar
-    private lateinit var dataButton: Button
-    private lateinit var showHiddenButton: Button
+    private lateinit var dataButton: MaterialButton
+    private lateinit var showHiddenButton: MaterialButton
     private lateinit var nearestHeader: TextView
     private lateinit var towerChips: LinearLayout
     private lateinit var arContainer: FrameLayout
@@ -111,7 +111,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun wireActions() {
-        findViewById<Button>(R.id.grantPermissionsButton).setOnClickListener { requestPermissions() }
+        findViewById<MaterialButton>(R.id.grantPermissionsButton).setOnClickListener { requestPermissions() }
         themeButton.setOnClickListener { viewModel.cycleHudTheme() }
         dataButton.setOnClickListener {
             startActivity(Intent(this, DataMenuActivity::class.java))
@@ -156,7 +156,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         distanceLabel.text =
-            "Max distance  ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}"
+            "RANGE  ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}"
         showHiddenButton.isVisible = state.hiddenTowerIds.isNotEmpty()
 
         if (searchField.text.toString() != state.searchQuery) {
@@ -179,17 +179,31 @@ class MainActivity : AppCompatActivity() {
 
         towerChips.removeAllViews()
         val chipColors = HudThemeApplier.colorsFor(state.hudTheme, towerChips)
+        val density = resources.displayMetrics.density
         state.nearestMatches(5).forEach { tower ->
             val distance = state.distanceTo(tower)
             val label = if (distance != null) {
-                "${tower.name} · ${GeoUtils.formatDistance(distance)}"
+                "${tower.name}  ${GeoUtils.formatDistance(distance)}"
             } else {
                 tower.name
             }
-            val chip = Button(this).apply {
+            val chip = TextView(this).apply {
                 text = label
-                setTextColor(chipColors.accent)
-                setBackgroundColor(0x00000000)
+                setTextColor(chipColors.text)
+                textSize = 12f
+                setPadding(
+                    (12 * density).toInt(),
+                    (8 * density).toInt(),
+                    (12 * density).toInt(),
+                    (8 * density).toInt()
+                )
+                background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_hud_match_chip)
+                val params = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                params.marginEnd = (8 * density).toInt()
+                layoutParams = params
                 setOnClickListener { openTowerDetails(tower.id) }
             }
             towerChips.addView(chip)
@@ -212,34 +226,29 @@ class MainActivity : AppCompatActivity() {
             else -> "Poor"
         }
         gpsChip.text = if (gpsTier != null && accuracy != null) {
-            "GPS $gpsTier ±${accuracy.toInt()}m"
+            "GPS · $gpsTier ±${accuracy.toInt()}m"
         } else {
-            "GPS…"
+            "GPS · —"
         }
-        val gpsColor = when (gpsTier) {
+        val gpsColorRes = when (gpsTier) {
             "Good" -> R.color.chip_good
             "Fair" -> R.color.chip_fair
             "Poor" -> R.color.chip_poor
             else -> R.color.chip_off
         }
-        gpsChip.setBackgroundColor(ContextCompat.getColor(this, gpsColor))
-        gpsChip.setTextColor(0xFF0B1C2C.toInt())
+        val gpsColor = ContextCompat.getColor(this, gpsColorRes)
+        gpsChip.setTextColor(gpsColor)
+        gpsChip.background = HudThemeApplier.statusChipBackground(gpsChip, gpsColor)
 
-        when (state.earthTrackingQuality) {
-            EarthTrackingQuality.TRACKING -> {
-                earthChip.text = "EARTH OK"
-                earthChip.setBackgroundColor(ContextCompat.getColor(this, R.color.chip_good))
-            }
-            EarthTrackingQuality.LIMITED -> {
-                earthChip.text = "EARTH…"
-                earthChip.setBackgroundColor(ContextCompat.getColor(this, R.color.chip_fair))
-            }
-            EarthTrackingQuality.NONE -> {
-                earthChip.text = "EARTH OFF"
-                earthChip.setBackgroundColor(ContextCompat.getColor(this, R.color.chip_off))
-            }
+        val (earthLabel, earthColorRes) = when (state.earthTrackingQuality) {
+            EarthTrackingQuality.TRACKING -> "Earth · Tracking" to R.color.chip_good
+            EarthTrackingQuality.LIMITED -> "Earth · Limited" to R.color.chip_fair
+            EarthTrackingQuality.NONE -> "Earth · Off" to R.color.chip_off
         }
-        earthChip.setTextColor(0xFF0B1C2C.toInt())
+        earthChip.text = earthLabel
+        val earthColor = ContextCompat.getColor(this, earthColorRes)
+        earthChip.setTextColor(earthColor)
+        earthChip.background = HudThemeApplier.statusChipBackground(earthChip, earthColor)
 
         val gpsWeak = gpsTier == null || gpsTier == "Poor" || gpsTier == "Fair"
         val earthWeak = state.earthTrackingQuality != EarthTrackingQuality.TRACKING
@@ -249,9 +258,9 @@ class MainActivity : AppCompatActivity() {
     private fun renderCompass(state: TowerUiState) {
         val heading = state.effectiveHeadingDegrees()
         headingLabel.text = if (heading != null) {
-            "Heading  ${GeoUtils.formatBearing(heading)}"
+            "HEADING  ${GeoUtils.formatBearing(heading)}"
         } else {
-            "Heading  —"
+            "HEADING  —"
         }
 
         val focus = state.focusTower()
@@ -290,7 +299,8 @@ class MainActivity : AppCompatActivity() {
             nearestHeader = nearestHeader,
             searchField = searchField,
             themeButton = themeButton,
-            dataButton = dataButton
+            dataButton = dataButton,
+            showHiddenButton = showHiddenButton
         )
     }
 

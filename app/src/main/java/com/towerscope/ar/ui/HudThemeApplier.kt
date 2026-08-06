@@ -1,11 +1,12 @@
 package com.towerscope.ar.ui
 
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.view.View
-import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.R
 
 /**
@@ -29,7 +30,7 @@ object HudThemeApplier {
                 text = ContextCompat.getColor(ctx, R.color.theme_day_text),
                 accent = ContextCompat.getColor(ctx, R.color.theme_day_accent),
                 secondary = ContextCompat.getColor(ctx, R.color.theme_day_secondary),
-                mutedText = Color.argb(180, 11, 28, 44)
+                mutedText = Color.argb(170, 26, 36, 51)
             )
             HudTheme.HIGH_CONTRAST -> Colors(
                 panel = ContextCompat.getColor(ctx, R.color.theme_hc_panel),
@@ -43,7 +44,7 @@ object HudThemeApplier {
                 text = ContextCompat.getColor(ctx, R.color.theme_night_text),
                 accent = ContextCompat.getColor(ctx, R.color.theme_night_accent),
                 secondary = ContextCompat.getColor(ctx, R.color.theme_night_secondary),
-                mutedText = Color.argb(230, 255, 255, 255)
+                mutedText = ContextCompat.getColor(ctx, R.color.text_muted)
             )
         }
     }
@@ -62,8 +63,9 @@ object HudThemeApplier {
         distanceLabel: TextView,
         nearestHeader: TextView,
         searchField: EditText,
-        themeButton: Button,
-        dataButton: Button
+        themeButton: TextView,
+        dataButton: MaterialButton,
+        showHiddenButton: MaterialButton
     ) {
         val c = colorsFor(theme, topBar)
         topBar.setBackgroundColor(c.panel)
@@ -81,19 +83,46 @@ object HudThemeApplier {
 
         searchField.setTextColor(c.text)
         searchField.setHintTextColor(c.mutedText)
-        searchField.setBackgroundColor(
-            if (theme == HudTheme.DAY) Color.argb(40, 0, 0, 0) else Color.argb(26, 255, 255, 255)
+        searchField.background = roundedRect(
+            fill = if (theme == HudTheme.DAY) Color.argb(28, 0, 0, 0) else Color.argb(20, 255, 255, 255),
+            stroke = if (theme == HudTheme.DAY) Color.argb(40, 0, 0, 0) else Color.argb(40, 255, 255, 255),
+            radiusDp = 10f,
+            view = searchField
         )
 
         themeButton.text = theme.label
-        themeButton.setBackgroundColor(
-            if (theme == HudTheme.DAY) Color.parseColor("#CBD5E1") else Color.parseColor("#334155")
+        themeButton.setTextColor(c.mutedText)
+        themeButton.background = roundedRect(
+            fill = if (theme == HudTheme.DAY) Color.argb(30, 0, 0, 0) else Color.argb(30, 255, 255, 255),
+            stroke = Color.TRANSPARENT,
+            radiusDp = 8f,
+            view = themeButton
         )
-        themeButton.setTextColor(if (theme == HudTheme.DAY) c.text else Color.WHITE)
 
         dataButton.setBackgroundColor(c.accent)
         dataButton.setTextColor(
             if (theme == HudTheme.DAY) Color.WHITE else Color.parseColor("#0B1C2C")
         )
+        showHiddenButton.setTextColor(c.text)
+        showHiddenButton.strokeColor = android.content.res.ColorStateList.valueOf(
+            if (theme == HudTheme.DAY) Color.argb(70, 0, 0, 0) else Color.argb(100, 255, 255, 255)
+        )
+    }
+
+    fun statusChipBackground(view: View, statusColor: Int): GradientDrawable {
+        val mutedFill = Color.argb(36, Color.red(statusColor), Color.green(statusColor), Color.blue(statusColor))
+        return roundedRect(mutedFill, Color.argb(120, Color.red(statusColor), Color.green(statusColor), Color.blue(statusColor)), 8f, view)
+    }
+
+    private fun roundedRect(fill: Int, stroke: Int, radiusDp: Float, view: View): GradientDrawable {
+        val density = view.resources.displayMetrics.density
+        return GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = radiusDp * density
+            setColor(fill)
+            if (stroke != Color.TRANSPARENT) {
+                setStroke((1 * density).toInt().coerceAtLeast(1), stroke)
+            }
+        }
     }
 }

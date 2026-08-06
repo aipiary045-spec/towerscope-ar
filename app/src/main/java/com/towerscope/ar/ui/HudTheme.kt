@@ -17,7 +17,7 @@ enum class HudTheme {
     val label: String
         get() = when (this) {
             DAY -> "Day"
-            HIGH_CONTRAST -> "HC"
+            HIGH_CONTRAST -> "Contrast"
             NIGHT -> "Night"
         }
 }
