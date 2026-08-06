@@ -2,11 +2,13 @@ package com.towerscope.ar
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.view.WindowManager
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -84,6 +86,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
@@ -340,13 +344,15 @@ class MainActivity : AppCompatActivity() {
 
         val gpsWeak = gpsTier == null || gpsTier == "Poor" || gpsTier == "Fair" || gpsTier == "Coarse"
         val earthWeak = state.earthTrackingQuality != EarthTrackingQuality.TRACKING
-        trackingWarning.isVisible = gpsWeak && earthWeak && state.towers.isNotEmpty()
+        trackingWarning.isVisible = earthWeak && state.towers.isNotEmpty()
         if (trackingWarning.isVisible) {
-                    trackingWarning.text = when {
+            trackingWarning.text = when {
                 state.earthTrackingQuality == EarthTrackingQuality.LIMITED ->
-                    "Earth localizing — markers wait for ≤25 m accuracy"
+                    "Approx GPS towers — wait for Earth ≤25 m for pinned markers"
+                gpsWeak ->
+                    "GPS towers (approx) — walk outdoors for Earth lock"
                 else ->
-                    "Tracking weak — markers may drift"
+                    "Showing GPS-approx towers until Earth is Ready"
             }
         }
     }
@@ -447,12 +453,19 @@ class MainActivity : AppCompatActivity() {
             arBinding = binding
             arContainer.removeAllViews()
             arContainer.addView(binding.view)
+            binding.onResume()
         }
     }
 
     override fun onResume() {
         super.onResume()
         viewModel.syncFromFileStore()
+        arBinding?.onResume()
+    }
+
+    override fun onPause() {
+        arBinding?.onPause()
+        super.onPause()
     }
 
     override fun onDestroy() {

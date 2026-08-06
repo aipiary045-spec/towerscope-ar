@@ -35,8 +35,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:configChanges="orientation|screenSize"
-            android:screenOrientation="fullUser"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|keyboardHidden"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.TowerScopeAR">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
