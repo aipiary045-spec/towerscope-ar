@@ -118,6 +118,7 @@ class MainActivity : AppCompatActivity() {
         towerChips = findViewById(R.id.towerChips)
         arContainer = findViewById(R.id.arContainer)
         directionOverlay = findViewById(R.id.directionOverlay)
+        directionOverlay.setOnTowerSelectedListener { towerId -> openTowerDetails(towerId) }
 
         bottomPanelBasePadding = bottomPanel.paddingBottom
         topChromeBasePadding = topChrome.paddingTop
@@ -148,6 +149,9 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, DataMenuActivity::class.java))
         }
         showHiddenButton.setOnClickListener { viewModel.clearHiddenTowers() }
+        focusTowerLabel.setOnClickListener {
+            viewModel.uiState.value.focusTower()?.let { openTowerDetails(it.id) }
+        }
         distanceSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val meters = TowerUiState.MIN_DISTANCE_METERS + progress
@@ -173,6 +177,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private var lastChipSignature: String? = null
 
     private fun render(state: TowerUiState) {
         val visible = state.visibleTowers()
@@ -208,10 +214,32 @@ class MainActivity : AppCompatActivity() {
             }
         )
 
+        renderNearbyChips(state)
+
+        arBinding?.update(
+            uiState = state,
+            onEarthTrackingQualityChanged = viewModel::setEarthTrackingQuality,
+            onEarthCameraPoseChanged = viewModel::setEarthCameraPose,
+            onCameraHeadingChanged = viewModel::setCameraHeadingDegrees,
+            onTowerTapped = { tower -> openTowerDetails(tower.id) }
+        )
+
+        renderDirectionOverlay(state)
+    }
+
+    private fun renderNearbyChips(state: TowerUiState) {
+        val matches = state.nearestMatches(5)
+        val signature = matches.joinToString("|") { tower ->
+            val distance = state.distanceTo(tower)?.toInt() ?: -1
+            "${tower.id}:$distance:${state.hudTheme.name}"
+        }
+        if (signature == lastChipSignature && towerChips.childCount == matches.size) return
+        lastChipSignature = signature
+
         towerChips.removeAllViews()
         val chipColors = HudThemeApplier.colorsFor(state.hudTheme, towerChips)
         val density = resources.displayMetrics.density
-        state.nearestMatches(5).forEach { tower ->
+        matches.forEach { tower ->
             val distance = state.distanceTo(tower)
             val label = if (distance != null) {
                 "${tower.name}  ${GeoUtils.formatDistance(distance)}"
@@ -229,6 +257,8 @@ class MainActivity : AppCompatActivity() {
                     (5 * density).toInt()
                 )
                 background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_hud_match_chip)
+                isClickable = true
+                isFocusable = true
                 val params = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
@@ -239,21 +269,12 @@ class MainActivity : AppCompatActivity() {
             }
             towerChips.addView(chip)
         }
-
-        arBinding?.update(
-            uiState = state,
-            onEarthTrackingQualityChanged = viewModel::setEarthTrackingQuality,
-            onEarthCameraPoseChanged = viewModel::setEarthCameraPose,
-            onCameraHeadingChanged = viewModel::setCameraHeadingDegrees,
-            onTowerTapped = { tower -> openTowerDetails(tower.id) }
-        )
-
-        renderDirectionOverlay(state)
     }
 
     private fun renderDirectionOverlay(state: TowerUiState) {
         val items = state.directionIndicators().map { (tower, relative, distance) ->
             OffScreenTowerOverlay.Indicator(
+                towerId = tower.id,
                 name = tower.name,
                 relativeBearingDegrees = relative,
                 distanceMeters = distance

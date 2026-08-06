@@ -284,19 +284,35 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
 
     fun setEarthTrackingQuality(quality: EarthTrackingQuality) {
         _uiState.update {
-            it.copy(
-                earthTrackingQuality = quality,
-                earthTracking = quality == EarthTrackingQuality.TRACKING
-            )
+            if (it.earthTrackingQuality == quality &&
+                it.earthTracking == (quality == EarthTrackingQuality.TRACKING)
+            ) {
+                it
+            } else {
+                it.copy(
+                    earthTrackingQuality = quality,
+                    earthTracking = quality == EarthTrackingQuality.TRACKING
+                )
+            }
         }
     }
 
     fun setEarthCameraPose(pose: EarthCameraPose?) {
-        _uiState.update { it.copy(earthCameraPose = pose) }
+        _uiState.update { current ->
+            if (earthPoseEquivalent(current.earthCameraPose, pose)) current
+            else current.copy(earthCameraPose = pose)
+        }
     }
 
     fun setCameraHeadingDegrees(heading: Double?) {
-        _uiState.update { it.copy(cameraHeadingDegrees = heading) }
+        _uiState.update { current ->
+            val existing = current.cameraHeadingDegrees
+            if (heading == null && existing == null) return@update current
+            if (heading != null && existing != null && kotlin.math.abs(heading - existing) < 1.0) {
+                return@update current
+            }
+            current.copy(cameraHeadingDegrees = heading)
+        }
     }
 
     fun hideTower(towerId: String) {
@@ -305,6 +321,18 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 hiddenTowerIds = it.hiddenTowerIds + towerId,
                 selectedTowerId = if (it.selectedTowerId == towerId) null else it.selectedTowerId,
                 statusMessage = "Tower filtered out of the scene"
+            )
+        }
+    }
+
+    /** Hide every tower except [towerId] so it is the only one on screen. */
+    fun showOnlyTower(towerId: String) {
+        _uiState.update { state ->
+            val others = state.towers.map { it.id }.filter { it != towerId }.toSet()
+            state.copy(
+                hiddenTowerIds = others,
+                selectedTowerId = towerId,
+                statusMessage = "Showing only selected tower"
             )
         }
     }
@@ -457,5 +485,16 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     companion object {
         private const val PREFS = "towerscope_prefs"
         private const val KEY_HUD_THEME = "hud_theme"
+
+        private fun earthPoseEquivalent(a: EarthCameraPose?, b: EarthCameraPose?): Boolean {
+            if (a === b) return true
+            if (a == null || b == null) return false
+            return kotlin.math.abs(a.latitude - b.latitude) < 0.00001 &&
+                kotlin.math.abs(a.longitude - b.longitude) < 0.00001 &&
+                kotlin.math.abs(a.altitudeMeters - b.altitudeMeters) < 0.75 &&
+                kotlin.math.abs(a.headingDegrees - b.headingDegrees) < 1.5 &&
+                kotlin.math.abs(a.horizontalAccuracyMeters - b.horizontalAccuracyMeters) < 1.0 &&
+                kotlin.math.abs(a.headingAccuracyDegrees - b.headingAccuracyDegrees) < 2.0
+        }
     }
 }

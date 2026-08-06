@@ -49,6 +49,10 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
         val detailAltitude = view.findViewById<TextView>(R.id.detailAltitude)
 
         view.findViewById<Button>(R.id.closeSheetButton).setOnClickListener { dismiss() }
+        view.findViewById<Button>(R.id.showOnlyButton).setOnClickListener {
+            viewModel.showOnlyTower(towerId)
+            dismiss()
+        }
         view.findViewById<Button>(R.id.hideTowerButton).setOnClickListener {
             viewModel.hideTower(towerId)
             dismiss()

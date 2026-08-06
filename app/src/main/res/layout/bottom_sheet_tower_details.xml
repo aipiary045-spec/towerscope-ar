@@ -58,11 +58,25 @@
         android:textSize="13sp" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/openMapsButton"
+        android:id="@+id/showOnlyButton"
         style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:layout_marginTop="18dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:text="Show only this tower"
+        android:textAllCaps="false"
+        android:textColor="#0B1C2C"
+        app:backgroundTint="@color/accent_yellow"
+        app:cornerRadius="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/openMapsButton"
+        style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
         android:insetTop="0dp"
         android:insetBottom="0dp"
         android:text="Open in Maps"

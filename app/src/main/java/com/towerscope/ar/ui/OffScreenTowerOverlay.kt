@@ -6,6 +6,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import com.towerscope.ar.util.GeoUtils
 import kotlin.math.abs
@@ -16,7 +17,7 @@ import kotlin.math.sin
 
 /**
  * Draws direction arrows + labels for in-range towers relative to device heading.
- * Works without Geospatial Earth tracking — GPS + compass only.
+ * Touches pass through except taps on labels, which select a tower.
  */
 class OffScreenTowerOverlay @JvmOverloads constructor(
     context: Context,
@@ -24,12 +25,21 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     data class Indicator(
+        val towerId: String,
         val name: String,
         val relativeBearingDegrees: Double,
         val distanceMeters: Double
     )
 
+    private data class HitTarget(
+        val towerId: String,
+        val bounds: RectF
+    )
+
     private var indicators: List<Indicator> = emptyList()
+    private val hitTargets = mutableListOf<HitTarget>()
+    private var onTowerSelected: ((String) -> Unit)? = null
+    private var pressedTowerId: String? = null
 
     private val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFFE6C84A.toInt()
@@ -57,13 +67,51 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
     private val path = Path()
     private val labelRect = RectF()
 
+    init {
+        isClickable = false
+        isFocusable = false
+    }
+
+    fun setOnTowerSelectedListener(listener: ((String) -> Unit)?) {
+        onTowerSelected = listener
+    }
+
     fun setIndicators(items: List<Indicator>) {
         indicators = items
         invalidate()
     }
 
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                pressedTowerId = hitTargets
+                    .lastOrNull { it.bounds.contains(event.x, event.y) }
+                    ?.towerId
+                return pressedTowerId != null
+            }
+            MotionEvent.ACTION_UP -> {
+                val id = pressedTowerId
+                pressedTowerId = null
+                if (id != null) {
+                    val stillHit = hitTargets
+                        .lastOrNull { it.bounds.contains(event.x, event.y) }
+                        ?.towerId
+                    if (stillHit == id) onTowerSelected?.invoke(id)
+                    return true
+                }
+                return false
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                pressedTowerId = null
+                return false
+            }
+        }
+        return pressedTowerId != null
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        hitTargets.clear()
         if (indicators.isEmpty() || width == 0 || height == 0) return
 
         val pad = 56f
@@ -79,7 +127,6 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
             val ahead = abs(indicator.relativeBearingDegrees) <= HALF_FOV_DEGREES
 
             if (ahead) {
-                // Place cue partway toward the edge so it sits in the camera view.
                 val edge = projectToEdge(cx, cy, dirX, dirY, pad, maxX, maxY)
                 val t = 0.42f
                 val x = cx + (edge.first - cx) * t
@@ -150,6 +197,7 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
         canvas.drawRoundRect(labelRect, 14f, 14f, labelBgPaint)
         canvas.drawText(title, left + 14f, top + 30f, labelPaint)
         canvas.drawText(distance, left + 14f, top + 56f, distancePaint)
+        hitTargets += HitTarget(indicator.towerId, RectF(labelRect))
     }
 
     companion object {
