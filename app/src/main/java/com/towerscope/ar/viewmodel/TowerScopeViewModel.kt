@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.towerscope.ar.data.KmlParser
 import com.towerscope.ar.data.Tower
+import com.towerscope.ar.data.TowerFileStore
 import com.towerscope.ar.location.HighAccuracyLocationClient
 import com.towerscope.ar.location.UserLocation
 import com.towerscope.ar.util.GeoUtils
@@ -23,7 +24,9 @@ data class TowerUiState(
     val hiddenTowerIds: Set<String> = emptySet(),
     val maxDistanceMeters: Float = DEFAULT_MAX_DISTANCE_METERS,
     val userLocation: UserLocation? = null,
+    val cameraHeadingDegrees: Double? = null,
     val earthTracking: Boolean = false,
+    val sourceName: String? = null,
     val statusMessage: String? = null,
     val errorMessage: String? = null,
     val isLoadingFile: Boolean = false
@@ -55,7 +58,8 @@ data class TowerUiState(
 
     companion object {
         const val MIN_DISTANCE_METERS = 100f
-        const val MAX_DISTANCE_METERS = 10_000f
+        /** 10 miles in meters. */
+        const val MAX_DISTANCE_METERS = (10.0 * GeoUtils.METERS_PER_MILE).toFloat()
         const val DEFAULT_MAX_DISTANCE_METERS = 2_000f
     }
 }
@@ -63,10 +67,28 @@ data class TowerUiState(
 class TowerScopeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val locationClient = HighAccuracyLocationClient(application)
+    private val fileStore = TowerFileStore(application)
     private val _uiState = MutableStateFlow(TowerUiState())
     val uiState: StateFlow<TowerUiState> = _uiState.asStateFlow()
 
     private var locationJob: Job? = null
+
+    init {
+        restorePersistedTowers()
+    }
+
+    private fun restorePersistedTowers() {
+        viewModelScope.launch {
+            val restored = withContext(Dispatchers.IO) { fileStore.loadPersistedTowers() } ?: return@launch
+            _uiState.update {
+                it.copy(
+                    towers = restored.second,
+                    sourceName = restored.first,
+                    statusMessage = "Restored ${restored.second.size} towers from ${restored.first}"
+                )
+            }
+        }
+    }
 
     fun startLocationUpdates() {
         if (locationJob?.isActive == true) return
@@ -103,6 +125,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(earthTracking = tracking) }
     }
 
+    fun setCameraHeadingDegrees(heading: Double?) {
+        _uiState.update { it.copy(cameraHeadingDegrees = heading) }
+    }
+
     fun hideTower(towerId: String) {
         _uiState.update {
             it.copy(
@@ -130,13 +156,17 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             _uiState.update { it.copy(isLoadingFile = true, errorMessage = null) }
             try {
                 val towers = withContext(Dispatchers.IO) {
-                    KmlParser.parseAsset(getApplication(), "sample_towers.kml")
+                    val parsed = KmlParser.parseAsset(getApplication(), "sample_towers.kml")
+                    val bytes = getApplication<Application>().assets.open("sample_towers.kml").use { it.readBytes() }
+                    fileStore.saveImport("sample_towers.kml", null, parsed, bytes)
+                    parsed
                 }
                 _uiState.update {
                     it.copy(
                         towers = towers,
                         hiddenTowerIds = emptySet(),
-                        statusMessage = "Loaded ${towers.size} sample towers",
+                        sourceName = "sample_towers.kml",
+                        statusMessage = "Loaded ${towers.size} sample towers (saved)",
                         isLoadingFile = false
                     )
                 }
@@ -155,9 +185,21 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingFile = true, errorMessage = null) }
             try {
-                val towers = withContext(Dispatchers.IO) {
-                    KmlParser.parseUri(getApplication(), uri)
+                val result = withContext(Dispatchers.IO) {
+                    val resolver = getApplication<Application>().contentResolver
+                    val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+                        ?: error("Unable to open file")
+                    val displayName = resolver.query(uri, null, null, null, null)?.use { cursor ->
+                        val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (cursor.moveToFirst() && index >= 0) cursor.getString(index) else null
+                    } ?: uri.lastPathSegment ?: "import.kml"
+                    val towers = KmlParser.parseUri(getApplication(), uri)
+                    if (towers.isNotEmpty()) {
+                        fileStore.saveImport(displayName, uri, towers, bytes)
+                    }
+                    displayName to towers
                 }
+                val (name, towers) = result
                 if (towers.isEmpty()) {
                     _uiState.update {
                         it.copy(
@@ -170,7 +212,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                         it.copy(
                             towers = towers,
                             hiddenTowerIds = emptySet(),
-                            statusMessage = "Loaded ${towers.size} towers",
+                            sourceName = name,
+                            statusMessage = "Loaded ${towers.size} towers from $name (saved)",
                             isLoadingFile = false
                         )
                     }
@@ -182,6 +225,20 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                         isLoadingFile = false
                     )
                 }
+            }
+        }
+    }
+
+    fun clearSavedTowers() {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { fileStore.clear() }
+            _uiState.update {
+                it.copy(
+                    towers = emptyList(),
+                    hiddenTowerIds = emptySet(),
+                    sourceName = null,
+                    statusMessage = "Cleared saved tower data"
+                )
             }
         }
     }
