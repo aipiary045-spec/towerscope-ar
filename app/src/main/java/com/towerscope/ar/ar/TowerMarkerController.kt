@@ -83,10 +83,15 @@ class TowerMarkerController {
     }
 
     /**
-     * All towers are treated as zero height (ground-level) so markers share the
-     * camera altitude and sit on a flat horizon instead of stacking by KML height.
+     * Pin anchors at estimated ground level (camera altitude minus typical phone
+     * height) so the visual tower rises from the ground, not from eye height.
      */
     internal fun resolveAltitudeMeters(tower: Tower, cameraAltitudeMeters: Double): Double {
-        return cameraAltitudeMeters
+        return cameraAltitudeMeters - DEVICE_HEIGHT_ABOVE_GROUND_METERS
+    }
+
+    companion object {
+        /** Approximate handset height above terrain while held for outdoor AR. */
+        const val DEVICE_HEIGHT_ABOVE_GROUND_METERS = 1.5
     }
 }

@@ -1,6 +1,7 @@
 package com.towerscope.ar.ui
 
 import android.content.Context
+import com.google.android.filament.MaterialInstance
 import com.google.ar.core.Config
 import com.google.ar.core.Frame
 import com.google.ar.core.Session
@@ -13,8 +14,7 @@ import com.towerscope.ar.viewmodel.TowerUiState
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.ar.node.AnchorNode
 import io.github.sceneview.math.Position
-import io.github.sceneview.math.Size
-import io.github.sceneview.node.CubeNode
+import io.github.sceneview.node.CylinderNode
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -31,6 +31,7 @@ class TowerArSceneBinding(
     private var onEarthCameraPoseChanged: (EarthCameraPose?) -> Unit = {}
     private var onCameraHeadingChanged: (Double?) -> Unit = {}
     private var onTowerTapped: (Tower) -> Unit = {}
+    private var towerMaterial: MaterialInstance? = null
 
     val view: ARSceneView = ARSceneView(context).apply {
         planeRenderer.isEnabled = false
@@ -56,6 +57,17 @@ class TowerArSceneBinding(
         this.onEarthCameraPoseChanged = onEarthCameraPoseChanged
         this.onCameraHeadingChanged = onCameraHeadingChanged
         this.onTowerTapped = onTowerTapped
+    }
+
+    private fun towerMaterialInstance(): MaterialInstance {
+        towerMaterial?.let { return it }
+        // Bright yellow, low metal — readable outdoors against sky/trees.
+        return view.materialLoader.createColorInstance(
+            color = 0xFFFFD60A.toInt(),
+            metallic = 0.05f,
+            roughness = 0.35f,
+            reflectance = 0.45f
+        ).also { towerMaterial = it }
     }
 
     private fun sync(session: Session) {
@@ -122,12 +134,15 @@ class TowerArSceneBinding(
                 }
             }
 
+            // Ground-pinned cylinder: base at anchor (ground), rises upward.
+            val height = TOWER_MARKER_HEIGHT_METERS
             anchorNode.addChildNode(
-                CubeNode(
+                CylinderNode(
                     engine = view.engine,
-                    // Compact ground marker — towers are treated as zero height.
-                    size = Size(0.8f, 0.8f, 0.8f),
-                    center = Position(y = 0f)
+                    radius = TOWER_MARKER_RADIUS_METERS,
+                    height = height,
+                    center = Position(y = height / 2f),
+                    materialInstance = towerMaterialInstance()
                 )
             )
 
@@ -140,6 +155,14 @@ class TowerArSceneBinding(
         markerNodes.values.forEach { it.destroy() }
         markerNodes.clear()
         markerController.detachAll()
+        towerMaterial?.let { view.materialLoader.destroyMaterialInstance(it) }
+        towerMaterial = null
         view.destroy()
+    }
+
+    companion object {
+        /** Tall enough to read as a tower; thick enough to see from hundreds of meters. */
+        private const val TOWER_MARKER_HEIGHT_METERS = 55f
+        private const val TOWER_MARKER_RADIUS_METERS = 4f
     }
 }

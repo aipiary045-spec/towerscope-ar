@@ -55,7 +55,6 @@ class DataMenuActivity : AppCompatActivity() {
                 )
             )
         }
-        findViewById<Button>(R.id.sampleButton).setOnClickListener { viewModel.loadSampleTowers() }
         findViewById<Button>(R.id.clearButton).setOnClickListener { viewModel.clearSavedTowers() }
         findViewById<Button>(R.id.doneButton).setOnClickListener { finish() }
 

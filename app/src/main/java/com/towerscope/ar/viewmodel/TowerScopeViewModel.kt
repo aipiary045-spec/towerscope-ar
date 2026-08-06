@@ -350,37 +350,6 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(statusMessage = null, errorMessage = null) }
     }
 
-    fun loadSampleTowers() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingFile = true, errorMessage = null) }
-            try {
-                val towers = withContext(Dispatchers.IO) {
-                    val parsed = KmlParser.parseAsset(getApplication(), "sample_towers.kml")
-                    val bytes = getApplication<Application>().assets.open("sample_towers.kml").use { it.readBytes() }
-                    fileStore.saveImport("sample_towers.kml", null, parsed, bytes)
-                    parsed
-                }
-                _uiState.update {
-                    it.copy(
-                        towers = towers,
-                        hiddenTowerIds = emptySet(),
-                        selectedTowerId = null,
-                        sourceName = "sample_towers.kml",
-                        statusMessage = "Loaded ${towers.size} sample towers (saved)",
-                        isLoadingFile = false
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        errorMessage = e.message ?: "Failed to load sample KML",
-                        isLoadingFile = false
-                    )
-                }
-            }
-        }
-    }
-
     fun loadTowersFromUri(uri: Uri) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingFile = true, errorMessage = null) }

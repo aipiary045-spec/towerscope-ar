@@ -342,9 +342,9 @@ class MainActivity : AppCompatActivity() {
         val earthWeak = state.earthTrackingQuality != EarthTrackingQuality.TRACKING
         trackingWarning.isVisible = gpsWeak && earthWeak && state.towers.isNotEmpty()
         if (trackingWarning.isVisible) {
-            trackingWarning.text = when {
+                    trackingWarning.text = when {
                 state.earthTrackingQuality == EarthTrackingQuality.LIMITED ->
-                    "Earth localizing — markers wait for ≤15 m accuracy"
+                    "Earth localizing — markers wait for ≤25 m accuracy"
                 else ->
                     "Tracking weak — markers may drift"
             }

@@ -45,16 +45,6 @@
         android:textStyle="bold" />
 
     <Button
-        android:id="@+id/sampleButton"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginTop="12dp"
-        android:backgroundTint="#00E5FF"
-        android:text="Load sample towers"
-        android:textColor="#0B1C2C"
-        android:textStyle="bold" />
-
-    <Button
         android:id="@+id/clearButton"
         android:layout_width="match_parent"
         android:layout_height="56dp"

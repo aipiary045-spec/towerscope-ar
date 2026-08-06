@@ -5,7 +5,7 @@ package com.towerscope.ar.ar
  */
 object GeospatialAccuracy {
     /** Max Earth horizontal accuracy (meters) before we place / keep AR markers. */
-    const val MARKER_HORIZONTAL_METERS = 15f
+    const val MARKER_HORIZONTAL_METERS = 25f
 
     /** Recreate an anchor when Earth horizontal accuracy improves by at least this much. */
     const val ANCHOR_REFRESH_IMPROVEMENT_METERS = 5f
