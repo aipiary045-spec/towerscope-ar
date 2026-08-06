@@ -2,12 +2,14 @@ package com.towerscope.ar.data
 
 import android.content.Context
 import android.net.Uri
-import org.xmlpull.v1.XmlPullParser
-import org.xmlpull.v1.XmlPullParserFactory
+import org.w3c.dom.Element
+import org.w3c.dom.Node
+import org.w3c.dom.NodeList
 import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.util.zip.ZipInputStream
+import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.math.abs
 
 /**
@@ -60,72 +62,60 @@ object KmlParser {
     }
 
     fun parseKml(input: InputStream): List<Tower> {
-        val factory = XmlPullParserFactory.newInstance().apply {
+        val factory = DocumentBuilderFactory.newInstance().apply {
             isNamespaceAware = true
+            isIgnoringComments = true
         }
-        val parser = factory.newPullParser()
-        parser.setInput(BufferedInputStream(input), null)
+        val document = factory.newDocumentBuilder().parse(BufferedInputStream(input))
+        document.documentElement.normalize()
 
         val towers = mutableListOf<Tower>()
-        var event = parser.eventType
-        var inPlacemark = false
-        var placemarkName: String? = null
-        var coordinatesText: String? = null
-        var currentText = StringBuilder()
-        var depthName = 0
+        val placemarks = document.getElementsByTagNameNS("*", "Placemark").ifEmpty {
+            document.getElementsByTagName("Placemark")
+        }
 
-        while (event != XmlPullParser.END_DOCUMENT) {
-            when (event) {
-                XmlPullParser.START_TAG -> {
-                    val tag = localName(parser)
-                    currentText = StringBuilder()
-                    when (tag) {
-                        "Placemark" -> {
-                            inPlacemark = true
-                            placemarkName = null
-                            coordinatesText = null
-                        }
-                        "name" -> if (inPlacemark) depthName++
-                    }
-                }
-                XmlPullParser.TEXT -> {
-                    currentText.append(parser.text ?: "")
-                }
-                XmlPullParser.END_TAG -> {
-                    val tag = localName(parser)
-                    val text = currentText.toString().trim()
-                    when {
-                        inPlacemark && tag == "name" && placemarkName == null && text.isNotEmpty() -> {
-                            placemarkName = text
-                        }
-                        inPlacemark && tag == "coordinates" && text.isNotEmpty() -> {
-                            coordinatesText = text
-                        }
-                        tag == "Placemark" -> {
-                            parsePoint(coordinatesText)?.let { (lon, lat, alt) ->
-                                val name = placemarkName?.takeIf { it.isNotBlank() } ?: "Unnamed tower"
-                                towers += Tower(
-                                    id = "${lat}_${lon}_${towers.size}",
-                                    name = name,
-                                    latitude = lat,
-                                    longitude = lon,
-                                    altitudeMeters = alt
-                                )
-                            }
-                            inPlacemark = false
-                            placemarkName = null
-                            coordinatesText = null
-                        }
-                    }
-                }
+        for (i in 0 until placemarks.length) {
+            val placemark = placemarks.item(i) as? Element ?: continue
+            val name = firstChildText(placemark, "name")?.takeIf { it.isNotBlank() }
+                ?: "Unnamed tower"
+            val coordinatesText = firstDescendantText(placemark, "coordinates") ?: continue
+            parsePoint(coordinatesText)?.let { (lon, lat, alt) ->
+                towers += Tower(
+                    id = "${lat}_${lon}_${towers.size}",
+                    name = name,
+                    latitude = lat,
+                    longitude = lon,
+                    altitudeMeters = alt
+                )
             }
-            event = parser.next()
         }
         return towers
     }
 
-    private fun localName(parser: XmlPullParser): String {
-        return parser.name?.substringAfterLast(':') ?: ""
+    private fun NodeList.ifEmpty(fallback: () -> NodeList): NodeList =
+        if (length == 0) fallback() else this
+
+    private fun firstChildText(parent: Element, localName: String): String? {
+        val children = parent.childNodes
+        for (i in 0 until children.length) {
+            val node = children.item(i)
+            if (node.nodeType == Node.ELEMENT_NODE && localName(node) == localName) {
+                return node.textContent?.trim()
+            }
+        }
+        return null
+    }
+
+    private fun firstDescendantText(parent: Element, localName: String): String? {
+        val matches = parent.getElementsByTagNameNS("*", localName).ifEmpty {
+            parent.getElementsByTagName(localName)
+        }
+        if (matches.length == 0) return null
+        return matches.item(0)?.textContent?.trim()
+    }
+
+    private fun localName(node: Node): String {
+        return node.localName ?: node.nodeName.substringAfterLast(':')
     }
 
     /**

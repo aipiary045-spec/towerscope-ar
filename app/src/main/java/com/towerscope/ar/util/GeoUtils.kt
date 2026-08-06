@@ -1,5 +1,6 @@
 package com.towerscope.ar.util
 
+import java.util.Locale
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -27,9 +28,9 @@ object GeoUtils {
 
     fun formatDistance(meters: Double): String {
         return if (meters >= 1000) {
-            String.format("%.1f km", meters / 1000.0)
+            String.format(Locale.US, "%.1f km", meters / 1000.0)
         } else {
-            String.format("%.0f m", meters)
+            String.format(Locale.US, "%.0f m", meters)
         }
     }
 }

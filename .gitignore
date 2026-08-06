@@ -17,3 +17,8 @@ bin/
 gen/
 out/
 .kotlin/
+
+build-log.txt
+.tmp-aar/
+.tmp-sv/
+

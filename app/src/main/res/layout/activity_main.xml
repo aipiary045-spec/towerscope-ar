@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B1C2C">
+
+    <FrameLayout
+        android:id="@+id/arContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="#CC0B1C2C"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="14dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/app_name"
+            android:textColor="#FFD60A"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/gpsChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:background="#00E5FF"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="6dp"
+            android:text="GPS…"
+            android:textColor="#0B1C2C"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/earthChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#FFD60A"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="6dp"
+            android:text="EARTH…"
+            android:textColor="#0B1C2C"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/messageBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_marginTop="72dp"
+        android:background="#CC0B1C2C"
+        android:padding="12dp"
+        android:textColor="#00E5FF"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/bottomPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#CC0B1C2C"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/visibleCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Visible 0 / 0"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/distanceLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Max distance  2.0 km"
+            android:textColor="#FFD60A"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/distanceSlider"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:max="9900"
+            android:progress="1900" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/loadKmlButton"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:backgroundTint="#FFD60A"
+                android:text="Load KML"
+                android:textColor="#0B1C2C"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/sampleButton"
+                android:layout_width="wrap_content"
+                android:layout_height="52dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="#00E5FF"
+                android:text="Sample"
+                android:textColor="#0B1C2C"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/showHiddenButton"
+                android:layout_width="wrap_content"
+                android:layout_height="52dp"
+                android:backgroundTint="#FFFFFF"
+                android:text="Show hidden"
+                android:textColor="#0B1C2C"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Tap a marker to hide it, or pick one:"
+            android:textColor="#E6FFFFFF"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:id="@+id/towerChips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/permissionGate"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#0B1C2C"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="28dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="#FFD60A"
+            android:textSize="36sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text="Camera and high-accuracy location are required to place tower markers outdoors."
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/grantPermissionsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="56dp"
+            android:layout_marginTop="28dp"
+            android:backgroundTint="#FFD60A"
+            android:text="Grant permissions"
+            android:textColor="#0B1C2C"
+            android:textStyle="bold" />
+    </LinearLayout>
+</FrameLayout>

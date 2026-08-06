@@ -1,183 +1,234 @@
 package com.towerscope.ar
 
 import android.Manifest
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier.modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
-import com.towerscope.ar.ui.ArScreen
-import com.towerscope.ar.ui.theme.AccentYellow
-import com.towerscope.ar.ui.theme.HudNavySolid
-import com.towerscope.ar.ui.theme.TextPrimary
-import com.towerscope.ar.ui.theme.TowerScopeTheme
+import android.net.Uri
+import android.os.Bundle
+import android.view.View
+import android.widget.Button
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.SeekBar
+import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.towerscope.ar.ui.TowerArSceneBinding
+import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
+import com.towerscope.ar.viewmodel.TowerUiState
+import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
-    private val viewModel: TowerScopeViewModel by viewModels()
+    private lateinit var viewModel: TowerScopeViewModel
+    private var arBinding: TowerArSceneBinding? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            TowerScopeTheme {
-                TowerScopeApp(viewModel = viewModel)
-            }
-        }
-    }
-}
+    private lateinit var permissionGate: View
+    private lateinit var gpsChip: TextView
+    private lateinit var earthChip: TextView
+    private lateinit var messageBanner: TextView
+    private lateinit var visibleCount: TextView
+    private lateinit var distanceLabel: TextView
+    private lateinit var distanceSlider: SeekBar
+    private lateinit var showHiddenButton: Button
+    private lateinit var towerChips: LinearLayout
+    private lateinit var arContainer: FrameLayout
 
-@Composable
-private fun TowerScopeApp(viewModel: TowerScopeViewModel) {
-    var permissionsGranted by remember { mutableStateOf(false) }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
+    private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
         val cameraOk = result[Manifest.permission.CAMERA] == true
         val fineOk = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
         val coarseOk = result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        permissionsGranted = cameraOk && (fineOk || coarseOk)
-        if (permissionsGranted) {
-            viewModel.startLocationUpdates()
+        if (cameraOk && (fineOk || coarseOk)) {
+            onPermissionsGranted()
+        } else {
+            permissionGate.isVisible = true
         }
     }
 
-    val filePickerLauncher = rememberLauncherForActivityResult(
+    private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
-    ) { uri ->
+    ) { uri: Uri? ->
         uri?.let(viewModel::loadTowersFromUri)
     }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
+        bindViews()
+        wireActions()
+        observeState()
+        ensurePermissions()
+    }
 
-    LaunchedEffect(Unit) {
+    private fun bindViews() {
+        permissionGate = findViewById(R.id.permissionGate)
+        gpsChip = findViewById(R.id.gpsChip)
+        earthChip = findViewById(R.id.earthChip)
+        messageBanner = findViewById(R.id.messageBanner)
+        visibleCount = findViewById(R.id.visibleCount)
+        distanceLabel = findViewById(R.id.distanceLabel)
+        distanceSlider = findViewById(R.id.distanceSlider)
+        showHiddenButton = findViewById(R.id.showHiddenButton)
+        towerChips = findViewById(R.id.towerChips)
+        arContainer = findViewById(R.id.arContainer)
+
+        distanceSlider.max = (TowerUiState.MAX_DISTANCE_METERS - TowerUiState.MIN_DISTANCE_METERS).toInt()
+        distanceSlider.progress =
+            (TowerUiState.DEFAULT_MAX_DISTANCE_METERS - TowerUiState.MIN_DISTANCE_METERS).toInt()
+    }
+
+    private fun wireActions() {
+        findViewById<Button>(R.id.grantPermissionsButton).setOnClickListener { requestPermissions() }
+        findViewById<Button>(R.id.loadKmlButton).setOnClickListener {
+            filePickerLauncher.launch(
+                arrayOf(
+                    "application/vnd.google-earth.kml+xml",
+                    "application/vnd.google-earth.kmz",
+                    "application/xml",
+                    "text/xml",
+                    "application/zip",
+                    "*/*"
+                )
+            )
+        }
+        findViewById<Button>(R.id.sampleButton).setOnClickListener { viewModel.loadSampleTowers() }
+        showHiddenButton.setOnClickListener { viewModel.clearHiddenTowers() }
+        distanceSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val meters = TowerUiState.MIN_DISTANCE_METERS + progress
+                viewModel.setMaxDistanceMeters(meters)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+    }
+
+    private fun observeState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state -> render(state) }
+            }
+        }
+    }
+
+    private fun render(state: TowerUiState) {
+        val visible = state.visibleTowers()
+        val accuracy = state.userLocation?.accuracyMeters
+        gpsChip.text = if (accuracy != null && accuracy.isFinite()) {
+            "GPS ±${accuracy.toInt()}m"
+        } else {
+            "GPS…"
+        }
+        earthChip.text = if (state.earthTracking) "EARTH OK" else "EARTH…"
+        earthChip.setBackgroundColor(
+            ContextCompat.getColor(
+                this,
+                if (state.earthTracking) android.R.color.holo_green_light else android.R.color.holo_orange_light
+            )
+        )
+        visibleCount.text = buildString {
+            append("Visible ${visible.size} / ${state.towers.size}")
+            if (state.hiddenTowerIds.isNotEmpty()) {
+                append("  ·  ${state.hiddenTowerIds.size} hidden")
+            }
+        }
+        distanceLabel.text =
+            "Max distance  ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}"
+        showHiddenButton.isVisible = state.hiddenTowerIds.isNotEmpty()
+
+        val message = state.errorMessage ?: state.statusMessage
+        messageBanner.isVisible = message != null
+        messageBanner.text = message.orEmpty()
+        messageBanner.setTextColor(
+            ContextCompat.getColor(
+                this,
+                if (state.errorMessage != null) android.R.color.holo_red_light
+                else android.R.color.holo_blue_light
+            )
+        )
+
+        towerChips.removeAllViews()
+        visible.take(3).forEach { tower ->
+            val chip = Button(this).apply {
+                text = tower.name
+                setTextColor(0xFFFFD60A.toInt())
+                setBackgroundColor(0x00000000)
+                setOnClickListener { confirmHide(tower.id, tower.name, state.distanceTo(tower)) }
+            }
+            towerChips.addView(chip)
+        }
+
+        arBinding?.update(
+            uiState = state,
+            onEarthTrackingChanged = viewModel::setEarthTracking,
+            onTowerTapped = { tower ->
+                confirmHide(tower.id, tower.name, state.distanceTo(tower))
+            }
+        )
+    }
+
+    private fun confirmHide(towerId: String, name: String, distance: Double?) {
+        val distanceText = distance?.let { "\n\nDistance: ${GeoUtils.formatDistance(it)}" }.orEmpty()
+        AlertDialog.Builder(this)
+            .setTitle(name)
+            .setMessage("Filter this tower out of the AR scene?$distanceText")
+            .setPositiveButton("Hide tower") { _, _ -> viewModel.hideTower(towerId) }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun ensurePermissions() {
         val cameraGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.CAMERA
+            this, Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
         val fineGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
+            this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
         val coarseGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_COARSE_LOCATION
+            this, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
-
         if (cameraGranted && (fineGranted || coarseGranted)) {
-            permissionsGranted = true
-            viewModel.startLocationUpdates()
+            onPermissionsGranted()
         } else {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.CAMERA,
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
+            permissionGate.isVisible = true
+            requestPermissions()
         }
     }
 
-    if (!permissionsGranted) {
-        PermissionGate(
-            onRequest = {
-                permissionLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.CAMERA,
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    )
-                )
-            }
-        )
-    } else {
-        ArScreen(
-            viewModel = viewModel,
-            onOpenFilePicker = {
-                filePickerLauncher.launch(
-                    arrayOf(
-                        "application/vnd.google-earth.kml+xml",
-                        "application/vnd.google-earth.kmz",
-                        "application/xml",
-                        "text/xml",
-                        "application/zip",
-                        "*/*"
-                    )
-                )
-            }
+    private fun requestPermissions() {
+        permissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
         )
     }
-}
 
-@Composable
-private fun PermissionGate(onRequest: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(HudNavySolid)
-            .padding(28.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "TowerScope AR",
-                color = AccentYellow,
-                fontWeight = FontWeight.Bold,
-                fontSize = 36.sp,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Camera and high-accuracy location are required to place tower markers outdoors.",
-                color = TextPrimary,
-                fontSize = 18.sp,
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(28.dp))
-            Button(
-                onClick = onRequest,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AccentYellow,
-                    contentColor = Color(0xFF0B1C2C)
-                ),
-                modifier = Modifier.height(56.dp)
-            ) {
-                Text("Grant permissions", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            }
+    private fun onPermissionsGranted() {
+        permissionGate.isVisible = false
+        viewModel.startLocationUpdates()
+        if (arBinding == null) {
+            val binding = TowerArSceneBinding(this)
+            arBinding = binding
+            arContainer.removeAllViews()
+            arContainer.addView(binding.view)
         }
+    }
+
+    override fun onDestroy() {
+        arBinding?.destroy()
+        arBinding = null
+        super.onDestroy()
     }
 }

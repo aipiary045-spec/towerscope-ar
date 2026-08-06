@@ -50,9 +50,9 @@ Android AR app that loads tower locations from **KML/KMZ** files and renders the
 
 ## Stack
 
-- Kotlin, Jetpack Compose, minSdk **33**
-- [SceneView](https://github.com/SceneView/sceneview) `arsceneview` **4.26.0** (ARCore Geospatial)
-- Play Services Location
+- Kotlin, minSdk **33**
+- [SceneView](https://github.com/SceneView/sceneview-android) `arsceneview` **2.2.1** + ARCore Geospatial
+- XML outdoor HUD (high-contrast) + Play Services Location
 
 ## Notes
 
