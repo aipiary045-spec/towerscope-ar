@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.towerscope.ar.data.KmlParser
 import com.towerscope.ar.data.Tower
 import com.towerscope.ar.data.TowerFileStore
+import com.towerscope.ar.location.DeviceHeadingClient
 import com.towerscope.ar.location.HighAccuracyLocationClient
 import com.towerscope.ar.location.UserLocation
 import com.towerscope.ar.ui.EarthTrackingQuality
@@ -30,6 +31,7 @@ data class TowerUiState(
     val selectedTowerId: String? = null,
     val userLocation: UserLocation? = null,
     val cameraHeadingDegrees: Double? = null,
+    val deviceHeadingDegrees: Double? = null,
     val earthTracking: Boolean = false,
     val earthTrackingQuality: EarthTrackingQuality = EarthTrackingQuality.NONE,
     val hudTheme: HudTheme = HudTheme.NIGHT,
@@ -39,7 +41,20 @@ data class TowerUiState(
     val isLoadingFile: Boolean = false
 ) {
     fun effectiveHeadingDegrees(): Double? =
-        cameraHeadingDegrees ?: userLocation?.bearingDegrees?.toDouble()
+        cameraHeadingDegrees
+            ?: deviceHeadingDegrees
+            ?: userLocation?.bearingDegrees?.toDouble()
+
+    /** Direction cues for the AR overlay (in-range towers with known distance/bearing). */
+    fun directionIndicators(): List<Triple<Tower, Double, Double>> {
+        val heading = effectiveHeadingDegrees() ?: return emptyList()
+        return visibleTowers().mapNotNull { tower ->
+            val distance = distanceTo(tower) ?: return@mapNotNull null
+            val bearing = bearingTo(tower) ?: return@mapNotNull null
+            val relative = GeoUtils.relativeBearingDegrees(heading, bearing)
+            Triple(tower, relative, distance)
+        }.sortedBy { it.third }
+    }
 
     fun visibleTowers(): List<Tower> {
         val location = userLocation
@@ -132,6 +147,7 @@ data class TowerUiState(
 class TowerScopeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val locationClient = HighAccuracyLocationClient(application)
+    private val headingClient = DeviceHeadingClient(application)
     private val fileStore = TowerFileStore(application)
     private val prefs = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private val _uiState = MutableStateFlow(
@@ -140,6 +156,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     val uiState: StateFlow<TowerUiState> = _uiState.asStateFlow()
 
     private var locationJob: Job? = null
+    private var headingJob: Job? = null
 
     init {
         restorePersistedTowers()
@@ -176,11 +193,23 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 _uiState.update { it.copy(userLocation = location) }
             }
         }
+        startDeviceHeadingUpdates()
+    }
+
+    fun startDeviceHeadingUpdates() {
+        if (headingJob?.isActive == true) return
+        headingJob = viewModelScope.launch {
+            headingClient.headingUpdates().collect { heading ->
+                _uiState.update { it.copy(deviceHeadingDegrees = heading) }
+            }
+        }
     }
 
     fun stopLocationUpdates() {
         locationJob?.cancel()
         locationJob = null
+        headingJob?.cancel()
+        headingJob = null
     }
 
     fun setMaxDistanceMeters(meters: Float) {

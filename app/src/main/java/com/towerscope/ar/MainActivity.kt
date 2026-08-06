@@ -15,7 +15,11 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -23,6 +27,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.ui.EarthTrackingQuality
 import com.towerscope.ar.ui.HudThemeApplier
+import com.towerscope.ar.ui.OffScreenTowerOverlay
 import com.towerscope.ar.ui.TowerArSceneBinding
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.GeoUtils
@@ -36,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     private var arBinding: TowerArSceneBinding? = null
 
     private lateinit var permissionGate: View
+    private lateinit var topChrome: View
     private lateinit var topBar: View
     private lateinit var compassStrip: View
     private lateinit var bottomPanel: View
@@ -56,6 +62,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var nearestHeader: TextView
     private lateinit var towerChips: LinearLayout
     private lateinit var arContainer: FrameLayout
+    private lateinit var directionOverlay: OffScreenTowerOverlay
+
+    private var bottomPanelBasePadding = 0
+    private var topChromeBasePadding = 0
 
     private var suppressSearchCallback = false
 
@@ -74,9 +84,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
         bindViews()
+        applySystemBarInsets()
         wireActions()
         observeState()
         ensurePermissions()
@@ -84,6 +96,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun bindViews() {
         permissionGate = findViewById(R.id.permissionGate)
+        topChrome = findViewById(R.id.topChrome)
         topBar = findViewById(R.id.topBar)
         compassStrip = findViewById(R.id.compassStrip)
         bottomPanel = findViewById(R.id.bottomPanel)
@@ -104,10 +117,28 @@ class MainActivity : AppCompatActivity() {
         nearestHeader = findViewById(R.id.nearestHeader)
         towerChips = findViewById(R.id.towerChips)
         arContainer = findViewById(R.id.arContainer)
+        directionOverlay = findViewById(R.id.directionOverlay)
+
+        bottomPanelBasePadding = bottomPanel.paddingBottom
+        topChromeBasePadding = topChrome.paddingTop
 
         distanceSlider.max = (TowerUiState.MAX_DISTANCE_METERS - TowerUiState.MIN_DISTANCE_METERS).toInt()
         distanceSlider.progress =
             (TowerUiState.DEFAULT_MAX_DISTANCE_METERS - TowerUiState.MIN_DISTANCE_METERS).toInt()
+    }
+
+    private fun applySystemBarInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(topChrome) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updatePadding(top = topChromeBasePadding + bars.top)
+            insets
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(bottomPanel) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updatePadding(bottom = bottomPanelBasePadding + bars.bottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(findViewById(R.id.root))
     }
 
     private fun wireActions() {
@@ -190,19 +221,19 @@ class MainActivity : AppCompatActivity() {
             val chip = TextView(this).apply {
                 text = label
                 setTextColor(chipColors.text)
-                textSize = 12f
+                textSize = 11f
                 setPadding(
-                    (12 * density).toInt(),
-                    (8 * density).toInt(),
-                    (12 * density).toInt(),
-                    (8 * density).toInt()
+                    (10 * density).toInt(),
+                    (5 * density).toInt(),
+                    (10 * density).toInt(),
+                    (5 * density).toInt()
                 )
                 background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_hud_match_chip)
                 val params = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
-                params.marginEnd = (8 * density).toInt()
+                params.marginEnd = (6 * density).toInt()
                 layoutParams = params
                 setOnClickListener { openTowerDetails(tower.id) }
             }
@@ -215,6 +246,19 @@ class MainActivity : AppCompatActivity() {
             onCameraHeadingChanged = viewModel::setCameraHeadingDegrees,
             onTowerTapped = { tower -> openTowerDetails(tower.id) }
         )
+
+        renderDirectionOverlay(state)
+    }
+
+    private fun renderDirectionOverlay(state: TowerUiState) {
+        val items = state.directionIndicators().map { (tower, relative, distance) ->
+            OffScreenTowerOverlay.Indicator(
+                name = tower.name,
+                relativeBearingDegrees = relative,
+                distanceMeters = distance
+            )
+        }
+        directionOverlay.setIndicators(items)
     }
 
     private fun renderTrackingChips(state: TowerUiState) {
@@ -345,6 +389,7 @@ class MainActivity : AppCompatActivity() {
     private fun onPermissionsGranted() {
         permissionGate.isVisible = false
         viewModel.startLocationUpdates()
+        viewModel.startDeviceHeadingUpdates()
         if (arBinding == null) {
             val binding = TowerArSceneBinding(this)
             arBinding = binding

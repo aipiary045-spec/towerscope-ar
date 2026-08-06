@@ -15,7 +15,8 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /**
- * Draws edge arrows + labels for towers that are within range but outside the camera FOV.
+ * Draws direction arrows + labels for in-range towers relative to device heading.
+ * Works without Geospatial Earth tracking — GPS + compass only.
  */
 class OffScreenTowerOverlay @JvmOverloads constructor(
     context: Context,
@@ -31,21 +32,26 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
     private var indicators: List<Indicator> = emptyList()
 
     private val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFFFFD60A.toInt()
+        color = 0xFFE6C84A.toInt()
         style = Paint.Style.FILL
     }
+    private val aheadRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF5EC8D6.toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = 4f
+    }
     private val labelBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xCC0B1C2C.toInt()
+        color = 0xE60B1C2C.toInt()
         style = Paint.Style.FILL
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFFFFFFFF.toInt()
-        textSize = 34f
+        color = 0xFFF5F7FA.toInt()
+        textSize = 32f
         isFakeBoldText = true
     }
     private val distancePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF00E5FF.toInt()
-        textSize = 28f
+        color = 0xFF5EC8D6.toInt()
+        textSize = 26f
         isFakeBoldText = true
     }
     private val path = Path()
@@ -60,24 +66,31 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
         super.onDraw(canvas)
         if (indicators.isEmpty() || width == 0 || height == 0) return
 
-        val pad = 48f
+        val pad = 56f
         val cx = width / 2f
         val cy = height / 2f
         val maxX = width - pad
         val maxY = height - pad
 
-        indicators.take(8).forEach { indicator ->
-            // Approximate phone FOV half-angle; only draw when clearly off-screen.
-            if (abs(indicator.relativeBearingDegrees) <= HALF_FOV_DEGREES) return@forEach
-
+        indicators.take(10).forEach { indicator ->
             val rad = Math.toRadians(indicator.relativeBearingDegrees)
-            // Screen x increases to the right; y increases downward.
             val dirX = sin(rad).toFloat()
             val dirY = -cos(rad).toFloat()
+            val ahead = abs(indicator.relativeBearingDegrees) <= HALF_FOV_DEGREES
 
-            val edge = projectToEdge(cx, cy, dirX, dirY, pad, maxX, maxY)
-            drawArrow(canvas, edge.first, edge.second, dirX, dirY)
-            drawLabel(canvas, edge.first, edge.second, dirX, dirY, indicator)
+            if (ahead) {
+                // Place cue partway toward the edge so it sits in the camera view.
+                val edge = projectToEdge(cx, cy, dirX, dirY, pad, maxX, maxY)
+                val t = 0.42f
+                val x = cx + (edge.first - cx) * t
+                val y = cy + (edge.second - cy) * t
+                canvas.drawCircle(x, y, 18f, aheadRingPaint)
+                drawLabel(canvas, x, y, dirX, dirY, indicator)
+            } else {
+                val edge = projectToEdge(cx, cy, dirX, dirY, pad, maxX, maxY)
+                drawArrow(canvas, edge.first, edge.second, dirX, dirY)
+                drawLabel(canvas, edge.first, edge.second, dirX, dirY, indicator)
+            }
         }
     }
 
@@ -101,8 +114,8 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
     }
 
     private fun drawArrow(canvas: Canvas, x: Float, y: Float, dirX: Float, dirY: Float) {
-        val len = 36f
-        val half = 18f
+        val len = 34f
+        val half = 16f
         val nx = -dirY
         val ny = dirX
         path.reset()
@@ -126,22 +139,21 @@ class OffScreenTowerOverlay @JvmOverloads constructor(
         val titleWidth = labelPaint.measureText(title)
         val distWidth = distancePaint.measureText(distance)
         val boxW = max(titleWidth, distWidth) + 28f
-        val boxH = 72f
+        val boxH = 68f
 
-        // Keep label inside the view, slightly inset from the arrow tip.
-        var left = x - boxW / 2f - dirX * 56f
-        var top = y - boxH / 2f - dirY * 56f
+        var left = x - boxW / 2f - dirX * 52f
+        var top = y - boxH / 2f - dirY * 52f
         left = left.coerceIn(12f, max(12f, width - boxW - 12f))
         top = top.coerceIn(12f, max(12f, height - boxH - 12f))
 
         labelRect.set(left, top, left + boxW, top + boxH)
-        canvas.drawRoundRect(labelRect, 16f, 16f, labelBgPaint)
-        canvas.drawText(title, left + 14f, top + 32f, labelPaint)
-        canvas.drawText(distance, left + 14f, top + 60f, distancePaint)
+        canvas.drawRoundRect(labelRect, 14f, 14f, labelBgPaint)
+        canvas.drawText(title, left + 14f, top + 30f, labelPaint)
+        canvas.drawText(distance, left + 14f, top + 56f, distancePaint)
     }
 
     companion object {
-        /** Half of approximate horizontal FOV; towers within this cone are on-screen. */
-        const val HALF_FOV_DEGREES = 32.0
+        /** Approx half horizontal FOV; within this cone cues sit in-view. */
+        const val HALF_FOV_DEGREES = 28.0
     }
 }
