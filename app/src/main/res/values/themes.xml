@@ -1,12 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.TowerScopeAR" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowBackground">#0B1C2C</item>
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:enforceNavigationBarContrast">false</item>
-        <item name="colorPrimary">#FFD60A</item>
-        <item name="colorSecondary">#00E5FF</item>
-    </style>
+    <!-- Theme lives in styles.xml -->
 </resources>

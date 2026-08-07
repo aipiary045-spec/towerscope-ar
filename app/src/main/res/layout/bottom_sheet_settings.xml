@@ -8,7 +8,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#0F1A24"
+        android:background="@color/bg_deep"
         android:orientation="vertical"
         android:paddingHorizontal="20dp"
         android:paddingTop="12dp"
@@ -24,9 +24,10 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-condensed"
             android:text="Settings"
             android:textColor="@color/accent_yellow"
-            android:textSize="20sp"
+            android:textSize="24sp"
             android:textStyle="bold" />
 
         <TextView
@@ -34,38 +35,38 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:textColor="@color/accent_cyan"
+            android:textColor="@color/accent_teal"
             android:textSize="12sp"
             android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/settingsDataButton"
-            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+            style="@style/Widget.TowerScope.Button.Primary"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="52dp"
             android:layout_marginTop="16dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="Tower data"
-            android:textAllCaps="false"
-            android:textColor="#0B1C2C"
-            app:backgroundTint="@color/accent_yellow"
-            app:cornerRadius="8dp" />
+            android:text="Tower data" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:letterSpacing="0.06"
+            android:layout_marginTop="22dp"
+            android:letterSpacing="0.08"
             android:text="DISPLAY"
-            android:textColor="@color/text_muted"
-            android:textSize="10sp" />
+            android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/border_luminous" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
             android:gravity="center_vertical"
+            android:minHeight="48dp"
             android:orientation="horizontal">
 
             <TextView
@@ -74,43 +75,58 @@
                 android:layout_weight="1"
                 android:text="Theme"
                 android:textColor="@color/text_primary"
-                android:textSize="14sp" />
+                android:textSize="15sp" />
 
             <TextView
                 android:id="@+id/settingsThemeButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_hud_ghost_button"
-                android:paddingHorizontal="12dp"
+                android:minHeight="40dp"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
                 android:paddingVertical="8dp"
                 android:text="Night"
                 android:textColor="@color/text_muted"
-                android:textSize="12sp" />
+                android:textSize="13sp" />
         </LinearLayout>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:letterSpacing="0.06"
+            android:layout_marginTop="22dp"
+            android:letterSpacing="0.08"
             android:text="COMPASS"
-            android:textColor="@color/text_muted"
-            android:textSize="10sp" />
+            android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/border_luminous" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/settingsCalibrateButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            style="@style/Widget.TowerScope.Button.Ghost"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:text="Calibrate with sun / moon" />
+
+        <TextView
+            android:id="@+id/settingsCalibrateState"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="Calibrate with sun / moon"
-            android:textAllCaps="false"
-            android:textColor="@color/text_primary"
-            app:cornerRadius="8dp"
-            app:strokeColor="#66FFFFFF"
-            app:strokeWidth="1dp" />
+            android:background="@drawable/bg_cal_state_needed"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:minHeight="36dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            android:text="STATUS  Not calibrated"
+            android:textColor="@color/accent_yellow"
+            android:textSize="12sp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -123,17 +139,22 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:letterSpacing="0.06"
+            android:layout_marginTop="22dp"
+            android:letterSpacing="0.08"
             android:text="FILTER"
-            android:textColor="@color/text_muted"
-            android:textSize="10sp" />
+            android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/border_luminous" />
 
         <EditText
             android:id="@+id/settingsSearchField"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_marginTop="8dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
             android:background="@drawable/bg_hud_input"
             android:hint="Search by name"
             android:imeOptions="actionSearch"
@@ -142,21 +163,23 @@
             android:paddingHorizontal="12dp"
             android:textColor="@color/text_primary"
             android:textColorHint="@color/text_muted"
-            android:textSize="13sp" />
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/settingsDistanceLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="14dp"
+            android:fontFamily="monospace"
             android:text="RANGE  —"
             android:textColor="@color/accent_yellow"
-            android:textSize="11sp" />
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
         <SeekBar
             android:id="@+id/settingsDistanceSlider"
             android:layout_width="match_parent"
-            android:layout_height="32dp"
+            android:layout_height="40dp"
             android:max="9900"
             android:paddingStart="4dp"
             android:paddingEnd="4dp"
@@ -166,20 +189,20 @@
             android:id="@+id/settingsShowHiddenButton"
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:layout_marginTop="4dp"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:text="Show hidden towers"
             android:textAllCaps="false"
-            android:textColor="@color/accent_cyan"
+            android:textColor="@color/accent_teal"
             android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/settingsCloseButton"
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:layout_marginTop="8dp"
             android:insetTop="0dp"
             android:insetBottom="0dp"

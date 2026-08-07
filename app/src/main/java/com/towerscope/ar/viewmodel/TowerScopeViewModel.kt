@@ -77,6 +77,8 @@ data class TowerUiState(
     val losRangeLoading: Boolean = false,
     val losRangeStatus: String? = null,
     val sourceName: String? = null,
+    /** Epoch ms when tower data was last imported / saved. 0 = unknown. */
+    val towersUpdatedAtMs: Long = 0L,
     val statusMessage: String? = null,
     val errorMessage: String? = null,
     val isLoadingFile: Boolean = false
@@ -280,6 +282,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 it.copy(
                     towers = restored.second,
                     sourceName = restored.first,
+                    towersUpdatedAtMs = fileStore.lastUpdatedEpochMs(),
                     statusMessage = "Restored ${restored.second.size} towers from ${restored.first}"
                 )
             }
@@ -766,6 +769,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                             hiddenTowerIds = emptySet(),
                             selectedTowerId = null,
                             sourceName = name,
+                            towersUpdatedAtMs = fileStore.lastUpdatedEpochMs(),
                             statusMessage = "Loaded ${towers.size} towers from $name (saved)",
                             isLoadingFile = false
                         )
@@ -791,6 +795,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                     hiddenTowerIds = emptySet(),
                     selectedTowerId = null,
                     sourceName = null,
+                    towersUpdatedAtMs = 0L,
                     statusMessage = "Cleared saved tower data"
                 )
             }
@@ -809,7 +814,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                             towers = emptyList(),
                             hiddenTowerIds = emptySet(),
                             selectedTowerId = null,
-                            sourceName = null
+                            sourceName = null,
+                            towersUpdatedAtMs = 0L
                         )
                     }
                 }
@@ -821,6 +827,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 else state.copy(
                     towers = towers,
                     sourceName = name,
+                    towersUpdatedAtMs = fileStore.lastUpdatedEpochMs(),
                     hiddenTowerIds = emptySet(),
                     selectedTowerId = null,
                     statusMessage = "Loaded ${towers.size} towers from $name"

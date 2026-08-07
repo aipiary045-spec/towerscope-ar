@@ -61,6 +61,7 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         val dataButton = view.findViewById<MaterialButton>(R.id.settingsDataButton)
         val themeButton = view.findViewById<TextView>(R.id.settingsThemeButton)
         val calibrateButton = view.findViewById<MaterialButton>(R.id.settingsCalibrateButton)
+        val calibrateState = view.findViewById<TextView>(R.id.settingsCalibrateState)
         val searchField = view.findViewById<EditText>(R.id.settingsSearchField)
         val distanceLabel = view.findViewById<TextView>(R.id.settingsDistanceLabel)
         val distanceSlider = view.findViewById<SeekBar>(R.id.settingsDistanceSlider)
@@ -99,8 +100,11 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
 
         distanceSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val meters = TowerUiState.MIN_DISTANCE_METERS + progress
+                distanceLabel.text =
+                    "RANGE  ${GeoUtils.formatDistance(meters.toDouble())}"
                 if (!fromUser) return
-                viewModel.setMaxDistanceMeters(TowerUiState.MIN_DISTANCE_METERS + progress)
+                viewModel.setMaxDistanceMeters(meters)
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
@@ -120,9 +124,22 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                 viewModel.uiState.collect { state ->
                     themeButton.text = state.hudTheme.label
                     calibrateButton.text = if (state.isHeadingCalibrated) {
-                        "Calibrate with sun / moon  ✓"
+                        "Recalibrate with sun / moon"
                     } else {
                         "Calibrate with sun / moon"
+                    }
+                    if (state.isHeadingCalibrated) {
+                        calibrateState.text = "STATUS  Calibrated"
+                        calibrateState.setTextColor(
+                            requireContext().getColor(R.color.status_clear)
+                        )
+                        calibrateState.setBackgroundResource(R.drawable.bg_cal_state_ok)
+                    } else {
+                        calibrateState.text = "STATUS  Not calibrated"
+                        calibrateState.setTextColor(
+                            requireContext().getColor(R.color.accent_yellow)
+                        )
+                        calibrateState.setBackgroundResource(R.drawable.bg_cal_state_needed)
                     }
 
                     distanceLabel.text =

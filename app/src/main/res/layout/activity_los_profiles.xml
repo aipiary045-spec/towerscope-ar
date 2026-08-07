@@ -4,7 +4,7 @@
     android:id="@+id/losRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0B1C2C"
+    android:background="@drawable/bg_topo_screen"
     android:orientation="vertical"
     android:paddingHorizontal="18dp"
     android:paddingTop="16dp">
@@ -12,9 +12,10 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-condensed"
         android:text="Elevation profiles"
         android:textColor="@color/accent_yellow"
-        android:textSize="26sp"
+        android:textSize="28sp"
         android:textStyle="bold" />
 
     <TextView

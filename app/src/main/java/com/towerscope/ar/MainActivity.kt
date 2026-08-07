@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.snackbar.Snackbar
 import com.towerscope.ar.ui.CompassRadarView
 import com.towerscope.ar.ui.HudThemeApplier
 import com.towerscope.ar.ui.SettingsBottomSheet
@@ -136,6 +137,9 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(bottomPanel) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.updatePadding(bottom = bottomPanelBasePadding + bars.bottom)
+            // Keep radar clear of bottom chrome + FABs
+            val fabClearance = (170 * resources.displayMetrics.density).toInt()
+            compassRadar.setPadding(0, 0, 0, bars.bottom + fabClearance / 4)
             insets
         }
         ViewCompat.requestApplyInsets(findViewById(R.id.root))
@@ -216,7 +220,12 @@ class MainActivity : AppCompatActivity() {
         val message = state.errorMessage ?: state.statusMessage ?: return
         if (message == lastToastMessage) return
         lastToastMessage = message
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        val root = findViewById<View>(R.id.root)
+        Snackbar.make(root, message, Snackbar.LENGTH_SHORT)
+            .setAnchorView(bottomPanel)
+            .setBackgroundTint(ContextCompat.getColor(this, R.color.surface_elevated))
+            .setTextColor(ContextCompat.getColor(this, R.color.text_primary))
+            .show()
         if (state.errorMessage == null) {
             viewModel.clearStatusMessage()
         }
@@ -331,11 +340,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderCompass(state: TowerUiState) {
         val heading = state.effectiveHeadingDegrees()
-        val calTag = if (state.isHeadingCalibrated) "  ·  cal" else ""
+        val calTag = if (state.isHeadingCalibrated) "  · CAL" else ""
         headingLabel.text = if (heading != null) {
-            "HEADING  ${GeoUtils.formatBearing(heading)}$calTag"
+            val reciprocal = GeoUtils.reciprocalBearingDegrees(heading)
+            "HDG  ${GeoUtils.formatAzimuthPadded(heading)}  ·  REC  ${GeoUtils.formatAzimuthPadded(reciprocal)}$calTag"
         } else {
-            "HEADING  —$calTag"
+            "HDG  —  ·  REC  —$calTag"
         }
 
         val focus = state.focusTower()
@@ -352,7 +362,7 @@ class MainActivity : AppCompatActivity() {
             buildString {
                 append(focus.name)
                 if (distance != null) append("  ·  ").append(GeoUtils.formatDistance(distance))
-                if (bearing != null) append("  ·  ").append(GeoUtils.formatBearing(bearing))
+                if (bearing != null) append("  ·  ").append(GeoUtils.formatAzimuthPadded(bearing))
                 if (turn != null) append("  ·  ").append(turn)
             }
         }

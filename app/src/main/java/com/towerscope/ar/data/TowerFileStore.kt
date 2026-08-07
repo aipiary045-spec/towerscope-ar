@@ -33,8 +33,11 @@ class TowerFileStore(context: Context) {
         prefs.edit()
             .putString(KEY_SOURCE_NAME, sourceName)
             .putString(KEY_SOURCE_URI, sourceUri?.toString())
+            .putLong(KEY_UPDATED_AT, System.currentTimeMillis())
             .apply()
     }
+
+    fun lastUpdatedEpochMs(): Long = prefs.getLong(KEY_UPDATED_AT, 0L)
 
     fun loadPersistedTowers(): Pair<String, List<Tower>>? {
         val name = persistedSourceName() ?: return null
@@ -104,6 +107,7 @@ class TowerFileStore(context: Context) {
         private const val KEY_SOURCE_NAME = "source_name"
         private const val KEY_SOURCE_URI = "source_uri"
         private const val KEY_RAW_FILE = "raw_file"
+        private const val KEY_UPDATED_AT = "updated_at_ms"
         private const val META_FILE = "towers.json"
     }
 }

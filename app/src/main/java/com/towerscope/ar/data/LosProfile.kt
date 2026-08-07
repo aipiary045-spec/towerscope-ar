@@ -60,6 +60,22 @@ data class LosProfile(
         }
     }
 
+    /**
+     * Sample with the worst clearance (obstruction peak for blocked paths).
+     * Null if no samples.
+     */
+    fun worstClearanceSample(clutterHeightMeters: Double): Pair<LosSample, Double>? {
+        if (samples.isEmpty()) return null
+        return samples
+            .map { sample ->
+                sample to (
+                    losElevationAt(sample.distanceMeters) -
+                        sample.effectiveTerrainMeters(clutterHeightMeters)
+                    )
+            }
+            .minByOrNull { it.second }
+    }
+
     fun isClear(clutterHeightMeters: Double): Boolean =
         minClearanceMeters(clutterHeightMeters) > 0.0
 

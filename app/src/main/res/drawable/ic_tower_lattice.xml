@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="32dp"
+    android:viewportWidth="24"
+    android:viewportHeight="32">
+    <!-- Lattice tower silhouette — tapered mast, stays crisp small -->
+    <path
+        android:fillColor="#3EC9D6"
+        android:pathData="M11.2,0h1.6L18,30h-3.2l-1.2,-6H10.4L9.2,30H6L11.2,0z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeWidth="1.2"
+        android:strokeColor="#3EC9D6"
+        android:pathData="M12,2L8.5,20h7L12,2zM9.2,12h5.6M8.8,16h6.4M10,8h4" />
+    <path
+        android:fillColor="#3EC9D6"
+        android:pathData="M7,30h10v2H7z" />
+    <path
+        android:fillColor="#3EC9D6"
+        android:pathData="M10.5,4h3v1.4h-3z" />
+</vector>

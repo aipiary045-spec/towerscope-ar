@@ -138,6 +138,19 @@ object GeoUtils {
         return String.format(Locale.US, "%s %.0f°", cardinalFromDegrees(normalized), normalized)
     }
 
+    fun normalizeBearing(degrees: Double): Double =
+        ((degrees % 360.0) + 360.0) % 360.0
+
+    /** Zero-padded absolute azimuth for ring labels, e.g. 030°. */
+    fun formatAzimuthPadded(degrees: Double): String {
+        val normalized = ((degrees % 360.0) + 360.0) % 360.0
+        return String.format(Locale.US, "%03.0f°", normalized)
+    }
+
+    /** Reciprocal of a bearing (opposite direction on the ring). */
+    fun reciprocalBearingDegrees(degrees: Double): Double =
+        ((degrees + 180.0) % 360.0 + 360.0) % 360.0
+
     /** Relative turn cue: ahead / L xx° / R xx°. */
     fun formatRelativeTurn(relativeBearingDegrees: Double): String {
         val abs = kotlin.math.abs(relativeBearingDegrees)

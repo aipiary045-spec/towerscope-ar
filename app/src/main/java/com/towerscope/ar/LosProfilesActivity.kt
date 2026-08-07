@@ -1,9 +1,13 @@
 package com.towerscope.ar
 
 import android.Manifest
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
+import android.view.animation.LinearInterpolator
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,6 +20,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.data.LosProfileBuilder
 import com.towerscope.ar.ui.LosProfileChartView
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
@@ -26,8 +31,7 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 /**
- * Separate (non-AR) screen: LOS elevation profiles for towers in the saved range,
- * ranked best clearance first.
+ * Ranked LOS elevation profiles for towers in the saved range.
  */
 class LosProfilesActivity : AppCompatActivity() {
 
@@ -36,6 +40,7 @@ class LosProfilesActivity : AppCompatActivity() {
     private lateinit var status: TextView
     private lateinit var list: LinearLayout
     private var startedScan = false
+    private val shimmerAnimators = mutableListOf<ObjectAnimator>()
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -102,6 +107,7 @@ class LosProfilesActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        clearShimmers()
         viewModel.clearLosRangeProfiles()
         super.onDestroy()
     }
@@ -137,49 +143,110 @@ class LosProfilesActivity : AppCompatActivity() {
         viewModel.refreshLosRangeProfiles()
     }
 
+    private fun clearShimmers() {
+        shimmerAnimators.forEach { it.cancel() }
+        shimmerAnimators.clear()
+    }
+
+    private fun pulse(view: View) {
+        val anim = ObjectAnimator.ofFloat(view, View.ALPHA, 0.35f, 1f).apply {
+            duration = 700L
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = LinearInterpolator()
+            start()
+        }
+        shimmerAnimators.add(anim)
+    }
+
+    private fun towerHeightLabel(state: TowerUiState, row: com.towerscope.ar.viewmodel.LosRangeRow): String {
+        val tip = row.profile?.towerTipElevationMeters
+        val groundHint = row.tower.altitudeMeters
+        return when {
+            tip != null && groundHint != null && row.tower.altitudeMode.name == "RELATIVE_TO_GROUND" ->
+                String.format(Locale.US, "Ht %.0f m", groundHint)
+            tip != null -> String.format(Locale.US, "Tip %.0f m", tip)
+            groundHint != null && row.tower.altitudeMode.name == "RELATIVE_TO_GROUND" ->
+                String.format(Locale.US, "Ht %.0f m", groundHint)
+            groundHint != null && row.tower.altitudeMode.name == "ABSOLUTE" ->
+                String.format(Locale.US, "Alt %.0f m", groundHint)
+            else -> String.format(Locale.US, "Ht ~%.0f m", LosProfileBuilder.DEFAULT_TOWER_HEIGHT_METERS)
+        }
+    }
+
     private fun renderRows(state: TowerUiState) {
+        clearShimmers()
         val clutter = state.clutterHeightMeters.toDouble()
         val inflater = LayoutInflater.from(this)
         list.removeAllViews()
         state.losRangeRows.forEachIndexed { index, row ->
             val view = inflater.inflate(R.layout.item_los_range_row, list, false)
-            view.findViewById<TextView>(R.id.rowRank).text = "${index + 1}."
+            val statusBar = view.findViewById<View>(R.id.rowStatusBar)
+            val pill = view.findViewById<TextView>(R.id.rowStatusPill)
+            val shimmer1 = view.findViewById<View>(R.id.rowShimmer)
+            val shimmer2 = view.findViewById<View>(R.id.rowShimmer2)
+            view.findViewById<TextView>(R.id.rowRank).text = String.format(Locale.US, "%02d", index + 1)
             view.findViewById<TextView>(R.id.rowName).text = row.tower.name
+
+            val bearing = state.bearingTo(row.tower)
+            val az = bearing?.let { GeoUtils.formatAzimuthPadded(it) } ?: "—"
+            val height = towerHeightLabel(state, row)
             view.findViewById<TextView>(R.id.rowMeta).text =
-                "Distance  ${GeoUtils.formatDistance(row.distanceMeters)}"
+                "${GeoUtils.formatDistance(row.distanceMeters)}  ·  Az $az  ·  $height"
+
             val clearanceView = view.findViewById<TextView>(R.id.rowClearance)
             val chart = view.findViewById<LosProfileChartView>(R.id.rowChart)
             when {
                 row.loading -> {
-                    clearanceView.text = "Profiling…"
+                    pill.isVisible = false
+                    statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.text_dim))
+                    clearanceView.text = "Profiling elevation…"
                     clearanceView.setTextColor(ContextCompat.getColor(this, R.color.text_muted))
                     chart.isVisible = false
+                    shimmer1.isVisible = true
+                    shimmer2.isVisible = true
+                    pulse(shimmer1)
+                    pulse(shimmer2)
                 }
                 row.error != null -> {
+                    pill.isVisible = false
+                    statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.status_blocked))
                     clearanceView.text = row.error
-                    clearanceView.setTextColor(ContextCompat.getColor(this, R.color.chip_poor))
+                    clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
                     chart.isVisible = false
+                    shimmer1.isVisible = false
+                    shimmer2.isVisible = false
                 }
                 row.profile != null -> {
                     val clearance = row.profile.minClearanceMeters(clutter)
                     val clear = clearance > 0.0
-                    clearanceView.text = if (clear) {
-                        String.format(Locale.US, "Clear · min clearance %.0f m", clearance)
+                    pill.isVisible = true
+                    if (clear) {
+                        pill.text = "CLEAR"
+                        pill.setTextColor(ContextCompat.getColor(this, R.color.status_clear))
+                        pill.setBackgroundResource(R.drawable.bg_pill_clear)
+                        statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.status_clear))
+                        clearanceView.text = String.format(Locale.US, "Min clearance  %.0f m", clearance)
+                        clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_clear))
                     } else {
-                        String.format(Locale.US, "Blocked · short by %.0f m", -clearance)
+                        pill.text = "BLOCKED"
+                        pill.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
+                        pill.setBackgroundResource(R.drawable.bg_pill_blocked)
+                        statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.status_blocked))
+                        clearanceView.text = String.format(Locale.US, "Short by  %.0f m", -clearance)
+                        clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
                     }
-                    clearanceView.setTextColor(
-                        ContextCompat.getColor(
-                            this,
-                            if (clear) R.color.chip_good else R.color.chip_poor
-                        )
-                    )
                     chart.isVisible = true
                     chart.setProfile(row.profile, clutter)
+                    shimmer1.isVisible = false
+                    shimmer2.isVisible = false
                 }
                 else -> {
+                    pill.isVisible = false
                     clearanceView.text = "—"
                     chart.isVisible = false
+                    shimmer1.isVisible = false
+                    shimmer2.isVisible = false
                 }
             }
             view.setOnClickListener {
