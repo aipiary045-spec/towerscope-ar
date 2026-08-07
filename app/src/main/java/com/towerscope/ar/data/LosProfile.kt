@@ -11,14 +11,21 @@ data class LosSample(
     val distanceMeters: Double,
     val latitude: Double,
     val longitude: Double,
-    /** USGS orthometric ground elevation (meters). */
+    /** Orthometric / surface elevation (meters). */
     val groundElevationMeters: Double,
     /** Earth curvature bulge at this distance from the observer (meters). */
-    val curvatureDropMeters: Double
+    val curvatureDropMeters: Double,
+    /** LiDAR first-return vs bare-earth DEM. */
+    val source: ElevationSource = ElevationSource.DEM
 ) {
-    /** Terrain height used on the flat chart: ground + clutter + curvature. */
-    fun effectiveTerrainMeters(clutterHeightMeters: Double): Double =
-        groundElevationMeters + clutterHeightMeters + curvatureDropMeters
+    /**
+     * Terrain height used on the flat chart.
+     * Clutter is added only for DEM samples (LiDAR already includes canopy).
+     */
+    fun effectiveTerrainMeters(clutterHeightMeters: Double): Double {
+        val clutter = if (source == ElevationSource.DEM) clutterHeightMeters else 0.0
+        return groundElevationMeters + clutter + curvatureDropMeters
+    }
 }
 
 /**
@@ -33,7 +40,9 @@ data class LosProfile(
     /** Absolute orthometric elevation of the tower tip. */
     val towerTipElevationMeters: Double,
     val totalDistanceMeters: Double,
-    val sampleCount: Int = samples.size
+    val sampleCount: Int = samples.size,
+    /** Fraction of samples that came from LiDAR (0–1). */
+    val lidarCoverageFraction: Double = 0.0
 ) {
     fun losElevationAt(distanceMeters: Double): Double {
         if (totalDistanceMeters <= 0.0) return observerEyeElevationMeters
@@ -53,6 +62,8 @@ data class LosProfile(
 
     fun isClear(clutterHeightMeters: Double): Boolean =
         minClearanceMeters(clutterHeightMeters) > 0.0
+
+    val usesLidar: Boolean get() = lidarCoverageFraction > 0.0
 }
 
 object LosProfileBuilder {
@@ -66,7 +77,8 @@ object LosProfileBuilder {
         towerName: String,
         samples: List<LosSample>,
         observerEyeElevationMeters: Double,
-        towerTipElevationMeters: Double
+        towerTipElevationMeters: Double,
+        lidarCoverageFraction: Double = 0.0
     ): LosProfile {
         val total = samples.lastOrNull()?.distanceMeters ?: 0.0
         return LosProfile(
@@ -75,12 +87,13 @@ object LosProfileBuilder {
             samples = samples,
             observerEyeElevationMeters = observerEyeElevationMeters,
             towerTipElevationMeters = towerTipElevationMeters,
-            totalDistanceMeters = total
+            totalDistanceMeters = total,
+            lidarCoverageFraction = lidarCoverageFraction
         )
     }
 
     /**
-     * Resolve tower tip absolute elevation from USGS ground at the tower and KML altitude.
+     * Resolve tower tip absolute elevation from ground at the tower and KML altitude.
      */
     fun resolveTowerTipElevationMeters(
         towerGroundElevationMeters: Double,

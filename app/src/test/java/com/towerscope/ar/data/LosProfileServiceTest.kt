@@ -1,34 +1,56 @@
 package com.towerscope.ar.data
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class UsgsElevationServiceTest {
+class DemElevationServiceTest {
 
-    private val service = UsgsElevationService()
+    private val service = DemElevationService()
 
     @Test
-    fun parsesModernEpqsJson() {
+    fun parsesMultipointIdentifyValues() {
         val json = """
-            {"location":{"x":-97.74,"y":30.27,"spatialReference":{"wkid":4326}},
-             "value":165.4,"rasterId":1,"resolution":1}
+            {"results":[
+              {"objectId":0,"name":"Pixel","value":"308.358"},
+              {"objectId":1,"name":"Pixel","value":318.267},
+              {"objectId":2,"name":"Pixel","value":"310.816"}
+            ]}
         """.trimIndent()
-        assertEquals(165.4, service.parseElevationMeters(json)!!, 0.001)
+        val values = service.parseIdentifyValues(json, 3)
+        assertEquals(308.358, values[0]!!, 0.001)
+        assertEquals(318.267, values[1]!!, 0.001)
+        assertEquals(310.816, values[2]!!, 0.001)
     }
+}
+
+class LosElevationApiClientTest {
+
+    private val client = LosElevationApiClient("https://example.invalid")
 
     @Test
-    fun parsesQuotedStringValueFromUsgs() {
-        // Live EPQS returns elevation as a JSON string.
-        val json =
-            """{"location":{"x":-96.870365,"y":35.89701},"locationId":0,"value":"316.258789062","rasterId":5677}"""
-        assertEquals(316.258789062, service.parseElevationMeters(json)!!, 0.0001)
-    }
-
-    @Test
-    fun nullValueReturnsNull() {
-        val json = """{"value":null}"""
-        assertNull(service.parseElevationMeters(json))
+    fun parsesApiProfileJson() {
+        val json = """
+            {
+              "samples":[
+                {"index":0,"latitude":35.9,"longitude":-96.87,"distanceMeters":0.0,
+                 "groundElevationMeters":300.5,"source":"lidar"},
+                {"index":1,"latitude":35.89,"longitude":-96.875,"distanceMeters":100.0,
+                 "groundElevationMeters":310.0,"source":"dem"}
+              ],
+              "sampleCount":2,
+              "totalDistanceMeters":100.0,
+              "lidarCoverageFraction":0.5,
+              "fromCache":false
+            }
+        """.trimIndent()
+        val profile = client.parseProfile(json)
+        assertEquals(2, profile.samples.size)
+        assertEquals(ElevationSource.LIDAR, profile.samples[0].source)
+        assertEquals(ElevationSource.DEM, profile.samples[1].source)
+        assertEquals(0.5, profile.lidarCoverageFraction, 0.001)
+        assertEquals(300.5, profile.samples[0].groundElevationMeters, 0.001)
     }
 }
 
@@ -36,7 +58,7 @@ class LosProfileServiceTest {
 
     @Test
     fun fillMissingInterpolatesForwardAndBack() {
-        val service = LosProfileService()
+        val service = LosProfileService(apiClient = null)
         val filled = service.fillMissingElevations(listOf(null, 10.0, null, null, 40.0, null))
         assertEquals(10.0, filled[0], 0.001)
         assertEquals(10.0, filled[1], 0.001)
@@ -54,5 +76,76 @@ class LosProfileServiceTest {
             altitudeMode = AltitudeMode.RELATIVE_TO_GROUND
         )
         assertEquals(145.0, tip, 0.001)
+    }
+
+    @Test
+    fun clutterAppliesOnlyToDemSamples() {
+        val dem = LosSample(
+            index = 0,
+            distanceMeters = 50.0,
+            latitude = 0.0,
+            longitude = 0.0,
+            groundElevationMeters = 100.0,
+            curvatureDropMeters = 0.0,
+            source = ElevationSource.DEM
+        )
+        val lidar = dem.copy(index = 1, source = ElevationSource.LIDAR)
+        assertEquals(110.0, dem.effectiveTerrainMeters(10.0), 0.001)
+        assertEquals(100.0, lidar.effectiveTerrainMeters(10.0), 0.001)
+    }
+
+    @Test
+    fun clearanceIgnoresClutterOnLidarOnlyProfile() {
+        val samples = listOf(
+            LosSample(0, 0.0, 0.0, 0.0, 100.0, 0.0, ElevationSource.LIDAR),
+            LosSample(1, 100.0, 0.0, 0.0, 100.0, 0.0, ElevationSource.LIDAR)
+        )
+        val profile = LosProfileBuilder.build(
+            towerId = "t1",
+            towerName = "T",
+            samples = samples,
+            observerEyeElevationMeters = 101.5,
+            towerTipElevationMeters = 160.0,
+            lidarCoverageFraction = 1.0
+        )
+        assertTrue(profile.isClear(40.0))
+        assertEquals(profile.minClearanceMeters(0.0), profile.minClearanceMeters(40.0), 0.001)
+        assertTrue(profile.usesLidar)
+    }
+
+    @Test
+    fun demProfileClutterCanBlock() {
+        val samples = listOf(
+            LosSample(0, 0.0, 0.0, 0.0, 100.0, 0.0, ElevationSource.DEM),
+            LosSample(1, 100.0, 0.0, 0.0, 100.0, 0.0, ElevationSource.DEM)
+        )
+        val profile = LosProfileBuilder.build(
+            towerId = "t1",
+            towerName = "T",
+            samples = samples,
+            observerEyeElevationMeters = 101.5,
+            towerTipElevationMeters = 120.0,
+            lidarCoverageFraction = 0.0
+        )
+        assertTrue(profile.isClear(0.0))
+        assertFalse(profile.isClear(40.0))
+    }
+}
+
+class LosProfileCacheKeyTest {
+
+    @Test
+    fun observerQuantizationMatchesApiCellSize() {
+        // Same ~25 m cell as elevation-api cache_key (0.00025 deg).
+        val a = roundObserver(35.90001)
+        val b = roundObserver(35.90010)
+        assertEquals(a, b, 1e-12)
+        val c = roundObserver(35.90100)
+        assertTrue(kotlin.math.abs(c - a) > 1e-12)
+    }
+
+    private fun roundObserver(lat: Double): Double {
+        val obsQ = 0.00025
+        return kotlin.math.round(lat / obsQ) * obsQ
     }
 }

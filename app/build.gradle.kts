@@ -13,6 +13,8 @@ val localProperties = Properties().apply {
     }
 }
 val arcoreApiKey: String = localProperties.getProperty("ARCORE_API_KEY") ?: "YOUR_API_KEY"
+val losElevationApiBaseUrl: String =
+    localProperties.getProperty("LOS_ELEVATION_API_BASE_URL") ?: ""
 
 android {
     namespace = "com.towerscope.ar"
@@ -26,6 +28,11 @@ android {
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["ARCORE_API_KEY"] = arcoreApiKey
+        buildConfigField(
+            "String",
+            "LOS_ELEVATION_API_BASE_URL",
+            "\"${losElevationApiBaseUrl.replace("\"", "\\\"")}\""
+        )
         // 16 KB page-size requirement applies to 64-bit ABIs; drop 32-bit natives.
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
@@ -51,6 +58,7 @@ android {
 
     buildFeatures {
         viewBinding = false
+        buildConfig = true
     }
 
     packaging {

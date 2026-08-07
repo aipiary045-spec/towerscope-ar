@@ -38,6 +38,19 @@ Android AR app that loads tower locations from **KML/KMZ** files and renders the
 5. Tap a yellow marker (or a name chip) → **Hide tower** to filter it out for the session
 6. Use the eye icon to restore hidden towers
 
+## LOS elevation (LiDAR + DEM)
+
+Tower details can show a line-of-sight elevation profile. The app prefers a small elevation API (USGS LiDAR first-return, 3DEP DEM fallback, caches) and falls back to on-device 3DEP DEM if the API is unreachable.
+
+1. Deploy [`elevation-api/`](elevation-api/README.md) (Docker / Fly.io)
+2. Add to `local.properties` (not committed):
+
+```
+LOS_ELEVATION_API_BASE_URL=https://your-elevation-host
+```
+
+3. Clutter slider applies only to **DEM** samples (LiDAR already includes canopy)
+
 ## Project layout
 
 | Path | Role |
@@ -45,7 +58,7 @@ Android AR app that loads tower locations from **KML/KMZ** files and renders the
 | `data/KmlParser.kt` | Direct KML / KMZ parser (`XmlPullParser` + zip) |
 | `location/HighAccuracyLocationClient.kt` | Fused location at `PRIORITY_HIGH_ACCURACY` |
 | `ar/TowerMarkerController.kt` | Geospatial anchors + distance detach |
-| `ui/ArScreen.kt` | SceneView AR scene + outdoor HUD |
+| `elevation-api/` | LiDAR + DEM LOS elevation service |
 | `assets/sample_towers.kml` | Demo placemarks |
 
 ## Stack

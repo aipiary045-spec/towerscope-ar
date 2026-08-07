@@ -473,7 +473,7 @@ class MainActivity : AppCompatActivity() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("TowerScope field tips")
             .setMessage(
-                "1. Open Settings (cog) → Tower data to load your KML/KMZ.\n" +
+                "1. Open Settings (lower-right cog) → Tower data to load your KML/KMZ.\n" +
                     "2. Go outdoors with a clear view of the sky.\n" +
                     "3. Walk slowly until Earth shows Ready (≤12 m).\n" +
                     "4. Settings → Calibrate with sun/moon to fix compass heading.\n" +

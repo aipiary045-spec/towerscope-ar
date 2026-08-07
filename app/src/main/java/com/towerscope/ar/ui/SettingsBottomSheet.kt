@@ -20,7 +20,6 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.switchmaterial.SwitchMaterial
 import com.towerscope.ar.DataMenuActivity
 import com.towerscope.ar.R
 import com.towerscope.ar.util.GeoUtils
@@ -29,13 +28,12 @@ import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
 
 /**
- * Secondary controls moved off the AR scan HUD (data, theme, cal, filters, LOS toggle).
+ * Secondary controls moved off the AR scan HUD (data, theme, cal, filters).
  */
 class SettingsBottomSheet : BottomSheetDialogFragment() {
 
     private val viewModel: TowerScopeViewModel by activityViewModels()
     private var suppressSearchCallback = false
-    private var suppressLosSwitchCallback = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,7 +60,6 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         val dataButton = view.findViewById<MaterialButton>(R.id.settingsDataButton)
         val themeButton = view.findViewById<TextView>(R.id.settingsThemeButton)
         val altitudeButton = view.findViewById<TextView>(R.id.settingsAltitudeButton)
-        val losSwitch = view.findViewById<SwitchMaterial>(R.id.settingsLosSwitch)
         val calibrateButton = view.findViewById<MaterialButton>(R.id.settingsCalibrateButton)
         val searchField = view.findViewById<EditText>(R.id.settingsSearchField)
         val distanceLabel = view.findViewById<TextView>(R.id.settingsDistanceLabel)
@@ -79,10 +76,6 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         }
         themeButton.setOnClickListener { viewModel.cycleHudTheme() }
         altitudeButton.setOnClickListener { viewModel.toggleUseKmlAltitude() }
-        losSwitch.setOnCheckedChangeListener { _, checked ->
-            if (suppressLosSwitchCallback) return@setOnCheckedChangeListener
-            viewModel.setShowElevationProfile(checked)
-        }
         calibrateButton.setOnClickListener {
             viewModel.beginHeadingCalibration()
             dismiss()
@@ -125,12 +118,6 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                         "Calibrate with sun / moon  ✓"
                     } else {
                         "Calibrate with sun / moon"
-                    }
-
-                    if (losSwitch.isChecked != state.showElevationProfile) {
-                        suppressLosSwitchCallback = true
-                        losSwitch.isChecked = state.showElevationProfile
-                        suppressLosSwitchCallback = false
                     }
 
                     distanceLabel.text =

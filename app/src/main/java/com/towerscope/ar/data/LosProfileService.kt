@@ -1,12 +1,16 @@
 package com.towerscope.ar.data
 
+import com.towerscope.ar.BuildConfig
 import com.towerscope.ar.util.GeoUtils
 
 /**
- * Builds a 50-point LOS elevation profile using USGS EPQS + Earth curvature.
+ * Builds a LOS elevation profile via elevation API (LiDAR + DEM), disk cache,
+ * and on-device 3DEP DEM fallback.
  */
 class LosProfileService(
-    private val elevationService: UsgsElevationService = UsgsElevationService()
+    private val apiClient: LosElevationApiClient? = defaultApiClient(),
+    private val demService: DemElevationService = DemElevationService(),
+    private val diskCache: LosProfileDiskCache? = null
 ) {
 
     suspend fun buildProfile(
@@ -15,6 +19,120 @@ class LosProfileService(
         observerLon: Double,
         eyeHeightAboveGroundMeters: Double = LosProfileBuilder.DEFAULT_EYE_HEIGHT_METERS,
         sampleCount: Int = LosProfileBuilder.DEFAULT_SAMPLE_COUNT
+    ): LosProfile {
+        val cache = diskCache
+        val cacheKey = cache?.cacheKey(
+            towerId = tower.id,
+            observerLat = observerLat,
+            observerLon = observerLon,
+            towerLat = tower.latitude,
+            towerLon = tower.longitude,
+            sampleCount = sampleCount
+        )
+        if (cache != null && cacheKey != null) {
+            cache.get(cacheKey)?.let { return it.toProfile() }
+        }
+
+        val profile = try {
+            if (apiClient != null) {
+                buildFromApi(
+                    tower = tower,
+                    observerLat = observerLat,
+                    observerLon = observerLon,
+                    eyeHeightAboveGroundMeters = eyeHeightAboveGroundMeters,
+                    sampleCount = sampleCount
+                )
+            } else {
+                buildFromDemFallback(
+                    tower = tower,
+                    observerLat = observerLat,
+                    observerLon = observerLon,
+                    eyeHeightAboveGroundMeters = eyeHeightAboveGroundMeters,
+                    sampleCount = sampleCount
+                )
+            }
+        } catch (apiError: Exception) {
+            // Last resort: direct 3DEP DEM from the device.
+            runCatching {
+                buildFromDemFallback(
+                    tower = tower,
+                    observerLat = observerLat,
+                    observerLon = observerLon,
+                    eyeHeightAboveGroundMeters = eyeHeightAboveGroundMeters,
+                    sampleCount = sampleCount
+                )
+            }.getOrElse {
+                throw apiError
+            }
+        }
+
+        if (cache != null && cacheKey != null) {
+            cache.put(
+                cacheKey,
+                LosProfileDiskCache.CachedLos(
+                    towerId = profile.towerId,
+                    towerName = profile.towerName,
+                    samples = profile.samples,
+                    observerEyeElevationMeters = profile.observerEyeElevationMeters,
+                    towerTipElevationMeters = profile.towerTipElevationMeters,
+                    totalDistanceMeters = profile.totalDistanceMeters,
+                    lidarCoverageFraction = profile.lidarCoverageFraction
+                )
+            )
+        }
+        return profile
+    }
+
+    private suspend fun buildFromApi(
+        tower: Tower,
+        observerLat: Double,
+        observerLon: Double,
+        eyeHeightAboveGroundMeters: Double,
+        sampleCount: Int
+    ): LosProfile {
+        val client = apiClient ?: error("Elevation API not configured")
+        val api = client.fetchProfile(
+            observerLat = observerLat,
+            observerLon = observerLon,
+            towerLat = tower.latitude,
+            towerLon = tower.longitude,
+            sampleCount = sampleCount
+        )
+        val samples = api.samples.map { s ->
+            LosSample(
+                index = s.index,
+                distanceMeters = s.distanceMeters,
+                latitude = s.latitude,
+                longitude = s.longitude,
+                groundElevationMeters = s.groundElevationMeters,
+                curvatureDropMeters = GeoUtils.earthCurvatureDropMeters(s.distanceMeters),
+                source = s.source
+            )
+        }
+        val observerGround = samples.first().groundElevationMeters
+        val towerGround = samples.last().groundElevationMeters
+        val observerEye = observerGround + eyeHeightAboveGroundMeters
+        val towerTip = LosProfileBuilder.resolveTowerTipElevationMeters(
+            towerGroundElevationMeters = towerGround,
+            altitudeMeters = tower.altitudeMeters,
+            altitudeMode = tower.altitudeMode
+        )
+        return LosProfileBuilder.build(
+            towerId = tower.id,
+            towerName = tower.name,
+            samples = samples,
+            observerEyeElevationMeters = observerEye,
+            towerTipElevationMeters = towerTip,
+            lidarCoverageFraction = api.lidarCoverageFraction
+        )
+    }
+
+    private suspend fun buildFromDemFallback(
+        tower: Tower,
+        observerLat: Double,
+        observerLon: Double,
+        eyeHeightAboveGroundMeters: Double,
+        sampleCount: Int
     ): LosProfile {
         val points = GeoUtils.sampleGeodesic(
             startLat = observerLat,
@@ -29,12 +147,11 @@ class LosProfileService(
             tower.latitude,
             tower.longitude
         )
-        val elevations = elevationService.elevationsMeters(points)
+        val elevations = demService.elevationsMeters(points)
         if (elevations.all { it == null }) {
-            error("USGS elevation unavailable (network or outside US coverage)")
+            error("Elevation unavailable (configure LOS_ELEVATION_API_BASE_URL or check network)")
         }
         val filled = fillMissingElevations(elevations)
-
         val samples = points.mapIndexed { index, point ->
             val distance = if (sampleCount <= 1) {
                 0.0
@@ -47,10 +164,10 @@ class LosProfileService(
                 latitude = point.latitude,
                 longitude = point.longitude,
                 groundElevationMeters = filled[index],
-                curvatureDropMeters = GeoUtils.earthCurvatureDropMeters(distance)
+                curvatureDropMeters = GeoUtils.earthCurvatureDropMeters(distance),
+                source = ElevationSource.DEM
             )
         }
-
         val observerGround = samples.first().groundElevationMeters
         val towerGround = samples.last().groundElevationMeters
         val observerEye = observerGround + eyeHeightAboveGroundMeters
@@ -59,17 +176,17 @@ class LosProfileService(
             altitudeMeters = tower.altitudeMeters,
             altitudeMode = tower.altitudeMode
         )
-
         return LosProfileBuilder.build(
             towerId = tower.id,
             towerName = tower.name,
             samples = samples,
             observerEyeElevationMeters = observerEye,
-            towerTipElevationMeters = towerTip
+            towerTipElevationMeters = towerTip,
+            lidarCoverageFraction = 0.0
         )
     }
 
-    /** Linear interpolate across null USGS failures. */
+    /** Forward/back fill across null elevation failures. */
     internal fun fillMissingElevations(raw: List<Double?>): List<Double> {
         if (raw.isEmpty()) return emptyList()
         val out = MutableList(raw.size) { i -> raw[i] }
@@ -91,7 +208,14 @@ class LosProfileService(
                 out[i] = lastKnown
             }
         }
-        // Still null (all failed) → sea level placeholder so UI can show an error path.
         return out.map { it ?: 0.0 }
+    }
+
+    companion object {
+        fun defaultApiClient(): LosElevationApiClient? {
+            val base = BuildConfig.LOS_ELEVATION_API_BASE_URL.trim()
+            if (base.isEmpty()) return null
+            return LosElevationApiClient(base)
+        }
     }
 }

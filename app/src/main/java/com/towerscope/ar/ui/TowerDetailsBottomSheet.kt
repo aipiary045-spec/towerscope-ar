@@ -23,7 +23,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.towerscope.ar.R
+import com.towerscope.ar.data.ElevationSource
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
@@ -34,6 +36,7 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
 
     private val viewModel: TowerScopeViewModel by activityViewModels()
     private lateinit var towerId: String
+    private var suppressLosSwitchCallback = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,6 +74,7 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
         val clutterLabel = view.findViewById<TextView>(R.id.clutterLabel)
         val clutterSlider = view.findViewById<SeekBar>(R.id.clutterSlider)
         val losSection = view.findViewById<View>(R.id.losSection)
+        val losSwitch = view.findViewById<SwitchMaterial>(R.id.detailLosSwitch)
 
         view.findViewById<Button>(R.id.closeSheetButton).setOnClickListener { dismiss() }
         view.findViewById<Button>(R.id.showOnlyButton).setOnClickListener {
@@ -121,8 +125,15 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
         })
 
-        // Ensure profile load even if selectTower already ran with stale cache skip.
-        viewModel.loadLosProfile(towerId)
+        losSwitch.isChecked = viewModel.uiState.value.showElevationProfile
+        losSwitch.setOnCheckedChangeListener { _, checked ->
+            if (suppressLosSwitchCallback) return@setOnCheckedChangeListener
+            viewModel.setShowElevationProfile(checked)
+        }
+
+        if (viewModel.uiState.value.showElevationProfile) {
+            viewModel.loadLosProfile(towerId)
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -159,6 +170,12 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
                         String.format(Locale.US, "Altitude  %.1f m", it)
                     } ?: "Altitude  —"
 
+                    if (losSwitch.isChecked != state.showElevationProfile) {
+                        suppressLosSwitchCallback = true
+                        losSwitch.isChecked = state.showElevationProfile
+                        suppressLosSwitchCallback = false
+                    }
+
                     renderLos(state, losSection, losStatus, losChart, clutterLabel, clutterSlider)
                 }
             }
@@ -180,14 +197,28 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
         losSection.isVisible = true
 
         val clutter = state.clutterHeightMeters.toDouble()
-        clutterLabel.text = String.format(Locale.US, "Clutter (trees)  %.0f m", clutter)
+        val profileForLabel = state.losProfile
+        val clutterApplies = profileForLabel == null ||
+            profileForLabel.samples.any { it.source == ElevationSource.DEM }
+        clutterLabel.text = if (profileForLabel != null && profileForLabel.usesLidar && !clutterApplies) {
+            String.format(Locale.US, "Clutter (DEM only)  %.0f m · LiDAR surface", clutter)
+        } else if (profileForLabel != null && profileForLabel.usesLidar) {
+            String.format(
+                Locale.US,
+                "Clutter (DEM gaps)  %.0f m · LiDAR %.0f%%",
+                clutter,
+                profileForLabel.lidarCoverageFraction * 100.0
+            )
+        } else {
+            String.format(Locale.US, "Clutter (trees)  %.0f m · 3DEP DEM", clutter)
+        }
         if (clutterSlider.progress != state.clutterHeightMeters.toInt()) {
             clutterSlider.progress = state.clutterHeightMeters.toInt()
         }
 
         when {
             state.losProfileLoading && state.losProfile == null -> {
-                losStatus.text = "Querying USGS elevations (50 points)…"
+                losStatus.text = "Querying LiDAR / 3DEP elevations…"
                 losStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_muted))
                 losChart.isVisible = false
             }
@@ -200,17 +231,27 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
                 val profile = state.losProfile
                 val clearance = profile.minClearanceMeters(clutter)
                 val clear = clearance > 0.0
+                val sourceLabel = when {
+                    profile.lidarCoverageFraction >= 0.9 -> "LiDAR surface"
+                    profile.usesLidar -> String.format(
+                        Locale.US,
+                        "LiDAR+DEM · %.0f%% LiDAR",
+                        profile.lidarCoverageFraction * 100.0
+                    )
+                    else -> "3DEP DEM"
+                }
                 losStatus.text = if (clear) {
                     String.format(
                         Locale.US,
-                        "Clear LOS · min clearance %.0f m · %d samples",
+                        "Clear LOS · min clearance %.0f m · %s",
                         clearance,
-                        profile.sampleCount
+                        sourceLabel
                     )
                 } else {
                     String.format(
                         Locale.US,
-                        "Blocked · terrain/clutter clears LOS by %.0f m",
+                        "Blocked · %s clears LOS by %.0f m",
+                        sourceLabel,
                         -clearance
                     )
                 }

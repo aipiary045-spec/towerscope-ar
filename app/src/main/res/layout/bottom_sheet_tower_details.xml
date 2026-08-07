@@ -63,6 +63,27 @@
             android:textSize="13sp" />
 
         <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Elevation profile"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/detailLosSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/losSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -71,7 +92,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="10dp"
                 android:letterSpacing="0.06"
                 android:text="LINE OF SIGHT"
                 android:textColor="@color/text_muted"
@@ -113,7 +134,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Adds tree/vegetation height on top of USGS terrain for the LOS check."
+                android:text="Adds tree/vegetation height on DEM samples only. LiDAR first-return already includes canopy."
                 android:textColor="@color/text_muted"
                 android:textSize="10sp" />
         </LinearLayout>

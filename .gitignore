@@ -22,3 +22,9 @@ build-log.txt
 .tmp-aar/
 .tmp-sv/
 
+elevation-api/.venv/
+elevation-api/__pycache__/
+elevation-api/**/__pycache__/
+app/release/
+
+

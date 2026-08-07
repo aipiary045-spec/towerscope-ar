@@ -48,17 +48,6 @@
                 android:textSize="15sp"
                 android:textStyle="bold" />
 
-            <ImageButton
-                android:id="@+id/settingsButton"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_marginEnd="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Settings"
-                android:padding="6dp"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_settings_cog" />
-
             <TextView
                 android:id="@+id/gpsChip"
                 android:layout_width="wrap_content"
@@ -170,6 +159,20 @@
                 android:orientation="horizontal" />
         </HorizontalScrollView>
     </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/settingsButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="108dp"
+        android:background="@drawable/bg_hud_chip"
+        android:contentDescription="Settings"
+        android:elevation="6dp"
+        android:padding="10dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_settings_cog" />
 
     <FrameLayout
         android:id="@+id/calibrationOverlay"

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.towerscope.ar.ar.GeospatialAccuracy
 import com.towerscope.ar.data.KmlParser
 import com.towerscope.ar.data.LosProfile
+import com.towerscope.ar.data.LosProfileDiskCache
 import com.towerscope.ar.data.LosProfileService
 import com.towerscope.ar.data.Tower
 import com.towerscope.ar.data.TowerFileStore
@@ -77,13 +78,13 @@ data class TowerUiState(
     val calibrationBody: CelestialBodies.Body? = null,
     val calibrationTargetAzimuthDegrees: Double? = null,
     val calibrationTargetElevationDegrees: Double? = null,
-    /** USGS LOS elevation profile for the selected tower (null until loaded). */
+    /** LOS elevation profile for the selected tower (null until loaded). */
     val losProfile: LosProfile? = null,
     val losProfileLoading: Boolean = false,
     val losProfileError: String? = null,
-    /** Extra vegetation / clutter height added on top of USGS terrain (meters). */
+    /** Extra vegetation height added on DEM samples only (meters). LiDAR already includes canopy. */
     val clutterHeightMeters: Float = DEFAULT_CLUTTER_METERS,
-    /** When false, tower details hide LOS chart and skip USGS elevation queries. */
+    /** When false, tower details hide LOS chart and skip elevation queries. */
     val showElevationProfile: Boolean = true,
     val sourceName: String? = null,
     val statusMessage: String? = null,
@@ -231,7 +232,9 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private val locationClient = HighAccuracyLocationClient(application)
     private val headingClient = DeviceHeadingClient(application)
     private val fileStore = TowerFileStore(application)
-    private val losProfileService = LosProfileService()
+    private val losProfileService = LosProfileService(
+        diskCache = LosProfileDiskCache(application)
+    )
     private val prefs = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private val _uiState = MutableStateFlow(
         TowerUiState(
@@ -378,7 +381,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     /**
-     * Sample 50 geodesic points to [towerId], query USGS elevations, apply Earth curvature.
+     * Sample geodesic points to [towerId], query LiDAR/DEM elevations (cached), apply Earth curvature.
      */
     fun loadLosProfile(towerId: String) {
         if (!_uiState.value.showElevationProfile) {
