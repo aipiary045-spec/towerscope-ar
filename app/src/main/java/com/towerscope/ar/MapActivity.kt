@@ -21,24 +21,27 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
+import com.towerscope.ar.util.CardinalSector
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
+import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
-import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polygon
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.ScaleBarOverlay
 import java.io.File
-
+import kotlin.math.max
+import kotlin.math.min
 /**
  * Free satellite map (Esri / USGS imagery via osmdroid):
  * live GPS, optional install/customer pin, in-range APs, and path to focus site.
@@ -55,8 +58,12 @@ class MapActivity : AppCompatActivity() {
     private val towerMarkers = mutableMapOf<String, Marker>()
     private var userMarker: Marker? = null
     private var installMarker: Marker? = null
+    private val sectorPolygons = mutableListOf<Polygon>()
     private var lastChipSignature: String? = null
     private var hasFittedOnce = false
+    private var lastSectorTowerId: String? = null
+    private var lastActiveSector: CardinalSector? = null
+    private var lastSectorRadiusMeters: Double = -1.0
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -235,6 +242,11 @@ class MapActivity : AppCompatActivity() {
                 if (isNotEmpty() && !endsWith("  ·  ")) append("  ·  ")
                 append("Az ").append(GeoUtils.formatAzimuthPadded(bearing))
             }
+            val sector = sectorTowardInstall(state, focus)
+            if (sector != null && focus != null) {
+                if (isNotEmpty()) append("  ·  ")
+                append("AP ").append(sector.shortLabel).append(" sector")
+            }
             if (isEmpty()) append("Range ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}")
             else append("  ·  ").append(state.visibleTowers().size).append(" in range")
         }
@@ -386,7 +398,137 @@ class MapActivity : AppCompatActivity() {
         }
 
         updateLosLine(state)
+        updateSectorWedges(state)
         mapView.invalidate()
+    }
+
+    /**
+     * Assumed N/E/S/W 90° pies on the focused AP.
+     * Highlight the sector that faces the install site (or live GPS).
+     */
+    private fun updateSectorWedges(state: TowerUiState) {
+        val focus = state.focusTower()
+        val origin = state.positioningLocation()
+        if (focus == null) {
+            clearSectorWedges()
+            return
+        }
+        val active = if (origin != null) {
+            val fromTower = GeoUtils.bearingDegrees(
+                focus.latitude,
+                focus.longitude,
+                origin.latitude,
+                origin.longitude
+            )
+            CardinalSector.facingSite(fromTower)
+        } else {
+            null
+        }
+        val distance = origin?.let {
+            GeoUtils.haversineMeters(
+                focus.latitude,
+                focus.longitude,
+                it.latitude,
+                it.longitude
+            )
+        } ?: 0.0
+        val radius = max(
+            min(state.maxDistanceMeters.toDouble(), max(distance * 1.15, 250.0)),
+            250.0
+        ).coerceAtMost(3_000.0)
+
+        if (
+            focus.id == lastSectorTowerId &&
+            active == lastActiveSector &&
+            kotlin.math.abs(radius - lastSectorRadiusMeters) < 5.0 &&
+            sectorPolygons.size == CardinalSector.ALL.size
+        ) {
+            return
+        }
+        lastSectorTowerId = focus.id
+        lastActiveSector = active
+        lastSectorRadiusMeters = radius
+
+        clearSectorPolygonOverlays()
+        val insertAt = mapView.overlays.indexOfFirst { it is ScaleBarOverlay }.coerceAtLeast(0) + 1
+        CardinalSector.ALL.forEachIndexed { index, sector ->
+            val highlighted = sector == active
+            val poly = Polygon().apply {
+                points = wedgePoints(
+                    focus.latitude,
+                    focus.longitude,
+                    sector.startAzimuthDegrees,
+                    sector.endAzimuthDegrees,
+                    radius
+                )
+                fillPaint.color = if (highlighted) {
+                    Color.argb(0x55, 0xF0, 0xD0, 0x60)
+                } else {
+                    Color.argb(0x28, 0x3E, 0xC9, 0xD6)
+                }
+                outlinePaint.color = if (highlighted) {
+                    ContextCompat.getColor(this@MapActivity, R.color.accent_yellow)
+                } else {
+                    Color.argb(0x88, 0x3E, 0xC9, 0xD6)
+                }
+                outlinePaint.strokeWidth = if (highlighted) {
+                    3f * resources.displayMetrics.density
+                } else {
+                    1.5f * resources.displayMetrics.density
+                }
+                outlinePaint.isAntiAlias = true
+                title = "${sector.fullLabel} sector (assumed 90°)"
+            }
+            mapView.overlays.add(insertAt + index, poly)
+            sectorPolygons.add(poly)
+        }
+    }
+
+    private fun clearSectorWedges() {
+        clearSectorPolygonOverlays()
+        lastSectorTowerId = null
+        lastActiveSector = null
+        lastSectorRadiusMeters = -1.0
+    }
+
+    private fun clearSectorPolygonOverlays() {
+        sectorPolygons.forEach { mapView.overlays.remove(it) }
+        sectorPolygons.clear()
+    }
+
+    private fun wedgePoints(
+        lat: Double,
+        lon: Double,
+        startAzimuth: Double,
+        endAzimuth: Double,
+        radiusMeters: Double,
+        arcSteps: Int = 24
+    ): ArrayList<GeoPoint> {
+        val points = ArrayList<GeoPoint>(arcSteps + 3)
+        points.add(GeoPoint(lat, lon))
+        var span = endAzimuth - startAzimuth
+        if (span <= 0.0) span += 360.0
+        for (i in 0..arcSteps) {
+            val t = i.toDouble() / arcSteps.toDouble()
+            val az = GeoUtils.normalizeBearing(startAzimuth + span * t)
+            val p = GeoUtils.destinationPoint(lat, lon, az, radiusMeters)
+            points.add(GeoPoint(p.latitude, p.longitude))
+        }
+        points.add(GeoPoint(lat, lon))
+        return points
+    }
+
+    /** Sector of [tower] that faces the install/GPS origin. */
+    private fun sectorTowardInstall(state: TowerUiState, tower: com.towerscope.ar.data.Tower?): CardinalSector? {
+        val origin = state.positioningLocation() ?: return null
+        if (tower == null) return null
+        val bearing = GeoUtils.bearingDegrees(
+            tower.latitude,
+            tower.longitude,
+            origin.latitude,
+            origin.longitude
+        )
+        return CardinalSector.facingSite(bearing)
     }
 
     private fun updateLosLine(state: TowerUiState) {

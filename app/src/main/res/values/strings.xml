@@ -11,7 +11,7 @@
     <string name="home_job_aim">Aim</string>
     <string name="home_job_aim_sub">Compass bearings to nearby sites</string>
     <string name="home_job_locate">Locate</string>
-    <string name="home_job_locate_sub">Pin install site · satellite path to AP</string>
+    <string name="home_job_locate_sub">Pin install · assumed N/E/S/W sectors</string>
     <string name="home_job_los">Check LOS</string>
     <string name="home_job_los_sub">Rank APs by Fresnel · from install or GPS</string>
     <string name="home_settings">Settings</string>

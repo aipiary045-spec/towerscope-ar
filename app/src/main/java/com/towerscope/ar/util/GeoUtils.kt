@@ -1,6 +1,7 @@
 package com.towerscope.ar.util
 
 import java.util.Locale
+import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -140,6 +141,33 @@ object GeoUtils {
 
     fun normalizeBearing(degrees: Double): Double =
         ((degrees % 360.0) + 360.0) % 360.0
+
+    /**
+     * Destination point traveling [distanceMeters] along [bearingDegrees] from start.
+     */
+    fun destinationPoint(
+        latitude: Double,
+        longitude: Double,
+        bearingDegrees: Double,
+        distanceMeters: Double
+    ): LatLng {
+        if (distanceMeters <= 0.0) return LatLng(latitude, longitude)
+        val δ = distanceMeters / EARTH_RADIUS_METERS
+        val θ = Math.toRadians(normalizeBearing(bearingDegrees))
+        val φ1 = Math.toRadians(latitude)
+        val λ1 = Math.toRadians(longitude)
+        val φ2 = asin(
+            sin(φ1) * cos(δ) + cos(φ1) * sin(δ) * cos(θ)
+        )
+        val λ2 = λ1 + atan2(
+            sin(θ) * sin(δ) * cos(φ1),
+            cos(δ) - sin(φ1) * sin(φ2)
+        )
+        return LatLng(
+            latitude = Math.toDegrees(φ2),
+            longitude = Math.toDegrees(λ2)
+        )
+    }
 
     /** Zero-padded absolute azimuth for ring labels, e.g. 030°. */
     fun formatAzimuthPadded(degrees: Double): String {

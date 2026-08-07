@@ -24,6 +24,7 @@ import com.towerscope.ar.data.LosProfileBuilder
 import com.towerscope.ar.ui.LosProfileChartView
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
+import com.towerscope.ar.util.CardinalSector
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
@@ -194,8 +195,20 @@ class LosProfilesActivity : AppCompatActivity() {
             val bearing = state.bearingTo(row.tower)
             val az = bearing?.let { GeoUtils.formatAzimuthPadded(it) } ?: "—"
             val height = towerHeightLabel(state, row)
+            val origin = state.positioningLocation()
+            val sectorLabel = if (origin != null) {
+                val fromAp = GeoUtils.bearingDegrees(
+                    row.tower.latitude,
+                    row.tower.longitude,
+                    origin.latitude,
+                    origin.longitude
+                )
+                "  ·  ${CardinalSector.facingSite(fromAp).shortLabel} sec"
+            } else {
+                ""
+            }
             view.findViewById<TextView>(R.id.rowMeta).text =
-                "${GeoUtils.formatDistance(row.distanceMeters)}  ·  Az $az  ·  $height"
+                "${GeoUtils.formatDistance(row.distanceMeters)}  ·  Az $az  ·  $height$sectorLabel"
 
             val clearanceView = view.findViewById<TextView>(R.id.rowClearance)
             val chart = view.findViewById<LosProfileChartView>(R.id.rowChart)
