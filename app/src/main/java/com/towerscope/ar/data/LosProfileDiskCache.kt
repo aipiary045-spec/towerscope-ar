@@ -23,7 +23,8 @@ class LosProfileDiskCache(
         observerLon: Double,
         towerLat: Double,
         towerLon: Double,
-        sampleCount: Int
+        sampleCount: Int,
+        eyeHeightAboveGroundMeters: Double = LosProfileBuilder.DEFAULT_EYE_HEIGHT_METERS
     ): String {
         val obsQ = 0.00025
         val twrQ = 0.00001
@@ -31,15 +32,17 @@ class LosProfileDiskCache(
         val olon = round(observerLon / obsQ) * obsQ
         val tlat = round(towerLat / twrQ) * twrQ
         val tlon = round(towerLon / twrQ) * twrQ
+        val eyeQ = round(eyeHeightAboveGroundMeters * 10.0) / 10.0
         return String.format(
             Locale.US,
-            "%s_%.5f,%.5f_%.5f,%.5f_%d",
+            "%s_%.5f,%.5f_%.5f,%.5f_%d_e%.1f",
             towerId,
             olat,
             olon,
             tlat,
             tlon,
-            sampleCount
+            sampleCount,
+            eyeQ
         )
     }
 

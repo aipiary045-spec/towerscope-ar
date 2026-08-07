@@ -58,7 +58,11 @@ class LosRangeRankingTest {
             row("clearFar", 500.0, 30.0),
             row("clearNear", 150.0, 10.0)
         )
-        val ranked = TowerScopeViewModel.rankLosRangeRows(rows, clutterHeightMeters = 0.0)
+        val ranked = TowerScopeViewModel.rankLosRangeRows(
+            rows,
+            clutterHeightMeters = 0.0,
+            frequencyGhz = 5.8
+        )
         assertEquals(listOf("clearFar", "clearNear", "block", "err"), ranked.map { it.tower.id })
     }
 }

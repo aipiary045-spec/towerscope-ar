@@ -17,12 +17,12 @@ Android field app that loads tower locations from **KML/KMZ** and shows them on 
 
 ## How to use
 
-1. Launch into **Home** — upload KML/KMZ, then Compass, Satellite map, Elevation profiles, or Settings
-2. Grant **precise Location** when entering field modes
-3. **Compass** — hold upright; top of radar is the direction you face; sun/moon calibrate for best heading
-4. **Satellite map** — free Esri imagery; pinch zoom; yellow line from you to the selected tower; tap markers or nearby chips to switch
-5. Drag the **Max distance** slider in Settings (persists across launches)
-6. **Elevation profiles** — ranked clear/blocked LOS for towers in range
+1. Launch **Home** — import KML/KMZ (empty-state CTA or Settings → Import sites)
+2. Grant **precise Location** when entering field tools
+3. **Aim** — compass bearings; hold upright; sun/moon calibrate for best heading
+4. **Locate** — satellite map; pin an **install site** (pin FAB = GPS, or long-press map); yellow path to selected AP
+5. **Check LOS** — ranked APs by 60% first Fresnel (freq + CPE height in Settings)
+6. Drag **range / frequency / CPE AGL** in Settings (persists across launches)
 
 ## LOS elevation (LiDAR + DEM)
 

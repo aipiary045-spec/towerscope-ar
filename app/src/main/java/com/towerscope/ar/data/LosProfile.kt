@@ -1,5 +1,6 @@
 package com.towerscope.ar.data
 
+import com.towerscope.ar.util.Fresnel
 import com.towerscope.ar.util.GeoUtils
 import kotlin.math.max
 
@@ -79,6 +80,34 @@ data class LosProfile(
     fun isClear(clutterHeightMeters: Double): Boolean =
         minClearanceMeters(clutterHeightMeters) > 0.0
 
+    /**
+     * Geometric clearance minus [fraction] of the first Fresnel radius at each sample.
+     * Positive ⇒ that fraction of F1 is clear of terrain/clutter.
+     */
+    fun minFresnelClearanceMeters(
+        clutterHeightMeters: Double,
+        frequencyGhz: Double,
+        fraction: Double = Fresnel.CLEARANCE_FRACTION
+    ): Double {
+        if (samples.isEmpty() || totalDistanceMeters <= 0.0) return 0.0
+        return samples.minOf { sample ->
+            val geometric = losElevationAt(sample.distanceMeters) -
+                sample.effectiveTerrainMeters(clutterHeightMeters)
+            val r = Fresnel.radiusMeters(
+                frequencyGhz = frequencyGhz,
+                pathLengthMeters = totalDistanceMeters,
+                distanceFromObserverMeters = sample.distanceMeters
+            )
+            geometric - fraction * r
+        }
+    }
+
+    fun isFresnelClear(
+        clutterHeightMeters: Double,
+        frequencyGhz: Double,
+        fraction: Double = Fresnel.CLEARANCE_FRACTION
+    ): Boolean = minFresnelClearanceMeters(clutterHeightMeters, frequencyGhz, fraction) > 0.0
+
     val usesLidar: Boolean get() = lidarCoverageFraction > 0.0
 }
 
@@ -87,6 +116,8 @@ object LosProfileBuilder {
     const val DEFAULT_SAMPLE_COUNT = 50
     const val DEFAULT_TOWER_HEIGHT_METERS = 60.0
     const val DEFAULT_EYE_HEIGHT_METERS = 1.5
+    /** Typical customer CPE / dish mount AGL. */
+    const val DEFAULT_CPE_ANTENNA_AGL_METERS = 4.0
 
     fun build(
         towerId: String,

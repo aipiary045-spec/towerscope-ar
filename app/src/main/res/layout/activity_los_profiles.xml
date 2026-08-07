@@ -12,10 +12,10 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif-condensed"
-        android:text="Elevation profiles"
-        android:textColor="@color/accent_yellow"
-        android:textSize="28sp"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:text="Check LOS"
+        android:textColor="@color/text_primary"
+        android:textSize="26sp"
         android:textStyle="bold" />
 
     <TextView
@@ -23,7 +23,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:text="Towers in your saved range · best LOS first"
+        android:text="Rank APs by Fresnel clearance from install or GPS"
         android:textColor="@color/text_muted"
         android:textSize="13sp" />
 

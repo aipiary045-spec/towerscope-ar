@@ -27,7 +27,8 @@ class LosProfileService(
             observerLon = observerLon,
             towerLat = tower.latitude,
             towerLon = tower.longitude,
-            sampleCount = sampleCount
+            sampleCount = sampleCount,
+            eyeHeightAboveGroundMeters = eyeHeightAboveGroundMeters
         )
         if (cache != null && cacheKey != null) {
             cache.get(cacheKey)?.let { return it.toProfile() }

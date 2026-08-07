@@ -473,11 +473,11 @@ class MainActivity : AppCompatActivity() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("TowerScope field tips")
             .setMessage(
-                "1. Upload your KML/KMZ from Settings → Tower data.\n" +
+                "1. Import network sites from Home (or Settings → Import / manage sites).\n" +
                     "2. Go outdoors for a clear GPS fix.\n" +
                     "3. Hold the phone upright — the top of the disc is the direction you face.\n" +
                     "4. Tap the sun button to calibrate with the sun or moon for best accuracy.\n" +
-                    "5. Tap a tower on the radar for details, or use Elevation profiles for ranked LOS."
+                    "5. Tap a site on the radar for details, or use Check LOS for ranked profiles."
             )
             .setPositiveButton("Got it") { _, _ ->
                 viewModel.markOnboardingComplete()

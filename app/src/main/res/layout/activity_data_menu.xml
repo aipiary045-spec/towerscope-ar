@@ -19,8 +19,9 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Tower data"
-            android:textColor="@color/accent_yellow"
+            android:fontFamily="@font/source_sans3_semibold"
+            android:text="Network sites"
+            android:textColor="@color/text_primary"
             android:textSize="26sp"
             android:textStyle="bold" />
 
@@ -28,7 +29,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Load a KML/KMZ file. Imports are saved on this device and restored next launch."
+            android:fontFamily="@font/source_sans3_regular"
+            android:text="Import a KML or KMZ. Files are saved on this device and restored next launch."
             android:textColor="@color/text_muted"
             android:textSize="14sp" />
 

@@ -32,6 +32,8 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
+import org.osmdroid.events.MapEventsReceiver
+import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.ScaleBarOverlay
@@ -39,7 +41,7 @@ import java.io.File
 
 /**
  * Free satellite map (Esri / USGS imagery via osmdroid):
- * user location, in-range towers, and a LOS line to the selected tower.
+ * live GPS, optional install/customer pin, in-range APs, and path to focus site.
  */
 class MapActivity : AppCompatActivity() {
 
@@ -52,6 +54,7 @@ class MapActivity : AppCompatActivity() {
     private var losLine: Polyline? = null
     private val towerMarkers = mutableMapOf<String, Marker>()
     private var userMarker: Marker? = null
+    private var installMarker: Marker? = null
     private var lastChipSignature: String? = null
     private var hasFittedOnce = false
 
@@ -96,6 +99,15 @@ class MapActivity : AppCompatActivity() {
         }
         findViewById<android.widget.ImageButton>(R.id.mapMyLocationButton).setOnClickListener {
             centerOnUser()
+        }
+        findViewById<android.widget.ImageButton>(R.id.mapInstallButton).setOnClickListener {
+            viewModel.setInstallSiteFromGps()
+            metaLabel.text = "Install site set to GPS · long-press map to move"
+        }
+        findViewById<android.widget.ImageButton>(R.id.mapInstallButton).setOnLongClickListener {
+            viewModel.clearInstallSite()
+            metaLabel.text = "Install site cleared · using live GPS"
+            true
         }
         findViewById<android.widget.ImageButton>(R.id.mapBasemapButton).setOnClickListener {
             cycleTileSource()
@@ -142,6 +154,17 @@ class MapActivity : AppCompatActivity() {
         scale.setAlignBottom(true)
         scale.setAlignRight(false)
         mapView.overlays.add(scale)
+
+        val events = object : MapEventsReceiver {
+            override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean = false
+            override fun longPressHelper(p: GeoPoint?): Boolean {
+                if (p == null) return false
+                viewModel.setInstallSite(p.latitude, p.longitude)
+                metaLabel.text = "Install site pinned · Check LOS ranks from here"
+                return true
+            }
+        }
+        mapView.overlays.add(0, MapEventsOverlay(events))
     }
 
     private var tileIndex = 0
@@ -201,14 +224,15 @@ class MapActivity : AppCompatActivity() {
         val distance = focus?.let { state.distanceTo(it) }
         val bearing = focus?.let { state.bearingTo(it) }
         focusLabel.text = when {
-            focus == null && state.towers.isEmpty() -> "No towers loaded — upload in Settings"
-            focus == null -> "No tower in range"
+            focus == null && state.towers.isEmpty() -> "No sites loaded — import on Home"
+            focus == null -> "No AP in range"
             else -> focus.name
         }
         metaLabel.text = buildString {
+            if (state.hasInstallSite) append("From install  ·  ")
             if (distance != null) append(GeoUtils.formatDistance(distance))
             if (bearing != null) {
-                if (isNotEmpty()) append("  ·  ")
+                if (isNotEmpty() && !endsWith("  ·  ")) append("  ·  ")
                 append("Az ").append(GeoUtils.formatAzimuthPadded(bearing))
             }
             if (isEmpty()) append("Range ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}")
@@ -331,7 +355,7 @@ class MapActivity : AppCompatActivity() {
             if (userMarker == null) {
                 userMarker = Marker(mapView).apply {
                     position = userPoint
-                    title = "You"
+                    title = "You (GPS)"
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                     icon = userIcon()
                 }
@@ -341,20 +365,40 @@ class MapActivity : AppCompatActivity() {
             }
         }
 
+        val installLat = state.installLatitude
+        val installLon = state.installLongitude
+        if (installLat != null && installLon != null) {
+            val installPoint = GeoPoint(installLat, installLon)
+            if (installMarker == null) {
+                installMarker = Marker(mapView).apply {
+                    position = installPoint
+                    title = "Install site"
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    icon = installIcon()
+                }
+                mapView.overlays.add(installMarker)
+            } else {
+                installMarker?.position = installPoint
+            }
+        } else if (installMarker != null) {
+            mapView.overlays.remove(installMarker)
+            installMarker = null
+        }
+
         updateLosLine(state)
         mapView.invalidate()
     }
 
     private fun updateLosLine(state: TowerUiState) {
-        val user = state.userLocation
+        val origin = state.positioningLocation()
         val focus = state.focusTower()
-        if (user == null || focus == null) {
+        if (origin == null || focus == null) {
             losLine?.let { mapView.overlays.remove(it) }
             losLine = null
             return
         }
         val points = arrayListOf(
-            GeoPoint(user.latitude, user.longitude),
+            GeoPoint(origin.latitude, origin.longitude),
             GeoPoint(focus.latitude, focus.longitude)
         )
         val existing = losLine
@@ -378,6 +422,7 @@ class MapActivity : AppCompatActivity() {
     private fun fitToYouAndFocus() {
         val state = viewModel.uiState.value
         val points = mutableListOf<GeoPoint>()
+        state.positioningLocation()?.let { points.add(GeoPoint(it.latitude, it.longitude)) }
         state.userLocation?.let { points.add(GeoPoint(it.latitude, it.longitude)) }
         state.focusTower()?.let { points.add(GeoPoint(it.latitude, it.longitude)) }
         if (points.isEmpty()) {
@@ -435,6 +480,15 @@ class MapActivity : AppCompatActivity() {
         val r = size / 2f
         canvas.drawCircle(r, r, r - stroke.strokeWidth, fill)
         canvas.drawCircle(r, r, r - stroke.strokeWidth, stroke)
+        return BitmapDrawable(resources, bmp)
+    }
+
+    private fun installIcon(): BitmapDrawable {
+        val drawable = ContextCompat.getDrawable(this, R.drawable.ic_install_pin)!!.mutate()
+        val bmp = drawable.toBitmap(
+            (22 * resources.displayMetrics.density).toInt(),
+            (28 * resources.displayMetrics.density).toInt()
+        )
         return BitmapDrawable(resources, bmp)
     }
 

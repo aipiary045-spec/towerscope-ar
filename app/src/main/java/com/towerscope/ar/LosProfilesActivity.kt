@@ -80,8 +80,10 @@ class LosProfilesActivity : AppCompatActivity() {
                 viewModel.uiState.collect { state ->
                     subtitle.text = String.format(
                         Locale.US,
-                        "Range %s · clutter %.0f m · best LOS first",
-                        GeoUtils.formatDistance(state.maxDistanceMeters.toDouble()),
+                        "%s · %.1f GHz · CPE %.0f m · clutter %.0f m",
+                        if (state.hasInstallSite) "From install site" else "From GPS",
+                        state.frequencyGhz,
+                        state.cpeAntennaAglMeters,
                         state.clutterHeightMeters
                     )
                     status.text = state.losRangeStatus.orEmpty()
@@ -177,6 +179,7 @@ class LosProfilesActivity : AppCompatActivity() {
     private fun renderRows(state: TowerUiState) {
         clearShimmers()
         val clutter = state.clutterHeightMeters.toDouble()
+        val freq = state.frequencyGhz.toDouble()
         val inflater = LayoutInflater.from(this)
         list.removeAllViews()
         state.losRangeRows.forEachIndexed { index, row ->
@@ -218,26 +221,49 @@ class LosProfilesActivity : AppCompatActivity() {
                     shimmer2.isVisible = false
                 }
                 row.profile != null -> {
-                    val clearance = row.profile.minClearanceMeters(clutter)
-                    val clear = clearance > 0.0
+                    val geometric = row.profile.minClearanceMeters(clutter)
+                    val fresnel = row.profile.minFresnelClearanceMeters(clutter, freq)
+                    val fresnelClear = fresnel > 0.0
+                    val geoClear = geometric > 0.0
                     pill.isVisible = true
-                    if (clear) {
-                        pill.text = "CLEAR"
-                        pill.setTextColor(ContextCompat.getColor(this, R.color.status_clear))
-                        pill.setBackgroundResource(R.drawable.bg_pill_clear)
-                        statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.status_clear))
-                        clearanceView.text = String.format(Locale.US, "Min clearance  %.0f m", clearance)
-                        clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_clear))
-                    } else {
-                        pill.text = "BLOCKED"
-                        pill.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
-                        pill.setBackgroundResource(R.drawable.bg_pill_blocked)
-                        statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.status_blocked))
-                        clearanceView.text = String.format(Locale.US, "Short by  %.0f m", -clearance)
-                        clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
+                    when {
+                        fresnelClear -> {
+                            pill.text = "F1 OK"
+                            pill.setTextColor(ContextCompat.getColor(this, R.color.status_clear))
+                            pill.setBackgroundResource(R.drawable.bg_pill_clear)
+                            statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.status_clear))
+                            clearanceView.text = String.format(
+                                Locale.US,
+                                "60%% F1 +%.0f m · geo %.0f m",
+                                fresnel,
+                                geometric
+                            )
+                            clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_clear))
+                        }
+                        geoClear -> {
+                            pill.text = "TIGHT"
+                            pill.setTextColor(ContextCompat.getColor(this, R.color.accent_yellow))
+                            pill.setBackgroundResource(R.drawable.bg_pill_clear)
+                            statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.accent_yellow))
+                            clearanceView.text = String.format(
+                                Locale.US,
+                                "Geo clear %.0f m · F1 short %.0f m",
+                                geometric,
+                                -fresnel
+                            )
+                            clearanceView.setTextColor(ContextCompat.getColor(this, R.color.accent_yellow))
+                        }
+                        else -> {
+                            pill.text = "BLOCKED"
+                            pill.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
+                            pill.setBackgroundResource(R.drawable.bg_pill_blocked)
+                            statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.status_blocked))
+                            clearanceView.text = String.format(Locale.US, "Short by  %.0f m", -geometric)
+                            clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
+                        }
                     }
                     chart.isVisible = true
-                    chart.setProfile(row.profile, clutter)
+                    chart.setProfile(row.profile, clutter, freq)
                     shimmer1.isVisible = false
                     shimmer2.isVisible = false
                 }

@@ -41,6 +41,9 @@ data class LosRangeRow(
 ) {
     fun clearanceMeters(clutterHeightMeters: Double): Double? =
         profile?.minClearanceMeters(clutterHeightMeters)
+
+    fun fresnelClearanceMeters(clutterHeightMeters: Double, frequencyGhz: Double): Double? =
+        profile?.minFresnelClearanceMeters(clutterHeightMeters, frequencyGhz)
 }
 
 data class TowerUiState(
@@ -50,6 +53,16 @@ data class TowerUiState(
     val searchQuery: String = "",
     val selectedTowerId: String? = null,
     val userLocation: UserLocation? = null,
+    /**
+     * Optional fixed install / customer site. When set, bearings, range, and LOS
+     * use this instead of live GPS (GPS marker still available on the map).
+     */
+    val installLatitude: Double? = null,
+    val installLongitude: Double? = null,
+    /** Link frequency for Fresnel (GHz). */
+    val frequencyGhz: Float = DEFAULT_FREQUENCY_GHZ,
+    /** CPE / customer antenna height above ground (meters). */
+    val cpeAntennaAglMeters: Float = DEFAULT_CPE_ANTENNA_AGL_METERS,
     val deviceHeadingDegrees: Double? = null,
     val compassSensorAccuracy: Int = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM,
     val hudTheme: HudTheme = HudTheme.NIGHT,
@@ -89,8 +102,27 @@ data class TowerUiState(
     val isHeadingCalibrated: Boolean
         get() = headingCalibrationOffsetDegrees != null
 
-    /** Fused GPS location used for bearings, distances, and LOS. */
-    fun positioningLocation(): UserLocation? = userLocation
+    val hasInstallSite: Boolean
+        get() = installLatitude != null && installLongitude != null
+
+    /**
+     * Location used for bearings, distances, and LOS.
+     * Prefers a pinned install site when set; otherwise live GPS.
+     */
+    fun positioningLocation(): UserLocation? {
+        val lat = installLatitude
+        val lon = installLongitude
+        if (lat != null && lon != null) {
+            return UserLocation(
+                latitude = lat,
+                longitude = lon,
+                altitudeMeters = userLocation?.altitudeMeters,
+                accuracyMeters = userLocation?.accuracyMeters ?: 0f,
+                bearingDegrees = userLocation?.bearingDegrees
+            )
+        }
+        return userLocation
+    }
 
     /**
      * Facing heading from the device compass, plus optional sun/moon calibration offset.
@@ -224,6 +256,12 @@ data class TowerUiState(
         const val DEFAULT_CLUTTER_METERS = 0f
         const val MAX_CLUTTER_METERS = 40f
         const val MAX_LOS_RANGE_TOWERS = 40
+        const val DEFAULT_FREQUENCY_GHZ = 5.8f
+        const val MIN_FREQUENCY_GHZ = 0.9f
+        const val MAX_FREQUENCY_GHZ = 80f
+        const val DEFAULT_CPE_ANTENNA_AGL_METERS = 4f
+        const val MIN_CPE_ANTENNA_AGL_METERS = 1f
+        const val MAX_CPE_ANTENNA_AGL_METERS = 30f
     }
 }
 
@@ -243,7 +281,16 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             hudExpanded = prefs.getBoolean(KEY_HUD_EXPANDED, true),
             headingCalibrationOffsetDegrees = loadHeadingOffset(),
             clutterHeightMeters = prefs.getFloat(KEY_CLUTTER_HEIGHT, TowerUiState.DEFAULT_CLUTTER_METERS),
-            showElevationProfile = prefs.getBoolean(KEY_SHOW_ELEVATION_PROFILE, true)
+            showElevationProfile = prefs.getBoolean(KEY_SHOW_ELEVATION_PROFILE, true),
+            frequencyGhz = prefs.getFloat(KEY_FREQUENCY_GHZ, TowerUiState.DEFAULT_FREQUENCY_GHZ),
+            cpeAntennaAglMeters = prefs.getFloat(
+                KEY_CPE_ANTENNA_AGL,
+                TowerUiState.DEFAULT_CPE_ANTENNA_AGL_METERS
+            ),
+            installLatitude = prefs.getFloat(KEY_INSTALL_LAT, Float.NaN)
+                .takeIf { !it.isNaN() }?.toDouble(),
+            installLongitude = prefs.getFloat(KEY_INSTALL_LON, Float.NaN)
+                .takeIf { !it.isNaN() }?.toDouble()
         )
     )
     val uiState: StateFlow<TowerUiState> = _uiState.asStateFlow()
@@ -359,9 +406,77 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { state ->
             state.copy(
                 clutterHeightMeters = clamped,
-                losRangeRows = rankLosRangeRows(state.losRangeRows, clamped.toDouble())
+                losRangeRows = rankLosRangeRows(
+                    state.losRangeRows,
+                    clamped.toDouble(),
+                    state.frequencyGhz.toDouble()
+                )
             )
         }
+    }
+
+    fun setFrequencyGhz(ghz: Float) {
+        val clamped = ghz.coerceIn(TowerUiState.MIN_FREQUENCY_GHZ, TowerUiState.MAX_FREQUENCY_GHZ)
+        prefs.edit().putFloat(KEY_FREQUENCY_GHZ, clamped).apply()
+        _uiState.update { state ->
+            state.copy(
+                frequencyGhz = clamped,
+                losRangeRows = rankLosRangeRows(
+                    state.losRangeRows,
+                    state.clutterHeightMeters.toDouble(),
+                    clamped.toDouble()
+                )
+            )
+        }
+    }
+
+    fun setCpeAntennaAglMeters(meters: Float) {
+        val clamped = meters.coerceIn(
+            TowerUiState.MIN_CPE_ANTENNA_AGL_METERS,
+            TowerUiState.MAX_CPE_ANTENNA_AGL_METERS
+        )
+        prefs.edit().putFloat(KEY_CPE_ANTENNA_AGL, clamped).apply()
+        _uiState.update { it.copy(cpeAntennaAglMeters = clamped) }
+        // Eye height changes the profile — clear cached chart for selected tower.
+        clearLosProfile()
+        _uiState.value.selectedTowerId?.let { loadLosProfile(it) }
+    }
+
+    fun setInstallSite(latitude: Double, longitude: Double) {
+        prefs.edit()
+            .putFloat(KEY_INSTALL_LAT, latitude.toFloat())
+            .putFloat(KEY_INSTALL_LON, longitude.toFloat())
+            .apply()
+        _uiState.update {
+            it.copy(
+                installLatitude = latitude,
+                installLongitude = longitude,
+                statusMessage = "Install site set"
+            )
+        }
+        clearLosProfile()
+        clearLosRangeProfiles()
+    }
+
+    fun setInstallSiteFromGps() {
+        val user = _uiState.value.userLocation ?: return
+        setInstallSite(user.latitude, user.longitude)
+    }
+
+    fun clearInstallSite() {
+        prefs.edit()
+            .remove(KEY_INSTALL_LAT)
+            .remove(KEY_INSTALL_LON)
+            .apply()
+        _uiState.update {
+            it.copy(
+                installLatitude = null,
+                installLongitude = null,
+                statusMessage = "Install site cleared — using live GPS"
+            )
+        }
+        clearLosProfile()
+        clearLosRangeProfiles()
     }
 
     fun setShowElevationProfile(enabled: Boolean) {
@@ -406,7 +521,11 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 it.copy(
                     losProfile = null,
                     losProfileLoading = false,
-                    losProfileError = "Need GPS to build line-of-sight profile"
+                    losProfileError = if (_uiState.value.hasInstallSite) {
+                        "Install site required for LOS profile"
+                    } else {
+                        "Need GPS (or set install site on Locate) for LOS"
+                    }
                 )
             }
             return
@@ -431,7 +550,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                     losProfileService.buildProfile(
                         tower = tower,
                         observerLat = location.latitude,
-                        observerLon = location.longitude
+                        observerLon = location.longitude,
+                        eyeHeightAboveGroundMeters = _uiState.value.cpeAntennaAglMeters.toDouble()
                     )
                 }
             }
@@ -470,7 +590,11 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 it.copy(
                     losRangeRows = emptyList(),
                     losRangeLoading = false,
-                    losRangeStatus = "Waiting for GPS…"
+                    losRangeStatus = if (it.hasInstallSite) {
+                        "Install site missing coordinates"
+                    } else {
+                        "Waiting for GPS… (or set install site on Locate)"
+                    }
                 )
             }
             return
@@ -481,7 +605,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 it.copy(
                     losRangeRows = emptyList(),
                     losRangeLoading = false,
-                    losRangeStatus = "No towers in range (${GeoUtils.formatDistance(it.maxDistanceMeters.toDouble())})"
+                    losRangeStatus = "No sites in range (${GeoUtils.formatDistance(it.maxDistanceMeters.toDouble())})"
                 )
             }
             return
@@ -490,17 +614,20 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         val seed = targets.map { (tower, distance) ->
             LosRangeRow(tower = tower, distanceMeters = distance, loading = true)
         }
+        val originLabel = if (_uiState.value.hasInstallSite) "install site" else "GPS"
         _uiState.update {
             it.copy(
                 losRangeRows = seed,
                 losRangeLoading = true,
-                losRangeStatus = "Profiling ${seed.size} towers…"
+                losRangeStatus = "Ranking ${seed.size} APs from $originLabel…"
             )
         }
 
         losRangeJob = viewModelScope.launch {
             val gate = Semaphore(LOS_RANGE_CONCURRENCY)
             val clutter = _uiState.value.clutterHeightMeters.toDouble()
+            val freq = _uiState.value.frequencyGhz.toDouble()
+            val eye = _uiState.value.cpeAntennaAglMeters.toDouble()
             coroutineScope {
                 targets.map { (tower, distance) ->
                     async(Dispatchers.IO) {
@@ -509,7 +636,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                                 losProfileService.buildProfile(
                                     tower = tower,
                                     observerLat = location.latitude,
-                                    observerLon = location.longitude
+                                    observerLon = location.longitude,
+                                    eyeHeightAboveGroundMeters = eye
                                 )
                             }
                             withContext(Dispatchers.Main.immediate) {
@@ -535,7 +663,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                                             }
                                         )
                                     }
-                                    val ranked = rankLosRangeRows(updated, clutter)
+                                    val ranked = rankLosRangeRows(updated, clutter, freq)
                                     val done = ranked.count { !it.loading }
                                     state.copy(
                                         losRangeRows = ranked,
@@ -548,11 +676,15 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 }.awaitAll()
             }
             _uiState.update { state ->
-                val ranked = rankLosRangeRows(state.losRangeRows, state.clutterHeightMeters.toDouble())
+                val ranked = rankLosRangeRows(
+                    state.losRangeRows,
+                    state.clutterHeightMeters.toDouble(),
+                    state.frequencyGhz.toDouble()
+                )
                 state.copy(
                     losRangeRows = ranked,
                     losRangeLoading = false,
-                    losRangeStatus = "Done · ${ranked.size} towers · best LOS first"
+                    losRangeStatus = "Done · ${ranked.size} APs · best Fresnel first"
                 )
             }
         }
@@ -851,23 +983,33 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_CLUTTER_HEIGHT = "clutter_height_meters"
         private const val KEY_SHOW_ELEVATION_PROFILE = "show_elevation_profile"
         private const val KEY_MAX_DISTANCE = "max_distance_meters"
+        private const val KEY_FREQUENCY_GHZ = "frequency_ghz"
+        private const val KEY_CPE_ANTENNA_AGL = "cpe_antenna_agl_meters"
+        private const val KEY_INSTALL_LAT = "install_latitude"
+        private const val KEY_INSTALL_LON = "install_longitude"
         private const val MAX_LOS_RANGE_TOWERS = 40
         private const val LOS_RANGE_CONCURRENCY = 2
 
-        /** Best clearance first; clear above blocked; failures last. */
-        fun rankLosRangeRows(rows: List<LosRangeRow>, clutterHeightMeters: Double): List<LosRangeRow> {
+        /**
+         * Best Fresnel margin first; Fresnel-clear above geometric-only / blocked; failures last.
+         */
+        fun rankLosRangeRows(
+            rows: List<LosRangeRow>,
+            clutterHeightMeters: Double,
+            frequencyGhz: Double
+        ): List<LosRangeRow> {
             return rows.sortedWith { a, b ->
-                val ca = a.clearanceMeters(clutterHeightMeters)
-                val cb = b.clearanceMeters(clutterHeightMeters)
+                val fa = a.fresnelClearanceMeters(clutterHeightMeters, frequencyGhz)
+                val fb = b.fresnelClearanceMeters(clutterHeightMeters, frequencyGhz)
                 when {
-                    ca == null && cb == null -> a.distanceMeters.compareTo(b.distanceMeters)
-                    ca == null -> 1
-                    cb == null -> -1
-                    ca > 0 && cb <= 0 -> -1
-                    ca <= 0 && cb > 0 -> 1
+                    fa == null && fb == null -> a.distanceMeters.compareTo(b.distanceMeters)
+                    fa == null -> 1
+                    fb == null -> -1
+                    fa > 0 && fb <= 0 -> -1
+                    fa <= 0 && fb > 0 -> 1
                     else -> {
-                        val byClearance = cb.compareTo(ca) // higher clearance first
-                        if (byClearance != 0) byClearance
+                        val byFresnel = fb.compareTo(fa)
+                        if (byFresnel != 0) byFresnel
                         else a.distanceMeters.compareTo(b.distanceMeters)
                     }
                 }

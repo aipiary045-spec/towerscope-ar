@@ -6,16 +6,17 @@
     android:layout_height="match_parent"
     android:background="@color/bg_navy">
 
+    <!-- Soft brand atmosphere — small, bottom-weighted, not a wallpaper -->
     <ImageView
         android:id="@+id/homeBrandBackground"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="-40dp"
+        android:alpha="0.14"
         android:contentDescription="@null"
-        android:paddingHorizontal="28dp"
-        android:paddingVertical="72dp"
         android:scaleType="fitCenter"
-        android:src="@drawable/bg_home_brand"
-        android:alpha="0.38" />
+        android:src="@drawable/ic_brand_mark" />
 
     <View
         android:layout_width="match_parent"
@@ -32,73 +33,144 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="22dp"
-            android:paddingTop="28dp"
-            android:paddingBottom="28dp">
+            android:paddingHorizontal="24dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="32dp">
 
-            <TextView
+            <!-- Brand lockup -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-condensed"
-                android:letterSpacing="0.04"
-                android:text="@string/hud_title"
-                android:textColor="@color/accent_yellow"
-                android:textSize="36sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="Precision field tools — compass, map, and line-of-sight."
-                android:textColor="@color/text_muted"
-                android:textSize="14sp" />
+                <ImageView
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:contentDescription="@string/app_name"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_brand_mark" />
 
-            <TextView
-                android:id="@+id/homeSourceStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:fontFamily="sans-serif-condensed"
-                android:text="No towers loaded"
-                android:textColor="@color/accent_teal"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/homeUpdatedAt"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:fontFamily="monospace"
-                android:text="Upload towers in Settings"
-                android:textColor="@color/text_muted"
-                android:textSize="11sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:letterSpacing="0.02"
+                        android:text="@string/hud_title"
+                        android:textColor="@color/text_primary"
+                        android:textSize="28sp"
+                        android:textStyle="bold" />
 
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/source_sans3_regular"
+                        android:text="@string/home_tagline"
+                        android:textColor="@color/accent_teal"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Network status -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
-                android:letterSpacing="0.08"
-                android:text="MODES"
-                android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
+                android:fontFamily="@font/source_sans3_regular"
+                android:letterSpacing="0.12"
+                android:text="@string/home_network"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp"
+                android:textStyle="bold" />
 
             <LinearLayout
-                android:id="@+id/homeArButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_network_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/homeSourceStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="@string/home_no_sites"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/homeUpdatedAt"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="@font/source_sans3_regular"
+                    android:text="@string/home_import_hint"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Empty-state primary CTA -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/homeImportButton"
+                style="@style/Widget.TowerScope.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="14dp"
+                android:fontFamily="@font/source_sans3_regular"
+                android:text="@string/home_import_sites"
+                android:textSize="16sp"
+                android:visibility="gone" />
+
+            <!-- Field tools -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:fontFamily="@font/source_sans3_regular"
+                android:letterSpacing="0.12"
+                android:text="@string/home_field_tools"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <!-- Aim -->
+            <LinearLayout
+                android:id="@+id/homeAimButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/bg_mode_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 android:gravity="center_vertical"
-                android:minHeight="72dp"
+                android:minHeight="76dp"
                 android:orientation="horizontal"
-                android:padding="16dp">
+                android:padding="14dp">
 
-                <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_compass_rose" />
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_job_icon">
+
+                    <ImageView
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_compass_rose" />
+                </FrameLayout>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -110,8 +182,8 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-condensed"
-                        android:text="Compass"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="@string/home_job_aim"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -120,28 +192,48 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Radar bearings · calibrate · tower details"
+                        android:fontFamily="@font/source_sans3_regular"
+                        android:text="@string/home_job_aim_sub"
                         android:textColor="@color/text_muted"
-                        android:textSize="12sp" />
+                        android:textSize="13sp" />
                 </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="01"
+                    android:textColor="@color/text_dim"
+                    android:textSize="13sp" />
             </LinearLayout>
 
+            <!-- Locate -->
             <LinearLayout
                 android:id="@+id/homeMapButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_mode_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 android:gravity="center_vertical"
-                android:minHeight="72dp"
+                android:minHeight="76dp"
                 android:orientation="horizontal"
-                android:padding="16dp">
+                android:padding="14dp">
 
-                <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_satellite_map" />
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_job_icon">
+
+                    <ImageView
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_satellite_map" />
+                </FrameLayout>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -153,8 +245,8 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-condensed"
-                        android:text="Satellite map"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="@string/home_job_locate"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -163,28 +255,48 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="You → tower line · zoom · all sites in range"
+                        android:fontFamily="@font/source_sans3_regular"
+                        android:text="@string/home_job_locate_sub"
                         android:textColor="@color/text_muted"
-                        android:textSize="12sp" />
+                        android:textSize="13sp" />
                 </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="02"
+                    android:textColor="@color/text_dim"
+                    android:textSize="13sp" />
             </LinearLayout>
 
+            <!-- Check LOS -->
             <LinearLayout
                 android:id="@+id/homeLosButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_mode_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 android:gravity="center_vertical"
-                android:minHeight="72dp"
+                android:minHeight="76dp"
                 android:orientation="horizontal"
-                android:padding="16dp">
+                android:padding="14dp">
 
-                <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_terrain_profile" />
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_job_icon">
+
+                    <ImageView
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_terrain_profile" />
+                </FrameLayout>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -196,8 +308,8 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-condensed"
-                        android:text="Elevation profiles"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="@string/home_job_los"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -206,28 +318,39 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Ranked clear / blocked line-of-sight"
+                        android:fontFamily="@font/source_sans3_regular"
+                        android:text="@string/home_job_los_sub"
                         android:textColor="@color/text_muted"
-                        android:textSize="12sp" />
+                        android:textSize="13sp" />
                 </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="03"
+                    android:textColor="@color/text_dim"
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/homeSettingsButton"
                 style="@style/Widget.TowerScope.Button.Ghost"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="22dp"
-                android:text="Settings"
+                android:layout_height="52dp"
+                android:layout_marginTop="24dp"
+                android:fontFamily="@font/source_sans3_regular"
+                android:text="@string/home_settings"
                 android:textSize="15sp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:paddingStart="4dp"
-                android:text="Tower data, range, theme, compass calibration"
-                android:textColor="@color/text_muted"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/source_sans3_regular"
+                android:gravity="center"
+                android:text="@string/home_settings_hint"
+                android:textColor="@color/text_dim"
                 android:textSize="12sp" />
         </LinearLayout>
     </ScrollView>

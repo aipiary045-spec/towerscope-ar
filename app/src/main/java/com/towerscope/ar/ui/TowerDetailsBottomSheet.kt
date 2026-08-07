@@ -229,8 +229,11 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
             }
             state.losProfile != null -> {
                 val profile = state.losProfile
+                val freq = state.frequencyGhz.toDouble()
                 val clearance = profile.minClearanceMeters(clutter)
+                val fresnel = profile.minFresnelClearanceMeters(clutter, freq)
                 val clear = clearance > 0.0
+                val fresnelClear = fresnel > 0.0
                 val sourceLabel = when {
                     profile.lidarCoverageFraction >= 0.9 -> "LiDAR surface"
                     profile.usesLidar -> String.format(
@@ -240,29 +243,43 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
                     )
                     else -> "3DEP DEM"
                 }
-                losStatus.text = if (clear) {
-                    String.format(
+                losStatus.text = when {
+                    fresnelClear -> String.format(
                         Locale.US,
-                        "Clear LOS · min clearance %.0f m · %s",
+                        "F1 OK · +%.0f m (60%%) · geo %.0f m · %.1f GHz · %s",
+                        fresnel,
                         clearance,
+                        freq,
                         sourceLabel
                     )
-                } else {
-                    String.format(
+                    clear -> String.format(
                         Locale.US,
-                        "Blocked · %s clears LOS by %.0f m",
-                        sourceLabel,
-                        -clearance
+                        "Geo clear %.0f m · F1 short %.0f m · %.1f GHz · %s",
+                        clearance,
+                        -fresnel,
+                        freq,
+                        sourceLabel
+                    )
+                    else -> String.format(
+                        Locale.US,
+                        "Blocked · short %.0f m · %.1f GHz · %s",
+                        -clearance,
+                        freq,
+                        sourceLabel
                     )
                 }
                 losStatus.setTextColor(
                     ContextCompat.getColor(
                         requireContext(),
-                        if (clear) R.color.chip_good else R.color.chip_poor
+                        when {
+                            fresnelClear -> R.color.chip_good
+                            clear -> R.color.chip_fair
+                            else -> R.color.chip_poor
+                        }
                     )
                 )
                 losChart.isVisible = true
-                losChart.setProfile(profile, clutter)
+                losChart.setProfile(profile, clutter, freq)
             }
             else -> {
                 losStatus.text = "Line-of-sight profile unavailable"

@@ -34,9 +34,9 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-condensed"
-            android:text="Satellite map"
-            android:textColor="@color/accent_yellow"
+            android:fontFamily="@font/source_sans3_semibold"
+            android:text="Locate"
+            android:textColor="@color/text_primary"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -96,6 +96,18 @@
             android:scaleType="centerInside"
             android:src="@drawable/ic_my_location"
             android:tint="@color/accent_teal" />
+
+        <ImageButton
+            android:id="@+id/mapInstallButton"
+            android:layout_width="@dimen/fab_size"
+            android:layout_height="@dimen/fab_size"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_settings_fab"
+            android:contentDescription="Set install site at my GPS"
+            android:padding="14dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_install_pin"
+            android:tint="@color/accent_yellow" />
 
         <ImageButton
             android:id="@+id/mapBasemapButton"

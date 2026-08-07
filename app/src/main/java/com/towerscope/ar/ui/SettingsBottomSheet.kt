@@ -65,8 +65,19 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         val searchField = view.findViewById<EditText>(R.id.settingsSearchField)
         val distanceLabel = view.findViewById<TextView>(R.id.settingsDistanceLabel)
         val distanceSlider = view.findViewById<SeekBar>(R.id.settingsDistanceSlider)
+        val frequencyLabel = view.findViewById<TextView>(R.id.settingsFrequencyLabel)
+        val frequencySlider = view.findViewById<SeekBar>(R.id.settingsFrequencySlider)
+        val cpeHeightLabel = view.findViewById<TextView>(R.id.settingsCpeHeightLabel)
+        val cpeHeightSlider = view.findViewById<SeekBar>(R.id.settingsCpeHeightSlider)
+        val installStatus = view.findViewById<TextView>(R.id.settingsInstallStatus)
+        val clearInstallButton = view.findViewById<MaterialButton>(R.id.settingsClearInstallButton)
         val showHiddenButton = view.findViewById<MaterialButton>(R.id.settingsShowHiddenButton)
         val closeButton = view.findViewById<MaterialButton>(R.id.settingsCloseButton)
+
+        val frequencyPresets = listOf(2.4f, 3.65f, 5.2f, 5.8f, 6.0f, 24.0f, 60.0f)
+        frequencySlider.max = frequencyPresets.lastIndex
+        cpeHeightSlider.max =
+            (TowerUiState.MAX_CPE_ANTENNA_AGL_METERS - TowerUiState.MIN_CPE_ANTENNA_AGL_METERS).toInt()
 
         distanceSlider.max =
             (TowerUiState.MAX_DISTANCE_METERS - TowerUiState.MIN_DISTANCE_METERS).toInt()
@@ -96,6 +107,7 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
             }
         }
         showHiddenButton.setOnClickListener { viewModel.clearHiddenTowers() }
+        clearInstallButton.setOnClickListener { viewModel.clearInstallSite() }
         closeButton.setOnClickListener { dismiss() }
 
         distanceSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -105,6 +117,28 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                     "RANGE  ${GeoUtils.formatDistance(meters.toDouble())}"
                 if (!fromUser) return
                 viewModel.setMaxDistanceMeters(meters)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+
+        frequencySlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val ghz = frequencyPresets[progress.coerceIn(0, frequencyPresets.lastIndex)]
+                frequencyLabel.text = String.format(java.util.Locale.US, "FREQ  %.1f GHz", ghz)
+                if (!fromUser) return
+                viewModel.setFrequencyGhz(ghz)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+
+        cpeHeightSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val meters = TowerUiState.MIN_CPE_ANTENNA_AGL_METERS + progress
+                cpeHeightLabel.text = String.format(java.util.Locale.US, "CPE AGL  %.0f m", meters)
+                if (!fromUser) return
+                viewModel.setCpeAntennaAglMeters(meters)
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
@@ -148,6 +182,39 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                         (state.maxDistanceMeters - TowerUiState.MIN_DISTANCE_METERS).toInt()
                     if (distanceSlider.progress != progress) {
                         distanceSlider.progress = progress
+                    }
+
+                    val freqIndex = frequencyPresets.indexOfFirst {
+                        kotlin.math.abs(it - state.frequencyGhz) < 0.05f
+                    }.let { if (it < 0) 3 else it }
+                    if (frequencySlider.progress != freqIndex) {
+                        frequencySlider.progress = freqIndex
+                    }
+                    frequencyLabel.text =
+                        String.format(java.util.Locale.US, "FREQ  %.1f GHz", state.frequencyGhz)
+
+                    val cpeProgress =
+                        (state.cpeAntennaAglMeters - TowerUiState.MIN_CPE_ANTENNA_AGL_METERS).toInt()
+                    if (cpeHeightSlider.progress != cpeProgress) {
+                        cpeHeightSlider.progress = cpeProgress
+                    }
+                    cpeHeightLabel.text = String.format(
+                        java.util.Locale.US,
+                        "CPE AGL  %.0f m",
+                        state.cpeAntennaAglMeters
+                    )
+
+                    if (state.hasInstallSite) {
+                        installStatus.text = String.format(
+                            java.util.Locale.US,
+                            "Install site · %.5f, %.5f",
+                            state.installLatitude,
+                            state.installLongitude
+                        )
+                        clearInstallButton.isVisible = true
+                    } else {
+                        installStatus.text = "Install site · using live GPS (set on Locate map)"
+                        clearInstallButton.isVisible = false
                     }
 
                     if (searchField.text.toString() != state.searchQuery) {

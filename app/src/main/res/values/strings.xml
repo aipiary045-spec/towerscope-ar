@@ -2,4 +2,18 @@
 <resources>
     <string name="app_name">TowerScope</string>
     <string name="hud_title">TowerScope</string>
+    <string name="home_tagline">Aim. Locate. Verify LOS.</string>
+    <string name="home_network">NETWORK</string>
+    <string name="home_field_tools">FIELD TOOLS</string>
+    <string name="home_no_sites">No network sites loaded</string>
+    <string name="home_import_hint">Import a KML or KMZ to get started</string>
+    <string name="home_import_sites">Import network sites</string>
+    <string name="home_job_aim">Aim</string>
+    <string name="home_job_aim_sub">Compass bearings to nearby sites</string>
+    <string name="home_job_locate">Locate</string>
+    <string name="home_job_locate_sub">Pin install site · satellite path to AP</string>
+    <string name="home_job_los">Check LOS</string>
+    <string name="home_job_los_sub">Rank APs by Fresnel · from install or GPS</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_settings_hint">Network data, range, theme, calibration</string>
 </resources>

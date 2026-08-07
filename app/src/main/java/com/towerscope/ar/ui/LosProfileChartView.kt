@@ -17,11 +17,12 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import com.towerscope.ar.R
 import com.towerscope.ar.data.LosProfile
+import com.towerscope.ar.util.Fresnel
 import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Distance (X) vs elevation (Y) LOS profile with terrain gradient fill,
+ * Distance (X) vs elevation (Y) LOS profile with terrain, Fresnel envelope,
  * obstruction marker, and You / Tower endpoint icons.
  */
 class LosProfileChartView @JvmOverloads constructor(
@@ -32,6 +33,8 @@ class LosProfileChartView @JvmOverloads constructor(
 
     private var profile: LosProfile? = null
     private var clutterMeters: Double = 0.0
+    private var frequencyGhz: Double = Fresnel.DEFAULT_FREQUENCY_GHZ
+    private var showFresnel: Boolean = true
 
     private val terrainStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -47,6 +50,20 @@ class LosProfileChartView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeWidth = dp(2.6f)
         color = ContextCompat.getColor(context, R.color.status_blocked)
+    }
+    private val fresnelFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0x333EC9D6
+    }
+    private val fresnelStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = dp(1.2f)
+        color = 0x883EC9D6.toInt()
+    }
+    private val fresnel60StrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = dp(1.4f)
+        color = 0xAAF0D060.toInt()
     }
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -75,6 +92,9 @@ class LosProfileChartView @JvmOverloads constructor(
 
     private val terrainPath = Path()
     private val fillPath = Path()
+    private val fresnelPath = Path()
+    private val fresnel60Upper = Path()
+    private val fresnel60Lower = Path()
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
 
     private val personIcon: Bitmap? =
@@ -97,9 +117,16 @@ class LosProfileChartView @JvmOverloads constructor(
         out
     }
 
-    fun setProfile(profile: LosProfile?, clutterHeightMeters: Double) {
+    fun setProfile(
+        profile: LosProfile?,
+        clutterHeightMeters: Double,
+        frequencyGhz: Double = Fresnel.DEFAULT_FREQUENCY_GHZ,
+        showFresnel: Boolean = true
+    ) {
         this.profile = profile
         this.clutterMeters = clutterHeightMeters.coerceAtLeast(0.0)
+        this.frequencyGhz = frequencyGhz.coerceAtLeast(0.1)
+        this.showFresnel = showFresnel
         invalidate()
     }
 
@@ -127,6 +154,12 @@ class LosProfileChartView @JvmOverloads constructor(
             val t = sample.effectiveTerrainMeters(clutterMeters)
             minY = min(minY, t)
             maxY = max(maxY, t)
+            if (showFresnel) {
+                val los = data.losElevationAt(sample.distanceMeters)
+                val r = Fresnel.radiusMeters(frequencyGhz, data.totalDistanceMeters, sample.distanceMeters)
+                minY = min(minY, los - r)
+                maxY = max(maxY, los + r)
+            }
         }
         val span = (maxY - minY).coerceAtLeast(10.0)
         val yPad = span * 0.08
@@ -171,15 +204,59 @@ class LosProfileChartView @JvmOverloads constructor(
         fillPaint.shader = null
         canvas.drawPath(terrainPath, terrainStrokePaint)
 
+        if (showFresnel) {
+            fresnelPath.reset()
+            fresnel60Upper.reset()
+            fresnel60Lower.reset()
+            val samples = data.samples
+            samples.forEachIndexed { index, sample ->
+                val los = data.losElevationAt(sample.distanceMeters)
+                val r = Fresnel.radiusMeters(frequencyGhz, data.totalDistanceMeters, sample.distanceMeters)
+                val x = xOf(sample.distanceMeters)
+                val yTop = yOf(los + r)
+                if (index == 0) fresnelPath.moveTo(x, yTop) else fresnelPath.lineTo(x, yTop)
+            }
+            for (i in samples.indices.reversed()) {
+                val sample = samples[i]
+                val los = data.losElevationAt(sample.distanceMeters)
+                val r = Fresnel.radiusMeters(frequencyGhz, data.totalDistanceMeters, sample.distanceMeters)
+                fresnelPath.lineTo(xOf(sample.distanceMeters), yOf(los - r))
+            }
+            fresnelPath.close()
+            canvas.drawPath(fresnelPath, fresnelFillPaint)
+            canvas.drawPath(fresnelPath, fresnelStrokePaint)
+
+            samples.forEachIndexed { index, sample ->
+                val los = data.losElevationAt(sample.distanceMeters)
+                val r60 = Fresnel.CLEARANCE_FRACTION *
+                    Fresnel.radiusMeters(frequencyGhz, data.totalDistanceMeters, sample.distanceMeters)
+                val x = xOf(sample.distanceMeters)
+                if (index == 0) {
+                    fresnel60Upper.moveTo(x, yOf(los + r60))
+                    fresnel60Lower.moveTo(x, yOf(los - r60))
+                } else {
+                    fresnel60Upper.lineTo(x, yOf(los + r60))
+                    fresnel60Lower.lineTo(x, yOf(los - r60))
+                }
+            }
+            canvas.drawPath(fresnel60Upper, fresnel60StrokePaint)
+            canvas.drawPath(fresnel60Lower, fresnel60StrokePaint)
+        }
+
+        val fresnelOk = if (showFresnel) {
+            data.isFresnelClear(clutterMeters, frequencyGhz)
+        } else {
+            data.isClear(clutterMeters)
+        }
         val clear = data.isClear(clutterMeters)
-        val los = if (clear) losPaint else blockedLosPaint
+        val los = if (fresnelOk) losPaint else blockedLosPaint
         val x0 = xOf(0.0)
         val y0 = yOf(data.observerEyeElevationMeters)
         val x1 = xOf(data.totalDistanceMeters)
         val y1 = yOf(data.towerTipElevationMeters)
         canvas.drawLine(x0, y0, x1, y1, los)
 
-        if (!clear) {
+        if (!clear || !fresnelOk) {
             data.worstClearanceSample(clutterMeters)?.let { (sample, _) ->
                 val ox = xOf(sample.distanceMeters)
                 val oy = yOf(sample.effectiveTerrainMeters(clutterMeters))
@@ -195,12 +272,21 @@ class LosProfileChartView @JvmOverloads constructor(
             canvas.drawBitmap(it, x1 - it.width / 2f, y1 - it.height + dp(2f), null)
         }
 
-        canvas.drawText("You", padL, padT + h + dp(18f), axisLabelPaint)
-        val endLabel = "Tower"
+        val startLabel = "CPE"
+        canvas.drawText(startLabel, padL, padT + h + dp(18f), axisLabelPaint)
+        val endLabel = "AP"
         val endW = axisLabelPaint.measureText(endLabel)
         canvas.drawText(endLabel, padL + w - endW, padT + h + dp(18f), axisLabelPaint)
         canvas.drawText(String.format("%.0f m", maxY), dp(4f), padT + sp(10f), monoPaint)
         canvas.drawText(String.format("%.0f m", minY), dp(4f), padT + h, monoPaint)
+        if (showFresnel) {
+            canvas.drawText(
+                String.format("%.1f GHz · F1 60%%", frequencyGhz),
+                padL + dp(4f),
+                padT + sp(11f),
+                monoPaint
+            )
+        }
     }
 
     private fun dp(value: Float): Float = value * resources.displayMetrics.density
