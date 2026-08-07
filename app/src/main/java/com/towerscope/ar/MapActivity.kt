@@ -1,0 +1,485 @@
+package com.towerscope.ar
+
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.drawable.BitmapDrawable
+import android.os.Bundle
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.WindowCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.TowerDetailsBottomSheet
+import com.towerscope.ar.util.GeoUtils
+import com.towerscope.ar.viewmodel.TowerScopeViewModel
+import com.towerscope.ar.viewmodel.TowerUiState
+import kotlinx.coroutines.launch
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
+import org.osmdroid.util.BoundingBox
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.util.MapTileIndex
+import org.osmdroid.views.CustomZoomButtonsController
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
+import org.osmdroid.views.overlay.ScaleBarOverlay
+import java.io.File
+
+/**
+ * Free satellite map (Esri / USGS imagery via osmdroid):
+ * user location, in-range towers, and a LOS line to the selected tower.
+ */
+class MapActivity : AppCompatActivity() {
+
+    private lateinit var viewModel: TowerScopeViewModel
+    private lateinit var mapView: MapView
+    private lateinit var focusLabel: TextView
+    private lateinit var metaLabel: TextView
+    private lateinit var towerChips: LinearLayout
+
+    private var losLine: Polyline? = null
+    private val towerMarkers = mutableMapOf<String, Marker>()
+    private var userMarker: Marker? = null
+    private var lastChipSignature: String? = null
+    private var hasFittedOnce = false
+
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        val fineOk = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseOk = result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (fineOk || coarseOk) {
+            viewModel.startLocationUpdates()
+            render(viewModel.uiState.value)
+        } else {
+            focusLabel.text = "Location permission required"
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        configureOsmDroid()
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        setContentView(R.layout.activity_map)
+        SystemBars.apply(
+            root = findViewById(R.id.mapRoot),
+            alsoBottom = findViewById(R.id.mapBottomPanel)
+        )
+        viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
+
+        mapView = findViewById(R.id.mapView)
+        focusLabel = findViewById(R.id.mapFocusLabel)
+        metaLabel = findViewById(R.id.mapMetaLabel)
+        towerChips = findViewById(R.id.mapTowerChips)
+
+        setupMap()
+
+        findViewById<MaterialButton>(R.id.mapHomeButton).setOnClickListener { finish() }
+        findViewById<MaterialButton>(R.id.mapDetailsButton).setOnClickListener {
+            viewModel.uiState.value.focusTower()?.id?.let { openTowerDetails(it) }
+        }
+        findViewById<android.widget.ImageButton>(R.id.mapFitButton).setOnClickListener {
+            fitToYouAndFocus()
+        }
+        findViewById<android.widget.ImageButton>(R.id.mapMyLocationButton).setOnClickListener {
+            centerOnUser()
+        }
+        findViewById<android.widget.ImageButton>(R.id.mapBasemapButton).setOnClickListener {
+            cycleTileSource()
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state -> render(state) }
+            }
+        }
+
+        ensureLocationPermission()
+    }
+
+    private fun configureOsmDroid() {
+        val cfg = Configuration.getInstance()
+        val base = File(cacheDir, "osmdroid")
+        val tiles = File(base, "tiles")
+        if (!base.exists()) base.mkdirs()
+        if (!tiles.exists()) tiles.mkdirs()
+        cfg.osmdroidBasePath = base
+        cfg.osmdroidTileCache = tiles
+        cfg.userAgentValue = "TowerScope/1.0 (Android; field map)"
+        cfg.tileDownloadThreads = 4
+        cfg.tileFileSystemCacheMaxBytes = 128L * 1024L * 1024L
+        cfg.load(applicationContext, getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
+    }
+
+    private fun setupMap() {
+        mapView.setTileSource(ESRI_WORLD_IMAGERY)
+        mapView.setMultiTouchControls(true)
+        mapView.minZoomLevel = 3.0
+        mapView.maxZoomLevel = 18.0
+        mapView.controller.setZoom(13.0)
+        mapView.isTilesScaledToDpi = true
+        mapView.setHorizontalMapRepetitionEnabled(false)
+        mapView.setVerticalMapRepetitionEnabled(false)
+        mapView.zoomController.setVisibility(CustomZoomButtonsController.Visibility.SHOW_AND_FADEOUT)
+
+        // Start near CONUS so tiles load even before GPS
+        mapView.controller.setCenter(GeoPoint(36.7, -97.0))
+
+        val scale = ScaleBarOverlay(mapView)
+        scale.setAlignBottom(true)
+        scale.setAlignRight(false)
+        mapView.overlays.add(scale)
+    }
+
+    private var tileIndex = 0
+    private fun cycleTileSource() {
+        tileIndex = (tileIndex + 1) % TILE_SOURCES.size
+        val source = TILE_SOURCES[tileIndex]
+        mapView.setTileSource(source)
+        mapView.invalidate()
+        metaLabel.text = "Basemap · ${source.name()}"
+    }
+
+    override fun onResume() {
+        super.onResume()
+        mapView.onResume()
+        viewModel.syncFromFileStore()
+    }
+
+    override fun onPause() {
+        mapView.onPause()
+        super.onPause()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (hasLocationPermission()) {
+            viewModel.startLocationUpdates()
+        }
+    }
+
+    override fun onStop() {
+        viewModel.stopLocationUpdates()
+        super.onStop()
+    }
+
+    private fun ensureLocationPermission() {
+        if (hasLocationPermission()) {
+            viewModel.startLocationUpdates()
+        } else {
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    private fun hasLocationPermission(): Boolean {
+        val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+        return fine == PackageManager.PERMISSION_GRANTED ||
+            coarse == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun render(state: TowerUiState) {
+        val focus = state.focusTower()
+        val distance = focus?.let { state.distanceTo(it) }
+        val bearing = focus?.let { state.bearingTo(it) }
+        focusLabel.text = when {
+            focus == null && state.towers.isEmpty() -> "No towers loaded — upload in Settings"
+            focus == null -> "No tower in range"
+            else -> focus.name
+        }
+        metaLabel.text = buildString {
+            if (distance != null) append(GeoUtils.formatDistance(distance))
+            if (bearing != null) {
+                if (isNotEmpty()) append("  ·  ")
+                append("Az ").append(GeoUtils.formatAzimuthPadded(bearing))
+            }
+            if (isEmpty()) append("Range ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}")
+            else append("  ·  ").append(state.visibleTowers().size).append(" in range")
+        }
+
+        renderChips(state)
+        renderMapOverlays(state)
+
+        if (!hasFittedOnce && state.userLocation != null && focus != null) {
+            fitToYouAndFocus()
+        } else if (!hasFittedOnce && state.userLocation != null) {
+            centerOnUser()
+            hasFittedOnce = true
+        }
+    }
+
+    private fun renderChips(state: TowerUiState) {
+        val matches = state.nearestMatches(8)
+        val focusId = state.focusTower()?.id
+        val signature = matches.joinToString("|") { "${it.id}:${state.distanceTo(it)?.toInt()}" } +
+            "|f=$focusId"
+        if (signature == lastChipSignature && towerChips.childCount == matches.size) return
+        lastChipSignature = signature
+
+        towerChips.removeAllViews()
+        val density = resources.displayMetrics.density
+        matches.forEach { tower ->
+            val distance = state.distanceTo(tower)
+            val selected = tower.id == focusId
+            val label = if (distance != null) {
+                "${tower.name}  ${GeoUtils.formatDistance(distance)}"
+            } else {
+                tower.name
+            }
+            val chip = TextView(this).apply {
+                text = label
+                setTextColor(
+                    ContextCompat.getColor(
+                        this@MapActivity,
+                        if (selected) R.color.bg_deep else R.color.text_primary
+                    )
+                )
+                textSize = 12f
+                setPadding(
+                    (12 * density).toInt(),
+                    (8 * density).toInt(),
+                    (12 * density).toInt(),
+                    (8 * density).toInt()
+                )
+                setBackgroundColor(
+                    ContextCompat.getColor(
+                        this@MapActivity,
+                        if (selected) R.color.accent_yellow else R.color.surface_elevated
+                    )
+                )
+                minHeight = (48 * density).toInt()
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                val params = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                params.marginEnd = (8 * density).toInt()
+                layoutParams = params
+                setOnClickListener {
+                    viewModel.selectTower(tower.id)
+                    fitToYouAndFocus()
+                }
+            }
+            towerChips.addView(chip)
+        }
+    }
+
+    private fun renderMapOverlays(state: TowerUiState) {
+        val visible = state.visibleTowers()
+        val focusId = state.focusTower()?.id
+        val visibleIds = visible.map { it.id }.toSet()
+
+        val stale = towerMarkers.keys.filter { it !in visibleIds }
+        stale.forEach { id ->
+            towerMarkers.remove(id)?.let { mapView.overlays.remove(it) }
+        }
+
+        visible.forEach { tower ->
+            val point = GeoPoint(tower.latitude, tower.longitude)
+            val selected = tower.id == focusId
+            val existing = towerMarkers[tower.id]
+            if (existing == null) {
+                val marker = Marker(mapView).apply {
+                    position = point
+                    title = tower.name
+                    snippet = state.distanceTo(tower)?.let(GeoUtils::formatDistance)
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    icon = markerIcon(selected)
+                    relatedObject = tower.id
+                    setOnMarkerClickListener { m, _ ->
+                        val id = m.relatedObject as? String
+                        if (id != null) {
+                            viewModel.selectTower(id)
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                }
+                mapView.overlays.add(marker)
+                towerMarkers[tower.id] = marker
+            } else {
+                existing.position = point
+                existing.title = tower.name
+                existing.snippet = state.distanceTo(tower)?.let(GeoUtils::formatDistance)
+                existing.icon = markerIcon(selected)
+                if (selected) existing.showInfoWindow()
+            }
+        }
+
+        val user = state.userLocation
+        if (user != null) {
+            val userPoint = GeoPoint(user.latitude, user.longitude)
+            if (userMarker == null) {
+                userMarker = Marker(mapView).apply {
+                    position = userPoint
+                    title = "You"
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                    icon = userIcon()
+                }
+                mapView.overlays.add(userMarker)
+            } else {
+                userMarker?.position = userPoint
+            }
+        }
+
+        updateLosLine(state)
+        mapView.invalidate()
+    }
+
+    private fun updateLosLine(state: TowerUiState) {
+        val user = state.userLocation
+        val focus = state.focusTower()
+        if (user == null || focus == null) {
+            losLine?.let { mapView.overlays.remove(it) }
+            losLine = null
+            return
+        }
+        val points = arrayListOf(
+            GeoPoint(user.latitude, user.longitude),
+            GeoPoint(focus.latitude, focus.longitude)
+        )
+        val existing = losLine
+        if (existing == null) {
+            val line = Polyline().apply {
+                setPoints(points)
+                outlinePaint.color = ContextCompat.getColor(this@MapActivity, R.color.accent_yellow)
+                outlinePaint.strokeWidth = 10f * resources.displayMetrics.density / 2.5f
+                outlinePaint.strokeCap = Paint.Cap.ROUND
+                outlinePaint.isAntiAlias = true
+            }
+            // Insert under markers so pins stay on top
+            val insertAt = mapView.overlays.indexOfFirst { it is ScaleBarOverlay }.coerceAtLeast(0) + 1
+            mapView.overlays.add(insertAt, line)
+            losLine = line
+        } else {
+            existing.setPoints(points)
+        }
+    }
+
+    private fun fitToYouAndFocus() {
+        val state = viewModel.uiState.value
+        val points = mutableListOf<GeoPoint>()
+        state.userLocation?.let { points.add(GeoPoint(it.latitude, it.longitude)) }
+        state.focusTower()?.let { points.add(GeoPoint(it.latitude, it.longitude)) }
+        if (points.isEmpty()) {
+            state.visibleTowers().forEach {
+                points.add(GeoPoint(it.latitude, it.longitude))
+            }
+        }
+        if (points.isEmpty()) return
+        if (points.size == 1) {
+            mapView.controller.animateTo(points.first())
+            mapView.controller.setZoom(15.0)
+        } else {
+            val box = BoundingBox.fromGeoPoints(points)
+            mapView.post {
+                mapView.zoomToBoundingBox(box.increaseByScale(1.35f), true, (64 * resources.displayMetrics.density).toInt())
+            }
+        }
+        hasFittedOnce = true
+    }
+
+    private fun centerOnUser() {
+        val user = viewModel.uiState.value.userLocation ?: return
+        mapView.controller.animateTo(GeoPoint(user.latitude, user.longitude))
+        mapView.controller.setZoom(15.5)
+        hasFittedOnce = true
+    }
+
+    private fun markerIcon(selected: Boolean): BitmapDrawable {
+        val color = ContextCompat.getColor(
+            this,
+            if (selected) R.color.accent_yellow else R.color.accent_teal
+        )
+        val drawable = ContextCompat.getDrawable(this, R.drawable.ic_tower_lattice)!!.mutate()
+        drawable.setTint(color)
+        val bmp = drawable.toBitmap(
+            (22 * resources.displayMetrics.density).toInt(),
+            (28 * resources.displayMetrics.density).toInt()
+        )
+        return BitmapDrawable(resources, bmp)
+    }
+
+    private fun userIcon(): BitmapDrawable {
+        val size = (18 * resources.displayMetrics.density).toInt()
+        val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bmp)
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = ContextCompat.getColor(this@MapActivity, R.color.status_clear)
+            style = Paint.Style.FILL
+        }
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.STROKE
+            strokeWidth = 3f * resources.displayMetrics.density
+        }
+        val r = size / 2f
+        canvas.drawCircle(r, r, r - stroke.strokeWidth, fill)
+        canvas.drawCircle(r, r, r - stroke.strokeWidth, stroke)
+        return BitmapDrawable(resources, bmp)
+    }
+
+    private fun openTowerDetails(towerId: String) {
+        viewModel.selectTower(towerId)
+        if (supportFragmentManager.findFragmentByTag(TowerDetailsBottomSheet.TAG) == null) {
+            TowerDetailsBottomSheet.newInstance(towerId)
+                .show(supportFragmentManager, TowerDetailsBottomSheet.TAG)
+        }
+    }
+
+    companion object {
+        private fun arcGisImagery(
+            name: String,
+            base: String,
+            copyright: String
+        ): OnlineTileSourceBase = object : OnlineTileSourceBase(
+            name,
+            1,
+            18,
+            256,
+            "",
+            arrayOf(base),
+            copyright
+        ) {
+            override fun getTileURLString(pMapTileIndex: Long): String {
+                val z = MapTileIndex.getZoom(pMapTileIndex)
+                val x = MapTileIndex.getX(pMapTileIndex)
+                val y = MapTileIndex.getY(pMapTileIndex)
+                return "$baseUrl$z/$y/$x"
+            }
+        }
+
+        private val ESRI_WORLD_IMAGERY = arcGisImagery(
+            name = "EsriWorldImagery",
+            base = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/",
+            copyright = "© Esri, Maxar, Earthstar Geographics"
+        )
+
+        private val USGS_IMAGERY = arcGisImagery(
+            name = "UsgsImagery",
+            base = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/",
+            copyright = "© USGS National Map"
+        )
+
+        private val TILE_SOURCES = listOf(ESRI_WORLD_IMAGERY, USGS_IMAGERY)
+    }
+}

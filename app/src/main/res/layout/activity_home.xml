@@ -1,204 +1,234 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/homeRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_topo_screen"
-    android:clipToPadding="false"
-    android:fillViewport="true">
+    android:background="@color/bg_navy">
 
-    <LinearLayout
+    <ImageView
+        android:id="@+id/homeBrandBackground"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="22dp"
-        android:paddingTop="28dp"
-        android:paddingBottom="28dp">
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:paddingHorizontal="28dp"
+        android:paddingVertical="72dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/bg_home_brand"
+        android:alpha="0.38" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-condensed"
-            android:letterSpacing="0.04"
-            android:text="@string/hud_title"
-            android:textColor="@color/accent_yellow"
-            android:textSize="36sp"
-            android:textStyle="bold" />
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_home_scrim" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="Precision field tools — compass bearings and line-of-sight."
-            android:textColor="@color/text_muted"
-            android:textSize="14sp" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:background="@drawable/bg_field_card"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingHorizontal="22dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="28dp">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.08"
-                android:text="TOWER DATA"
-                android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
+                android:fontFamily="sans-serif-condensed"
+                android:letterSpacing="0.04"
+                android:text="@string/hud_title"
+                android:textColor="@color/accent_yellow"
+                android:textSize="36sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Precision field tools — compass, map, and line-of-sight."
+                android:textColor="@color/text_muted"
+                android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/homeSourceStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="18dp"
                 android:fontFamily="sans-serif-condensed"
                 android:text="No towers loaded"
                 android:textColor="@color/accent_teal"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/homeUpdatedAt"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
                 android:fontFamily="monospace"
-                android:text="Last updated —"
+                android:text="Upload towers in Settings"
                 android:textColor="@color/text_muted"
                 android:textSize="11sp" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/homeUploadButton"
-                style="@style/Widget.TowerScope.Button.Primary"
+            <TextView
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="14dp"
-                android:text="Upload KML / KMZ"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:letterSpacing="0.08"
+                android:text="MODES"
+                android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
+
+            <LinearLayout
+                android:id="@+id/homeArButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_mode_card"
+                android:gravity="center_vertical"
+                android:minHeight="72dp"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_compass_rose" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-condensed"
+                        android:text="Compass"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Radar bearings · calibrate · tower details"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/homeMapButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_mode_card"
+                android:gravity="center_vertical"
+                android:minHeight="72dp"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_satellite_map" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-condensed"
+                        android:text="Satellite map"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="You → tower line · zoom · all sites in range"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/homeLosButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_mode_card"
+                android:gravity="center_vertical"
+                android:minHeight="72dp"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_terrain_profile" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-condensed"
+                        android:text="Elevation profiles"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Ranked clear / blocked line-of-sight"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/homeSettingsButton"
+                style="@style/Widget.TowerScope.Button.Ghost"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="22dp"
+                android:text="Settings"
                 android:textSize="15sp" />
 
             <TextView
-                android:id="@+id/homeUploadMessage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
+                android:paddingStart="4dp"
+                android:text="Tower data, range, theme, compass calibration"
                 android:textColor="@color/text_muted"
-                android:textSize="12sp"
-                android:visibility="gone" />
+                android:textSize="12sp" />
         </LinearLayout>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:letterSpacing="0.08"
-            android:text="MODES"
-            android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
-
-        <LinearLayout
-            android:id="@+id/homeArButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_mode_card"
-            android:gravity="center_vertical"
-            android:minHeight="72dp"
-            android:orientation="horizontal"
-            android:padding="16dp">
-
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_compass_rose" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-condensed"
-                    android:text="Compass"
-                    android:textColor="@color/text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Radar bearings · calibrate · tower details"
-                    android:textColor="@color/text_muted"
-                    android:textSize="12sp" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/homeLosButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_mode_card"
-            android:gravity="center_vertical"
-            android:minHeight="72dp"
-            android:orientation="horizontal"
-            android:padding="16dp">
-
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_terrain_profile" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-condensed"
-                    android:text="Elevation profiles"
-                    android:textColor="@color/text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Ranked clear / blocked line-of-sight"
-                    android:textColor="@color/text_muted"
-                    android:textSize="12sp" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/homeSettingsButton"
-            style="@style/Widget.TowerScope.Button.Ghost"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="22dp"
-            android:text="Settings"
-            android:textSize="15sp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:paddingStart="4dp"
-            android:text="Range, theme, compass calibration"
-            android:textColor="@color/text_muted"
-            android:textSize="12sp" />
-    </LinearLayout>
-</ScrollView>
+    </ScrollView>
+</FrameLayout>

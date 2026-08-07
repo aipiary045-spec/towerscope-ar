@@ -45,7 +45,15 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginTop="16dp"
-            android:text="Tower data" />
+            android:text="Tower data (KML / KMZ)" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Upload or clear saved tower files."
+            android:textColor="@color/text_muted"
+            android:textSize="11sp" />
 
         <TextView
             android:layout_width="match_parent"

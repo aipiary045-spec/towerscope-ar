@@ -1,12 +1,13 @@
 # TowerScope
 
-Android field app that loads tower locations from **KML/KMZ** and shows them on a **hybrid compass radar** (bearings + distance), with high-accuracy GPS, sun/moon heading calibration, and line-of-sight elevation profiles.
+Android field app that loads tower locations from **KML/KMZ** and shows them on a **hybrid compass radar**, a **satellite map** with you→tower lines, and ranked line-of-sight elevation profiles.
 
 ## Requirements
 
 - Android Studio Ladybug (or newer) with JDK 17
 - Physical device with magnetometer + GPS
 - Outdoor use with clear sky for best GPS / compass results
+- Internet for satellite tiles (Esri World Imagery — no Google Maps billing)
 
 ## Open in Android Studio
 
@@ -16,12 +17,12 @@ Android field app that loads tower locations from **KML/KMZ** and shows them on 
 
 ## How to use
 
-1. Launch into **Home** — upload KML/KMZ, open Compass, Elevation profiles, or Settings
-2. Grant **precise Location** when entering Compass
-3. Hold the phone upright — the top of the radar disc is the direction you face
-4. Tap the sun button to calibrate with the sun or moon for best heading accuracy
+1. Launch into **Home** — upload KML/KMZ, then Compass, Satellite map, Elevation profiles, or Settings
+2. Grant **precise Location** when entering field modes
+3. **Compass** — hold upright; top of radar is the direction you face; sun/moon calibrate for best heading
+4. **Satellite map** — free Esri imagery; pinch zoom; yellow line from you to the selected tower; tap markers or nearby chips to switch
 5. Drag the **Max distance** slider in Settings (persists across launches)
-6. Tap a tower for details / LOS, or open **Elevation profiles** for ranked LOS in range
+6. **Elevation profiles** — ranked clear/blocked LOS for towers in range
 
 ## LOS elevation (LiDAR + DEM)
 
@@ -44,6 +45,7 @@ LOS_ELEVATION_API_BASE_URL=https://your-elevation-host
 | `location/HighAccuracyLocationClient.kt` | Fused location at `PRIORITY_HIGH_ACCURACY` |
 | `location/DeviceHeadingClient.kt` | True-north heading + declination |
 | `ui/CompassRadarView.kt` | Hybrid rotating radar compass |
+| `MapActivity.kt` | Satellite map (osmdroid + Esri imagery) |
 | `elevation-api/` | LiDAR + DEM LOS elevation service |
 | `assets/sample_towers.kml` | Demo placemarks |
 
@@ -52,6 +54,7 @@ LOS_ELEVATION_API_BASE_URL=https://your-elevation-host
 - Kotlin, minSdk **33**
 - XML outdoor HUD + Play Services Location
 - Rotation vector compass (no ARCore / camera)
+- osmdroid + Esri World Imagery (no Google Maps billing)
 
 ## Notes
 

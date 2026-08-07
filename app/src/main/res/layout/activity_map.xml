@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/mapRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_navy">
+
+    <org.osmdroid.views.MapView
+        android:id="@+id/mapView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/bg_deep"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintBottom_toTopOf="@id/mapBottomPanel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/mapTopChrome" />
+
+    <LinearLayout
+        android:id="@+id/mapTopChrome"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/hud_panel"
+        android:orientation="vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-condensed"
+            android:text="Satellite map"
+            android:textColor="@color/accent_yellow"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/mapFocusLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-condensed"
+            android:maxLines="2"
+            android:text="Waiting for GPS…"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/mapMetaLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="monospace"
+            android:text="—"
+            android:textColor="@color/accent_teal"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/mapFabColumn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="14dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@id/mapBottomPanel"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageButton
+            android:id="@+id/mapFitButton"
+            android:layout_width="@dimen/fab_size"
+            android:layout_height="@dimen/fab_size"
+            android:background="@drawable/bg_settings_fab"
+            android:contentDescription="Fit you and selected tower"
+            android:padding="14dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_fit_bounds"
+            android:tint="@color/accent_yellow" />
+
+        <ImageButton
+            android:id="@+id/mapMyLocationButton"
+            android:layout_width="@dimen/fab_size"
+            android:layout_height="@dimen/fab_size"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_settings_fab"
+            android:contentDescription="Center on my location"
+            android:padding="14dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_my_location"
+            android:tint="@color/accent_teal" />
+
+        <ImageButton
+            android:id="@+id/mapBasemapButton"
+            android:layout_width="@dimen/fab_size"
+            android:layout_height="@dimen/fab_size"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_settings_fab"
+            android:contentDescription="Switch satellite basemap"
+            android:padding="14dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_layers"
+            android:tint="@color/text_primary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/mapBottomPanel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/hud_panel"
+        android:orientation="vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:letterSpacing="0.06"
+            android:text="NEARBY IN RANGE"
+            android:textColor="@color/text_muted"
+            android:textSize="10sp" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/mapTowerChips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/mapHomeButton"
+                style="@style/Widget.TowerScope.Button.Ghost"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:text="Home" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/mapDetailsButton"
+                style="@style/Widget.TowerScope.Button.Primary"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Tower details" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
