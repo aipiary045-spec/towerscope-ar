@@ -12,7 +12,6 @@ val localProperties = Properties().apply {
         FileInputStream(file).use { load(it) }
     }
 }
-val arcoreApiKey: String = localProperties.getProperty("ARCORE_API_KEY") ?: "YOUR_API_KEY"
 val losElevationApiBaseUrl: String =
     localProperties.getProperty("LOS_ELEVATION_API_BASE_URL") ?: ""
 
@@ -27,7 +26,6 @@ android {
         versionCode = 1
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders["ARCORE_API_KEY"] = arcoreApiKey
         buildConfigField(
             "String",
             "LOS_ELEVATION_API_BASE_URL",
@@ -90,10 +88,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("androidx.fragment:fragment-ktx:1.8.6")
-
-    // 2.3.x ships Filament natives rebuilt for 16 KB page alignment.
-    implementation("io.github.sceneview:arsceneview:2.3.3")
-    implementation("com.google.ar:core:1.54.0")
 
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.android.gms:play-services-base:18.5.0")

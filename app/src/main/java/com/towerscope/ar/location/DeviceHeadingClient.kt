@@ -18,11 +18,10 @@ data class DeviceHeading(
 )
 
 /**
- * Device heading in degrees clockwise from true north for upright AR (camera into world).
+ * Device heading in degrees clockwise from true north for portrait compass use.
  *
- * [SensorManager.getOrientation] azimuth is relative to the device Y axis projected on the
- * ground — useless when Y is vertical. We remap so azimuth follows the back-camera look
- * direction ([AXIS_X] / [AXIS_MINUS_Z]).
+ * Remaps so azimuth follows the direction the **top of the phone** points when held
+ * upright (screen toward user) — for radar display and sun/moon calibration aiming.
  *
  * Magnetic azimuth is corrected with [GeomagneticField] declination when using
  * [Sensor.TYPE_ROTATION_VECTOR]. [Sensor.TYPE_GAME_ROTATION_VECTOR] has no geomagnetic
@@ -52,11 +51,11 @@ class DeviceHeadingClient(context: Context) {
             val listener = object : SensorEventListener {
                 override fun onSensorChanged(event: SensorEvent) {
                     SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                    // Portrait AR: screen toward user, camera into world along -Z.
+                    // Portrait compass: top of phone = forward (screen toward user).
                     val remapped = SensorManager.remapCoordinateSystem(
                         rotationMatrix,
                         SensorManager.AXIS_X,
-                        SensorManager.AXIS_MINUS_Z,
+                        SensorManager.AXIS_Z,
                         remappedMatrix
                     )
                     val matrixForOrientation = if (remapped) remappedMatrix else rotationMatrix

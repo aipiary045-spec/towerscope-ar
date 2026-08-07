@@ -1,14 +1,15 @@
 package com.towerscope.ar.data
 
 /**
- * How a KML altitude should be interpreted for Geospatial anchors.
+ * How a KML altitude should be interpreted when present in the file.
+ * Used for display / LOS; not for AR anchors.
  */
 enum class AltitudeMode {
-    /** WGS84 meters above ellipsoid (HAE) — pass through to Earth.createAnchor. */
+    /** WGS84 meters above ellipsoid (HAE). */
     ABSOLUTE,
-    /** Pin to Google terrain at the tower lat/lng. */
+    /** Ground level at the tower lat/lng. */
     CLAMP_TO_GROUND,
-    /** Meters above Google terrain at the tower lat/lng. */
+    /** Meters above ground at the tower lat/lng. */
     RELATIVE_TO_GROUND
 }
 

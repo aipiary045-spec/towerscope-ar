@@ -5,7 +5,6 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.towerscope.ar.ar.GeospatialAccuracy
 import com.towerscope.ar.data.KmlParser
 import com.towerscope.ar.data.LosProfile
 import com.towerscope.ar.data.LosProfileDiskCache
@@ -15,40 +14,33 @@ import com.towerscope.ar.data.TowerFileStore
 import com.towerscope.ar.location.DeviceHeadingClient
 import com.towerscope.ar.location.HighAccuracyLocationClient
 import com.towerscope.ar.location.UserLocation
-import com.towerscope.ar.ui.EarthTrackingQuality
 import com.towerscope.ar.ui.HudTheme
 import com.towerscope.ar.util.CelestialBodies
 import com.towerscope.ar.util.GeoUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 
-/** Latest ARCore Geospatial camera pose (may be tracking but not yet accurate enough for markers). */
-data class EarthCameraPose(
-    val latitude: Double,
-    val longitude: Double,
-    val altitudeMeters: Double,
-    val headingDegrees: Double,
-    val horizontalAccuracyMeters: Double,
-    val verticalAccuracyMeters: Double,
-    val headingAccuracyDegrees: Double
+/** One tower row on the separate elevation-profiles page. */
+data class LosRangeRow(
+    val tower: Tower,
+    val distanceMeters: Double,
+    val profile: LosProfile? = null,
+    val error: String? = null,
+    val loading: Boolean = false
 ) {
-    /** True when Earth localization is tight enough to call markers "Ready". */
-    val isAccurateForMarkers: Boolean
-        get() = horizontalAccuracyMeters.isFinite() &&
-            horizontalAccuracyMeters <= GeospatialAccuracy.MARKER_HORIZONTAL_METERS &&
-            verticalAccuracyMeters.isFinite() &&
-            verticalAccuracyMeters <= GeospatialAccuracy.MARKER_VERTICAL_METERS
-
-    /** True when Earth is good enough to place Geospatial/terrain anchors (vs GPS theater). */
-    val isGoodEnoughToPlace: Boolean
-        get() = horizontalAccuracyMeters.isFinite() &&
-            horizontalAccuracyMeters <= GeospatialAccuracy.PLACE_HORIZONTAL_METERS
+    fun clearanceMeters(clutterHeightMeters: Double): Double? =
+        profile?.minClearanceMeters(clutterHeightMeters)
 }
 
 data class TowerUiState(
@@ -58,20 +50,14 @@ data class TowerUiState(
     val searchQuery: String = "",
     val selectedTowerId: String? = null,
     val userLocation: UserLocation? = null,
-    val earthCameraPose: EarthCameraPose? = null,
-    val cameraHeadingDegrees: Double? = null,
     val deviceHeadingDegrees: Double? = null,
     val compassSensorAccuracy: Int = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM,
-    val earthTracking: Boolean = false,
-    val earthTrackingQuality: EarthTrackingQuality = EarthTrackingQuality.NONE,
     val hudTheme: HudTheme = HudTheme.NIGHT,
-    /** When true, Geospatial anchors use KML altitudes; otherwise ground stubs. */
-    val useKmlAltitude: Boolean = false,
     /** Bottom HUD search/range/controls expanded. */
     val hudExpanded: Boolean = true,
     /**
      * Degrees added to device compass heading after sun/moon calibration.
-     * Null = not calibrated. Not applied when Geospatial heading is trusted.
+     * Null = not calibrated.
      */
     val headingCalibrationOffsetDegrees: Double? = null,
     val calibrationActive: Boolean = false,
@@ -86,6 +72,10 @@ data class TowerUiState(
     val clutterHeightMeters: Float = DEFAULT_CLUTTER_METERS,
     /** When false, tower details hide LOS chart and skip elevation queries. */
     val showElevationProfile: Boolean = true,
+    /** Batch LOS list for the elevation-profiles page (best clearance first when ranked). */
+    val losRangeRows: List<LosRangeRow> = emptyList(),
+    val losRangeLoading: Boolean = false,
+    val losRangeStatus: String? = null,
     val sourceName: String? = null,
     val statusMessage: String? = null,
     val errorMessage: String? = null,
@@ -97,36 +87,20 @@ data class TowerUiState(
     val isHeadingCalibrated: Boolean
         get() = headingCalibrationOffsetDegrees != null
 
-    /**
-     * Prefer Earth camera lat/lng whenever Geospatial is placing anchors so HUD/overlays
-     * match marker origins. Falls back to fused GPS only when Earth is off / too weak.
-     */
-    fun positioningLocation(): UserLocation? {
-        val earth = earthCameraPose
-        if (earth != null && earth.isGoodEnoughToPlace) {
-            return UserLocation(
-                latitude = earth.latitude,
-                longitude = earth.longitude,
-                altitudeMeters = earth.altitudeMeters,
-                accuracyMeters = earth.horizontalAccuracyMeters.toFloat(),
-                bearingDegrees = earth.headingDegrees.toFloat()
-            )
-        }
-        return userLocation
-    }
+    /** Fused GPS location used for bearings, distances, and LOS. */
+    fun positioningLocation(): UserLocation? = userLocation
 
     /**
-     * Camera look heading. Never uses GPS course — that is travel direction, not facing.
-     * Sun/moon offset applies only to the device compass (Earth heading is independent).
+     * Facing heading from the device compass, plus optional sun/moon calibration offset.
+     * Never uses GPS course — that is travel direction, not facing.
      */
     fun effectiveHeadingDegrees(): Double? {
-        cameraHeadingDegrees?.let { return it }
         val device = deviceHeadingDegrees ?: return null
         val offset = headingCalibrationOffsetDegrees ?: 0.0
         return CelestialBodies.normalizeDegrees(device + offset)
     }
 
-    /** Direction cues for the AR overlay (in-range towers with known distance/bearing). */
+    /** Towers with known distance/bearing for the radar disc (relative to heading). */
     fun directionIndicators(): List<Triple<Tower, Double, Double>> {
         val heading = effectiveHeadingDegrees() ?: return emptyList()
         return visibleTowers().mapNotNull { tower ->
@@ -154,6 +128,29 @@ data class TowerUiState(
             )
             distance <= maxDistanceMeters
         }
+    }
+
+    /**
+     * Towers inside the saved range for the elevation-profiles page.
+     * Ignores compass search text; still respects hidden towers.
+     */
+    fun towersInRangeForLos(): List<Pair<Tower, Double>> {
+        val location = positioningLocation() ?: return emptyList()
+        return towers
+            .asSequence()
+            .filter { it.id !in hiddenTowerIds }
+            .map { tower ->
+                tower to GeoUtils.haversineMeters(
+                    location.latitude,
+                    location.longitude,
+                    tower.latitude,
+                    tower.longitude
+                )
+            }
+            .filter { it.second <= maxDistanceMeters }
+            .sortedBy { it.second }
+            .take(MAX_LOS_RANGE_TOWERS)
+            .toList()
     }
 
     fun distanceTo(tower: Tower): Double? {
@@ -224,6 +221,7 @@ data class TowerUiState(
         const val DEFAULT_MAX_DISTANCE_METERS = 2_000f
         const val DEFAULT_CLUTTER_METERS = 0f
         const val MAX_CLUTTER_METERS = 40f
+        const val MAX_LOS_RANGE_TOWERS = 40
     }
 }
 
@@ -240,7 +238,6 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         TowerUiState(
             maxDistanceMeters = loadMaxDistanceMeters(),
             hudTheme = loadHudTheme(),
-            useKmlAltitude = prefs.getBoolean(KEY_USE_KML_ALTITUDE, false),
             hudExpanded = prefs.getBoolean(KEY_HUD_EXPANDED, true),
             headingCalibrationOffsetDegrees = loadHeadingOffset(),
             clutterHeightMeters = prefs.getFloat(KEY_CLUTTER_HEIGHT, TowerUiState.DEFAULT_CLUTTER_METERS),
@@ -252,6 +249,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private var locationJob: Job? = null
     private var headingJob: Job? = null
     private var losJob: Job? = null
+    private var losRangeJob: Job? = null
     private var losLoadingTowerId: String? = null
 
     init {
@@ -355,7 +353,12 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     fun setClutterHeightMeters(meters: Float) {
         val clamped = meters.coerceIn(0f, TowerUiState.MAX_CLUTTER_METERS)
         prefs.edit().putFloat(KEY_CLUTTER_HEIGHT, clamped).apply()
-        _uiState.update { it.copy(clutterHeightMeters = clamped) }
+        _uiState.update { state ->
+            state.copy(
+                clutterHeightMeters = clamped,
+                losRangeRows = rankLosRangeRows(state.losRangeRows, clamped.toDouble())
+            )
+        }
     }
 
     fun setShowElevationProfile(enabled: Boolean) {
@@ -452,6 +455,118 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    /**
+     * Build LOS profiles for towers in the saved range (separate from AR).
+     * Results stream in and stay sorted best-clearance → worst.
+     */
+    fun refreshLosRangeProfiles() {
+        losRangeJob?.cancel()
+        val location = _uiState.value.positioningLocation()
+        if (location == null) {
+            _uiState.update {
+                it.copy(
+                    losRangeRows = emptyList(),
+                    losRangeLoading = false,
+                    losRangeStatus = "Waiting for GPS…"
+                )
+            }
+            return
+        }
+        val targets = _uiState.value.towersInRangeForLos()
+        if (targets.isEmpty()) {
+            _uiState.update {
+                it.copy(
+                    losRangeRows = emptyList(),
+                    losRangeLoading = false,
+                    losRangeStatus = "No towers in range (${GeoUtils.formatDistance(it.maxDistanceMeters.toDouble())})"
+                )
+            }
+            return
+        }
+
+        val seed = targets.map { (tower, distance) ->
+            LosRangeRow(tower = tower, distanceMeters = distance, loading = true)
+        }
+        _uiState.update {
+            it.copy(
+                losRangeRows = seed,
+                losRangeLoading = true,
+                losRangeStatus = "Profiling ${seed.size} towers…"
+            )
+        }
+
+        losRangeJob = viewModelScope.launch {
+            val gate = Semaphore(LOS_RANGE_CONCURRENCY)
+            val clutter = _uiState.value.clutterHeightMeters.toDouble()
+            coroutineScope {
+                targets.map { (tower, distance) ->
+                    async(Dispatchers.IO) {
+                        gate.withPermit {
+                            val result = runCatching {
+                                losProfileService.buildProfile(
+                                    tower = tower,
+                                    observerLat = location.latitude,
+                                    observerLon = location.longitude
+                                )
+                            }
+                            withContext(Dispatchers.Main.immediate) {
+                                _uiState.update { state ->
+                                    val updated = state.losRangeRows.map { row ->
+                                        if (row.tower.id != tower.id) row
+                                        else result.fold(
+                                            onSuccess = { profile ->
+                                                LosRangeRow(
+                                                    tower = tower,
+                                                    distanceMeters = distance,
+                                                    profile = profile,
+                                                    loading = false
+                                                )
+                                            },
+                                            onFailure = { error ->
+                                                LosRangeRow(
+                                                    tower = tower,
+                                                    distanceMeters = distance,
+                                                    error = error.message ?: "Failed",
+                                                    loading = false
+                                                )
+                                            }
+                                        )
+                                    }
+                                    val ranked = rankLosRangeRows(updated, clutter)
+                                    val done = ranked.count { !it.loading }
+                                    state.copy(
+                                        losRangeRows = ranked,
+                                        losRangeStatus = "Loaded $done / ${ranked.size}"
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }.awaitAll()
+            }
+            _uiState.update { state ->
+                val ranked = rankLosRangeRows(state.losRangeRows, state.clutterHeightMeters.toDouble())
+                state.copy(
+                    losRangeRows = ranked,
+                    losRangeLoading = false,
+                    losRangeStatus = "Done · ${ranked.size} towers · best LOS first"
+                )
+            }
+        }
+    }
+
+    fun clearLosRangeProfiles() {
+        losRangeJob?.cancel()
+        losRangeJob = null
+        _uiState.update {
+            it.copy(
+                losRangeRows = emptyList(),
+                losRangeLoading = false,
+                losRangeStatus = null
+            )
+        }
+    }
+
     fun cycleHudTheme() {
         _uiState.update { state ->
             val next = state.hudTheme.next()
@@ -465,21 +580,6 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             val next = !state.hudExpanded
             prefs.edit().putBoolean(KEY_HUD_EXPANDED, next).apply()
             state.copy(hudExpanded = next)
-        }
-    }
-
-    fun toggleUseKmlAltitude() {
-        _uiState.update { state ->
-            val next = !state.useKmlAltitude
-            prefs.edit().putBoolean(KEY_USE_KML_ALTITUDE, next).apply()
-            state.copy(
-                useKmlAltitude = next,
-                statusMessage = if (next) {
-                    "Using KML altitudes when present"
-                } else {
-                    "Using ground-level tower stubs"
-                }
-            )
         }
     }
 
@@ -535,7 +635,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     /**
-     * User centered the sun/moon in the crosshair. Offset = celestial azimuth − device heading.
+     * User pointed the top of the phone at the sun/moon. Offset = celestial azimuth − device heading.
      */
     fun confirmHeadingCalibration() {
         val state = _uiState.value
@@ -598,48 +698,12 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun setEarthTracking(tracking: Boolean) {
-        _uiState.update { it.copy(earthTracking = tracking) }
-    }
-
-    fun setEarthTrackingQuality(quality: EarthTrackingQuality) {
-        _uiState.update {
-            val tracking = quality != EarthTrackingQuality.NONE
-            if (it.earthTrackingQuality == quality && it.earthTracking == tracking) {
-                it
-            } else {
-                it.copy(
-                    earthTrackingQuality = quality,
-                    earthTracking = tracking
-                )
-            }
-        }
-    }
-
-    fun setEarthCameraPose(pose: EarthCameraPose?) {
-        _uiState.update { current ->
-            if (earthPoseEquivalent(current.earthCameraPose, pose)) current
-            else current.copy(earthCameraPose = pose)
-        }
-    }
-
-    fun setCameraHeadingDegrees(heading: Double?) {
-        _uiState.update { current ->
-            val existing = current.cameraHeadingDegrees
-            if (heading == null && existing == null) return@update current
-            if (heading != null && existing != null && kotlin.math.abs(heading - existing) < 1.0) {
-                return@update current
-            }
-            current.copy(cameraHeadingDegrees = heading)
-        }
-    }
-
     fun hideTower(towerId: String) {
         _uiState.update {
             it.copy(
                 hiddenTowerIds = it.hiddenTowerIds + towerId,
                 selectedTowerId = if (it.selectedTowerId == towerId) null else it.selectedTowerId,
-                statusMessage = "Tower filtered out of the scene"
+                statusMessage = "Tower filtered out"
             )
         }
     }
@@ -774,24 +838,33 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     companion object {
         private const val PREFS = "towerscope_prefs"
         private const val KEY_HUD_THEME = "hud_theme"
-        private const val KEY_USE_KML_ALTITUDE = "use_kml_altitude"
         private const val KEY_HUD_EXPANDED = "hud_expanded"
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
         private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
         private const val KEY_CLUTTER_HEIGHT = "clutter_height_meters"
         private const val KEY_SHOW_ELEVATION_PROFILE = "show_elevation_profile"
         private const val KEY_MAX_DISTANCE = "max_distance_meters"
+        private const val MAX_LOS_RANGE_TOWERS = 40
+        private const val LOS_RANGE_CONCURRENCY = 2
 
-        private fun earthPoseEquivalent(a: EarthCameraPose?, b: EarthCameraPose?): Boolean {
-            if (a === b) return true
-            if (a == null || b == null) return false
-            return kotlin.math.abs(a.latitude - b.latitude) < 0.00001 &&
-                kotlin.math.abs(a.longitude - b.longitude) < 0.00001 &&
-                kotlin.math.abs(a.altitudeMeters - b.altitudeMeters) < 0.75 &&
-                kotlin.math.abs(a.headingDegrees - b.headingDegrees) < 1.5 &&
-                kotlin.math.abs(a.horizontalAccuracyMeters - b.horizontalAccuracyMeters) < 1.0 &&
-                kotlin.math.abs(a.verticalAccuracyMeters - b.verticalAccuracyMeters) < 1.0 &&
-                kotlin.math.abs(a.headingAccuracyDegrees - b.headingAccuracyDegrees) < 2.0
+        /** Best clearance first; clear above blocked; failures last. */
+        fun rankLosRangeRows(rows: List<LosRangeRow>, clutterHeightMeters: Double): List<LosRangeRow> {
+            return rows.sortedWith { a, b ->
+                val ca = a.clearanceMeters(clutterHeightMeters)
+                val cb = b.clearanceMeters(clutterHeightMeters)
+                when {
+                    ca == null && cb == null -> a.distanceMeters.compareTo(b.distanceMeters)
+                    ca == null -> 1
+                    cb == null -> -1
+                    ca > 0 && cb <= 0 -> -1
+                    ca <= 0 && cb > 0 -> 1
+                    else -> {
+                        val byClearance = cb.compareTo(ca) // higher clearance first
+                        if (byClearance != 0) byClearance
+                        else a.distanceMeters.compareTo(b.distanceMeters)
+                    }
+                }
+            }
         }
     }
 }

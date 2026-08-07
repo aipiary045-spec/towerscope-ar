@@ -21,6 +21,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.DataMenuActivity
+import com.towerscope.ar.MainActivity
 import com.towerscope.ar.R
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
@@ -28,7 +29,7 @@ import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
 
 /**
- * Secondary controls moved off the AR scan HUD (data, theme, cal, filters).
+ * Secondary controls (data, theme, cal, filters).
  */
 class SettingsBottomSheet : BottomSheetDialogFragment() {
 
@@ -59,7 +60,6 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         val status = view.findViewById<TextView>(R.id.settingsStatus)
         val dataButton = view.findViewById<MaterialButton>(R.id.settingsDataButton)
         val themeButton = view.findViewById<TextView>(R.id.settingsThemeButton)
-        val altitudeButton = view.findViewById<TextView>(R.id.settingsAltitudeButton)
         val calibrateButton = view.findViewById<MaterialButton>(R.id.settingsCalibrateButton)
         val searchField = view.findViewById<EditText>(R.id.settingsSearchField)
         val distanceLabel = view.findViewById<TextView>(R.id.settingsDistanceLabel)
@@ -75,10 +75,16 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
             dismiss()
         }
         themeButton.setOnClickListener { viewModel.cycleHudTheme() }
-        altitudeButton.setOnClickListener { viewModel.toggleUseKmlAltitude() }
         calibrateButton.setOnClickListener {
-            viewModel.beginHeadingCalibration()
             dismiss()
+            if (activity is MainActivity) {
+                viewModel.beginHeadingCalibration()
+            } else {
+                startActivity(
+                    Intent(requireContext(), MainActivity::class.java)
+                        .putExtra(MainActivity.EXTRA_START_CALIBRATION, true)
+                )
+            }
         }
         calibrateButton.setOnLongClickListener {
             if (viewModel.uiState.value.isHeadingCalibrated) {
@@ -113,7 +119,6 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     themeButton.text = state.hudTheme.label
-                    altitudeButton.text = if (state.useKmlAltitude) "KML alt" else "Ground"
                     calibrateButton.text = if (state.isHeadingCalibrated) {
                         "Calibrate with sun / moon  ✓"
                     } else {

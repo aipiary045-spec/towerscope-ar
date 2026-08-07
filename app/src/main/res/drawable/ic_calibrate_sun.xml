@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple sun glyph for heading calibration. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,8a4,4 0 1,1 0,8a4,4 0 1,1 0,-8z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M11.25,2h1.5v3h-1.5zM11.25,19h1.5v3h-1.5zM2,11.25h3v1.5H2zM19,11.25h3v1.5h-3z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M5.05,4.0l1.06,-1.06l2.12,2.12L7.17,6.12zM15.77,18.88l1.06,-1.06l2.12,2.12l-1.06,1.06zM4.0,18.95l-1.06,-1.06l2.12,-2.12l1.06,1.06zM18.88,8.23l-1.06,-1.06l2.12,-2.12l1.06,1.06z" />
+</vector>

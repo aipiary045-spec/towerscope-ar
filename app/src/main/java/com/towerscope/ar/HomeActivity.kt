@@ -1,8 +1,8 @@
 package com.towerscope.ar
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -13,18 +13,19 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.ui.SettingsBottomSheet
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import kotlinx.coroutines.launch
 
 /**
- * Separate screen for importing / clearing KML-KMZ tower data.
+ * App hub — AR, elevation profiles, settings, and KML/KMZ upload.
  */
-class DataMenuActivity : AppCompatActivity() {
+class HomeActivity : AppCompatActivity() {
 
     private lateinit var viewModel: TowerScopeViewModel
     private lateinit var sourceStatus: TextView
-    private lateinit var menuMessage: TextView
+    private lateinit var uploadMessage: TextView
 
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -35,14 +36,14 @@ class DataMenuActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        setContentView(R.layout.activity_data_menu)
-        SystemBars.apply(findViewById(R.id.dataMenuRoot))
+        setContentView(R.layout.activity_home)
+        SystemBars.apply(findViewById(R.id.homeRoot))
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
 
-        sourceStatus = findViewById(R.id.sourceStatus)
-        menuMessage = findViewById(R.id.menuMessage)
+        sourceStatus = findViewById(R.id.homeSourceStatus)
+        uploadMessage = findViewById(R.id.homeUploadMessage)
 
-        findViewById<MaterialButton>(R.id.loadKmlButton).setOnClickListener {
+        findViewById<MaterialButton>(R.id.homeUploadButton).setOnClickListener {
             filePickerLauncher.launch(
                 arrayOf(
                     "application/vnd.google-earth.kml+xml",
@@ -54,8 +55,17 @@ class DataMenuActivity : AppCompatActivity() {
                 )
             )
         }
-        findViewById<MaterialButton>(R.id.clearButton).setOnClickListener { viewModel.clearSavedTowers() }
-        findViewById<MaterialButton>(R.id.doneButton).setOnClickListener { finish() }
+        findViewById<MaterialButton>(R.id.homeArButton).setOnClickListener {
+            startActivity(Intent(this, MainActivity::class.java))
+        }
+        findViewById<MaterialButton>(R.id.homeLosButton).setOnClickListener {
+            startActivity(Intent(this, LosProfilesActivity::class.java))
+        }
+        findViewById<MaterialButton>(R.id.homeSettingsButton).setOnClickListener {
+            if (supportFragmentManager.findFragmentByTag(SettingsBottomSheet.TAG) == null) {
+                SettingsBottomSheet.newInstance().show(supportFragmentManager, SettingsBottomSheet.TAG)
+            }
+        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -63,19 +73,25 @@ class DataMenuActivity : AppCompatActivity() {
                     val source = state.sourceName
                     sourceStatus.text = when {
                         state.towers.isEmpty() -> "No towers loaded"
-                        source != null -> "Loaded ${state.towers.size} towers\nSource: $source"
-                        else -> "Loaded ${state.towers.size} towers"
+                        source != null -> "${state.towers.size} towers · $source"
+                        else -> "${state.towers.size} towers loaded"
                     }
-                    // Prefer error; avoid duplicating the same loaded/restored line already in the card.
                     val message = state.errorMessage
-                        ?: state.statusMessage?.takeIf { !it.startsWith("Loaded") && !it.startsWith("Restored") }
-                    menuMessage.isVisible = message != null
-                    menuMessage.text = message.orEmpty()
-                    menuMessage.setTextColor(
-                        if (state.errorMessage != null) 0xFFFF6B6B.toInt() else 0xFF9AA4B2.toInt()
+                        ?: state.statusMessage?.takeIf {
+                            !it.startsWith("Loaded") && !it.startsWith("Restored")
+                        }
+                    uploadMessage.isVisible = message != null
+                    uploadMessage.text = message.orEmpty()
+                    uploadMessage.setTextColor(
+                        if (state.errorMessage != null) 0xFFFF8A80.toInt() else 0xFF9AA4B2.toInt()
                     )
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.syncFromFileStore()
     }
 }

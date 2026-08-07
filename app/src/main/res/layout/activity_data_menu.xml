@@ -1,91 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/dataMenuRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#0B1C2C"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:clipToPadding="false"
+    android:fillViewport="true">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tower data"
-        android:textColor="@color/accent_yellow"
-        android:textSize="24sp"
-        android:textStyle="bold" />
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="24dp">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Load a KML/KMZ file. Imports are saved on this device and restored next launch."
-        android:textColor="@color/text_primary"
-        android:textSize="14sp" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tower data"
+            android:textColor="@color/accent_yellow"
+            android:textSize="26sp"
+            android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/sourceStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:background="@drawable/bg_hud_input"
-        android:padding="14dp"
-        android:text="No towers loaded"
-        android:textColor="@color/accent_cyan"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Load a KML/KMZ file. Imports are saved on this device and restored next launch."
+            android:textColor="@color/text_muted"
+            android:textSize="14sp" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/loadKmlButton"
-        style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="24dp"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        android:text="Load KML / KMZ"
-        android:textAllCaps="false"
-        android:textColor="#0B1C2C"
-        android:textStyle="bold"
-        app:backgroundTint="@color/accent_yellow"
-        app:cornerRadius="8dp" />
+        <TextView
+            android:id="@+id/sourceStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_hud_input"
+            android:padding="14dp"
+            android:text="No towers loaded"
+            android:textColor="@color/accent_cyan"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/clearButton"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="10dp"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        android:text="Clear saved data"
-        android:textAllCaps="false"
-        android:textColor="@color/chip_poor"
-        app:cornerRadius="8dp"
-        app:strokeColor="@color/chip_poor"
-        app:strokeWidth="1dp" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/loadKmlButton"
+            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="24dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="Load KML / KMZ"
+            android:textAllCaps="false"
+            android:textColor="#0B1C2C"
+            android:textStyle="bold"
+            app:backgroundTint="@color/accent_yellow"
+            app:cornerRadius="10dp" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/doneButton"
-        style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="20dp"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        android:text="Back to AR"
-        android:textAllCaps="false"
-        android:textColor="#0B1C2C"
-        android:textStyle="bold"
-        app:backgroundTint="@color/accent_cyan"
-        app:cornerRadius="8dp" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/clearButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="10dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="Clear saved data"
+            android:textAllCaps="false"
+            android:textColor="@color/chip_poor"
+            app:cornerRadius="10dp"
+            app:strokeColor="@color/chip_poor"
+            app:strokeWidth="1dp" />
 
-    <TextView
-        android:id="@+id/menuMessage"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:textColor="@color/text_muted"
-        android:textSize="13sp"
-        android:visibility="gone" />
-</LinearLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/doneButton"
+            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="20dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="Done"
+            android:textAllCaps="false"
+            android:textColor="#0B1C2C"
+            android:textStyle="bold"
+            app:backgroundTint="@color/accent_cyan"
+            app:cornerRadius="10dp" />
+
+        <TextView
+            android:id="@+id/menuMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textColor="@color/text_muted"
+            android:textSize="13sp"
+            android:visibility="gone" />
+    </LinearLayout>
+</ScrollView>

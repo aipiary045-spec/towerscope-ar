@@ -3,10 +3,10 @@ package com.towerscope.ar
 import android.Manifest
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.hardware.SensorManager
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
-import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -24,11 +24,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
-import com.towerscope.ar.ui.EarthTrackingQuality
+import com.towerscope.ar.ui.CompassRadarView
 import com.towerscope.ar.ui.HudThemeApplier
-import com.towerscope.ar.ui.OffScreenTowerOverlay
 import com.towerscope.ar.ui.SettingsBottomSheet
-import com.towerscope.ar.ui.TowerArSceneBinding
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.CelestialBodies
 import com.towerscope.ar.util.GeoUtils
@@ -40,7 +38,6 @@ import java.util.Locale
 class MainActivity : AppCompatActivity() {
 
     private lateinit var viewModel: TowerScopeViewModel
-    private var arBinding: TowerArSceneBinding? = null
 
     private lateinit var permissionGate: View
     private lateinit var topChrome: View
@@ -50,15 +47,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var trackingWarning: TextView
     private lateinit var appTitle: TextView
     private lateinit var settingsButton: ImageButton
+    private lateinit var calibrateButton: ImageButton
     private lateinit var gpsChip: TextView
-    private lateinit var earthChip: TextView
+    private lateinit var compassChip: TextView
     private lateinit var headingLabel: TextView
     private lateinit var focusTowerLabel: TextView
     private lateinit var visibleCount: TextView
     private lateinit var nearestHeader: TextView
     private lateinit var towerChips: LinearLayout
-    private lateinit var arContainer: FrameLayout
-    private lateinit var directionOverlay: OffScreenTowerOverlay
+    private lateinit var compassRadar: CompassRadarView
     private lateinit var calibrationOverlay: View
     private lateinit var calibrationTitle: TextView
     private lateinit var calibrationHint: TextView
@@ -74,10 +71,9 @@ class MainActivity : AppCompatActivity() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
-        val cameraOk = result[Manifest.permission.CAMERA] == true
         val fineOk = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
         val coarseOk = result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        if (cameraOk && (fineOk || coarseOk)) {
+        if (fineOk || coarseOk) {
             onPermissionsGranted()
         } else {
             permissionGate.isVisible = true
@@ -96,6 +92,10 @@ class MainActivity : AppCompatActivity() {
         wireActions()
         observeState()
         ensurePermissions()
+        if (intent.getBooleanExtra(EXTRA_START_CALIBRATION, false)) {
+            intent.removeExtra(EXTRA_START_CALIBRATION)
+            viewModel.beginHeadingCalibration()
+        }
     }
 
     private fun bindViews() {
@@ -107,21 +107,21 @@ class MainActivity : AppCompatActivity() {
         trackingWarning = findViewById(R.id.trackingWarning)
         appTitle = findViewById(R.id.appTitle)
         settingsButton = findViewById(R.id.settingsButton)
+        calibrateButton = findViewById(R.id.calibrateButton)
         gpsChip = findViewById(R.id.gpsChip)
-        earthChip = findViewById(R.id.earthChip)
+        compassChip = findViewById(R.id.compassChip)
         headingLabel = findViewById(R.id.headingLabel)
         focusTowerLabel = findViewById(R.id.focusTowerLabel)
         visibleCount = findViewById(R.id.visibleCount)
         nearestHeader = findViewById(R.id.nearestHeader)
         towerChips = findViewById(R.id.towerChips)
-        arContainer = findViewById(R.id.arContainer)
-        directionOverlay = findViewById(R.id.directionOverlay)
+        compassRadar = findViewById(R.id.compassRadar)
         calibrationOverlay = findViewById(R.id.calibrationOverlay)
         calibrationTitle = findViewById(R.id.calibrationTitle)
         calibrationHint = findViewById(R.id.calibrationHint)
         calibrationConfirmButton = findViewById(R.id.calibrationConfirmButton)
         calibrationCancelButton = findViewById(R.id.calibrationCancelButton)
-        directionOverlay.setOnTowerSelectedListener { towerId -> openTowerDetails(towerId) }
+        compassRadar.setOnTowerSelectedListener { towerId -> openTowerDetails(towerId) }
 
         bottomPanelBasePadding = bottomPanel.paddingBottom
         topChromeBasePadding = topChrome.paddingTop
@@ -144,6 +144,16 @@ class MainActivity : AppCompatActivity() {
     private fun wireActions() {
         findViewById<MaterialButton>(R.id.grantPermissionsButton).setOnClickListener { requestPermissions() }
         settingsButton.setOnClickListener { openSettings() }
+        calibrateButton.setOnClickListener { viewModel.beginHeadingCalibration() }
+        calibrateButton.setOnLongClickListener {
+            if (viewModel.uiState.value.isHeadingCalibrated) {
+                viewModel.clearHeadingCalibration()
+                Toast.makeText(this, "Calibration cleared", Toast.LENGTH_SHORT).show()
+                true
+            } else {
+                false
+            }
+        }
         calibrationConfirmButton.setOnClickListener { viewModel.confirmHeadingCalibration() }
         calibrationCancelButton.setOnClickListener { viewModel.cancelHeadingCalibration() }
         focusTowerLabel.setOnClickListener {
@@ -166,6 +176,7 @@ class MainActivity : AppCompatActivity() {
         renderTheme(state)
         renderCalibration(state)
         maybeToastStatus(state)
+        renderRadar(state)
 
         visibleCount.text = buildString {
             append("Visible ${visible.size} / ${state.towers.size}")
@@ -175,16 +186,30 @@ class MainActivity : AppCompatActivity() {
         }
 
         renderNearbyChips(state)
+    }
 
-        arBinding?.update(
-            uiState = state,
-            onEarthTrackingQualityChanged = viewModel::setEarthTrackingQuality,
-            onEarthCameraPoseChanged = viewModel::setEarthCameraPose,
-            onCameraHeadingChanged = viewModel::setCameraHeadingDegrees,
-            onTowerTapped = { tower -> openTowerDetails(tower.id) }
+    private fun renderRadar(state: TowerUiState) {
+        val colors = HudThemeApplier.colorsFor(state.hudTheme, compassRadar)
+        val focusLine = focusTowerLabel.text?.toString().orEmpty()
+        val markers = state.directionIndicators().map { (tower, relative, distance) ->
+            CompassRadarView.TowerMarker(
+                towerId = tower.id,
+                name = tower.name,
+                relativeBearingDegrees = relative,
+                distanceMeters = distance
+            )
+        }
+        compassRadar.update(
+            headingDegrees = state.effectiveHeadingDegrees(),
+            maxDistanceMeters = state.maxDistanceMeters,
+            markers = markers,
+            focusTowerId = state.focusTower()?.id,
+            focusLine = focusLine,
+            accentColor = colors.accent,
+            secondaryColor = colors.secondary,
+            textColor = colors.text,
+            mutedColor = colors.mutedText
         )
-
-        renderDirectionOverlay(state)
     }
 
     private fun maybeToastStatus(state: TowerUiState) {
@@ -192,7 +217,6 @@ class MainActivity : AppCompatActivity() {
         if (message == lastToastMessage) return
         lastToastMessage = message
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-        // Clear non-error banners so they do not re-toast every collect.
         if (state.errorMessage == null) {
             viewModel.clearStatusMessage()
         }
@@ -242,21 +266,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun renderDirectionOverlay(state: TowerUiState) {
-        val items = state.directionIndicators().map { (tower, relative, distance) ->
-            OffScreenTowerOverlay.Indicator(
-                towerId = tower.id,
-                name = tower.name,
-                relativeBearingDegrees = relative,
-                distanceMeters = distance
-            )
-        }
-        directionOverlay.setIndicators(
-            items = items,
-            focusTowerId = state.focusTower()?.id
-        )
-    }
-
     private fun renderTrackingChips(state: TowerUiState) {
         val accuracy = state.userLocation?.accuracyMeters
         val hasFine = ContextCompat.checkSelfPermission(
@@ -287,55 +296,42 @@ class MainActivity : AppCompatActivity() {
         gpsChip.setTextColor(gpsColor)
         gpsChip.background = HudThemeApplier.statusChipBackground(gpsChip, gpsColor)
 
-        val earthAcc = state.earthCameraPose?.horizontalAccuracyMeters
-        val (earthLabel, earthColorRes) = when (state.earthTrackingQuality) {
-            EarthTrackingQuality.TRACKING -> {
-                val accText = if (earthAcc != null && earthAcc.isFinite()) {
-                    " ±${earthAcc.toInt()}m"
-                } else {
-                    ""
-                }
-                "Earth · Ready$accText" to R.color.chip_good
-            }
-            EarthTrackingQuality.LIMITED -> {
-                val accText = if (earthAcc != null && earthAcc.isFinite()) {
-                    " ±${earthAcc.toInt()}m"
-                } else {
-                    ""
-                }
-                "Earth · Weak$accText" to R.color.chip_fair
-            }
-            EarthTrackingQuality.NONE -> "Earth · Off" to R.color.chip_off
+        val (compassLabel, compassColorRes) = when {
+            state.deviceHeadingDegrees == null -> "Compass · —" to R.color.chip_off
+            state.needsCompassCalibration -> "Compass · Calibrate" to R.color.chip_poor
+            state.compassSensorAccuracy >= SensorManager.SENSOR_STATUS_ACCURACY_HIGH ->
+                "Compass · Good" to R.color.chip_good
+            state.compassSensorAccuracy >= SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM ->
+                "Compass · Fair" to R.color.chip_fair
+            else -> "Compass · Weak" to R.color.chip_poor
         }
-        earthChip.text = earthLabel
-        val earthColor = ContextCompat.getColor(this, earthColorRes)
-        earthChip.setTextColor(earthColor)
-        earthChip.background = HudThemeApplier.statusChipBackground(earthChip, earthColor)
+        val calibratedTag = if (state.isHeadingCalibrated) " ✓" else ""
+        compassChip.text = "$compassLabel$calibratedTag"
+        val compassColor = ContextCompat.getColor(this, compassColorRes)
+        compassChip.setTextColor(compassColor)
+        compassChip.background = HudThemeApplier.statusChipBackground(compassChip, compassColor)
 
-        val compassHint = state.needsCompassCalibration &&
-            state.cameraHeadingDegrees == null &&
-            state.towers.isNotEmpty()
-        val earthWeak = state.earthTrackingQuality != EarthTrackingQuality.TRACKING
-        trackingWarning.isVisible = (earthWeak || compassHint) && state.towers.isNotEmpty()
+        val showWarning = state.towers.isNotEmpty() && (
+            state.needsCompassCalibration ||
+                state.userLocation == null ||
+                (accuracy != null && accuracy > 25f)
+            )
+        trackingWarning.isVisible = showWarning
         if (trackingWarning.isVisible) {
             trackingWarning.text = when {
-                compassHint ->
-                    "Compass needs calibration — open Settings → Calibrate"
-                state.earthTrackingQuality == EarthTrackingQuality.LIMITED ->
-                    "Walk slowly outdoors until Earth ≤12 m"
+                state.needsCompassCalibration ->
+                    "Compass needs calibration — tap the sun button"
+                state.userLocation == null ->
+                    "Waiting for GPS — go outdoors with a clear sky"
                 else ->
-                    "Outdoors with clear sky — wait for Earth Ready"
+                    "GPS accuracy weak (±${accuracy?.toInt()}m) — wait for a tighter fix"
             }
         }
     }
 
     private fun renderCompass(state: TowerUiState) {
         val heading = state.effectiveHeadingDegrees()
-        val calTag = when {
-            state.cameraHeadingDegrees != null -> ""
-            state.isHeadingCalibrated -> "  ·  cal"
-            else -> ""
-        }
+        val calTag = if (state.isHeadingCalibrated) "  ·  cal" else ""
         headingLabel.text = if (heading != null) {
             "HEADING  ${GeoUtils.formatBearing(heading)}$calTag"
         } else {
@@ -377,14 +373,16 @@ class MainActivity : AppCompatActivity() {
         )
         val colors = HudThemeApplier.colorsFor(state.hudTheme, settingsButton)
         settingsButton.imageTintList = android.content.res.ColorStateList.valueOf(colors.secondary)
+        calibrateButton.imageTintList = android.content.res.ColorStateList.valueOf(colors.accent)
     }
 
     private fun renderCalibration(state: TowerUiState) {
         calibrationOverlay.isVisible = state.calibrationActive
-        directionOverlay.isVisible = !state.calibrationActive
+        compassRadar.isVisible = !state.calibrationActive
         topChrome.isVisible = !state.calibrationActive
         bottomPanel.isVisible = !state.calibrationActive
         settingsButton.isVisible = !state.calibrationActive
+        calibrateButton.isVisible = !state.calibrationActive
 
         if (!state.calibrationActive) return
 
@@ -393,7 +391,7 @@ class MainActivity : AppCompatActivity() {
             CelestialBodies.Body.MOON -> "Moon"
             null -> "sky body"
         }
-        calibrationTitle.text = "Center the $bodyLabel in the crosshair"
+        calibrationTitle.text = "Point the top of the phone at the $bodyLabel"
         val elev = state.calibrationTargetElevationDegrees
         val elevText = if (elev != null) {
             String.format(Locale.US, "Elev %.0f° · ", elev)
@@ -404,8 +402,8 @@ class MainActivity : AppCompatActivity() {
             CelestialBodies.Body.SUN ->
                 "${elevText}Do not stare at the Sun — glance to align, then Confirm"
             CelestialBodies.Body.MOON ->
-                "${elevText}Center the Moon, hold steady, then Confirm"
-            null -> "Align, then Confirm"
+                "${elevText}Aim at the Moon, hold steady, then Confirm"
+            null -> "Aim, then Confirm"
         }
     }
 
@@ -429,16 +427,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun ensurePermissions() {
-        val cameraGranted = ContextCompat.checkSelfPermission(
-            this, Manifest.permission.CAMERA
-        ) == PackageManager.PERMISSION_GRANTED
         val fineGranted = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
         val coarseGranted = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
-        if (cameraGranted && (fineGranted || coarseGranted)) {
+        if (fineGranted || coarseGranted) {
             onPermissionsGranted()
         } else {
             permissionGate.isVisible = true
@@ -449,7 +444,6 @@ class MainActivity : AppCompatActivity() {
     private fun requestPermissions() {
         permissionLauncher.launch(
             arrayOf(
-                Manifest.permission.CAMERA,
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION
             )
@@ -460,13 +454,6 @@ class MainActivity : AppCompatActivity() {
         permissionGate.isVisible = false
         viewModel.startLocationUpdates()
         viewModel.startDeviceHeadingUpdates()
-        if (arBinding == null) {
-            val binding = TowerArSceneBinding(this)
-            arBinding = binding
-            arContainer.removeAllViews()
-            arContainer.addView(binding.view)
-            binding.onResume()
-        }
         maybeShowOnboarding()
     }
 
@@ -476,12 +463,11 @@ class MainActivity : AppCompatActivity() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("TowerScope field tips")
             .setMessage(
-                "1. Open Settings (lower-right cog) → Tower data to load your KML/KMZ.\n" +
-                    "2. Go outdoors with a clear view of the sky.\n" +
-                    "3. Walk slowly until Earth shows Ready (≤12 m).\n" +
-                    "4. Settings → Calibrate with sun/moon to fix compass heading.\n" +
-                    "5. Tap a tower for details and line-of-sight (toggle in Settings).\n\n" +
-                    "Precision needs Earth Ready — GPS-only markers can be far off."
+                "1. From Home, upload your KML/KMZ (or use Settings → Tower data).\n" +
+                    "2. Go outdoors for a clear GPS fix.\n" +
+                    "3. Hold the phone upright — the top of the disc is the direction you face.\n" +
+                    "4. Tap the sun button to calibrate with the sun or moon for best accuracy.\n" +
+                    "5. Tap a tower on the radar for details, or use Elevation profiles for ranked LOS."
             )
             .setPositiveButton("Got it") { _, _ ->
                 viewModel.markOnboardingComplete()
@@ -493,17 +479,9 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.syncFromFileStore()
-        arBinding?.onResume()
     }
 
-    override fun onPause() {
-        arBinding?.onPause()
-        super.onPause()
-    }
-
-    override fun onDestroy() {
-        arBinding?.destroy()
-        arBinding = null
-        super.onDestroy()
+    companion object {
+        const val EXTRA_START_CALIBRATION = "start_calibration"
     }
 }

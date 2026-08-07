@@ -6,17 +6,13 @@
     android:layout_height="match_parent"
     android:background="#0B1C2C">
 
-    <FrameLayout
-        android:id="@+id/arContainer"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <com.towerscope.ar.ui.OffScreenTowerOverlay
-        android:id="@+id/directionOverlay"
+    <com.towerscope.ar.ui.CompassRadarView
+        android:id="@+id/compassRadar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clickable="false"
-        android:focusable="false" />
+        android:layout_marginTop="108dp"
+        android:layout_marginBottom="118dp"
+        android:layout_marginHorizontal="12dp" />
 
     <LinearLayout
         android:id="@+id/topChrome"
@@ -61,13 +57,13 @@
                 android:textSize="10sp" />
 
             <TextView
-                android:id="@+id/earthChip"
+                android:id="@+id/compassChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_hud_chip"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="4dp"
-                android:text="Earth · —"
+                android:text="Compass · —"
                 android:textColor="@color/chip_text_on_dark"
                 android:textSize="10sp" />
         </LinearLayout>
@@ -79,7 +75,7 @@
             android:background="@color/hud_panel"
             android:paddingHorizontal="12dp"
             android:paddingBottom="6dp"
-            android:text="Tracking weak — markers may drift"
+            android:text="Compass needs calibration"
             android:textColor="@color/chip_poor"
             android:textSize="11sp"
             android:visibility="gone" />
@@ -161,6 +157,21 @@
     </LinearLayout>
 
     <ImageButton
+        android:id="@+id/calibrateButton"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="170dp"
+        android:background="@drawable/bg_settings_fab"
+        android:contentDescription="Calibrate compass with sun or moon"
+        android:elevation="8dp"
+        android:padding="13dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_calibrate_sun"
+        android:tint="@color/accent_yellow" />
+
+    <ImageButton
         android:id="@+id/settingsButton"
         android:layout_width="52dp"
         android:layout_height="52dp"
@@ -179,6 +190,7 @@
         android:id="@+id/calibrationOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="#E60B1C2C"
         android:clickable="true"
         android:focusable="true"
         android:visibility="gone">
@@ -191,11 +203,7 @@
             android:layout_marginTop="88dp"
             android:gravity="center"
             android:paddingHorizontal="24dp"
-            android:shadowColor="#CC000000"
-            android:shadowDx="0"
-            android:shadowDy="1"
-            android:shadowRadius="4"
-            android:text="Center the Sun in the crosshair"
+            android:text="Point the top of the phone at the Sun"
             android:textColor="@color/accent_yellow"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -208,11 +216,7 @@
             android:layout_marginTop="116dp"
             android:gravity="center"
             android:paddingHorizontal="28dp"
-            android:shadowColor="#CC000000"
-            android:shadowDx="0"
-            android:shadowDy="1"
-            android:shadowRadius="4"
-            android:text="Do not stare at the Sun — glance to align, then confirm"
+            android:text="Do not stare at the Sun — glance to align, then Confirm"
             android:textColor="#DDFFFFFF"
             android:textSize="12sp" />
 
@@ -221,8 +225,19 @@
             android:layout_width="96dp"
             android:layout_height="96dp"
             android:layout_gravity="center"
-            android:contentDescription="Aiming crosshair"
+            android:contentDescription="Aiming guide"
             android:src="@drawable/ic_calibration_crosshair" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="72dp"
+            android:gravity="center"
+            android:paddingHorizontal="32dp"
+            android:text="Hold the phone upright and aim the top edge"
+            android:textColor="@color/text_muted"
+            android:textSize="12sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -293,7 +308,7 @@
             android:layout_marginTop="12dp"
             android:gravity="center"
             android:lineSpacingExtra="3dp"
-            android:text="Camera and high-accuracy location are required to place outdoor tower markers."
+            android:text="High-accuracy location is required to show tower directions on the compass."
             android:textColor="@color/text_muted"
             android:textSize="14sp" />
 

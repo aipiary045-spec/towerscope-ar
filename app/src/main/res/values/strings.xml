@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">TowerScope AR</string>
+    <string name="app_name">TowerScope</string>
     <string name="hud_title">TowerScope</string>
 </resources>

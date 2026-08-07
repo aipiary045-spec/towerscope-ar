@@ -21,10 +21,3 @@ enum class HudTheme {
             NIGHT -> "Night"
         }
 }
-
-/** Geospatial Earth tracking quality for HUD chips. */
-enum class EarthTrackingQuality {
-    TRACKING,
-    LIMITED,
-    NONE
-}
