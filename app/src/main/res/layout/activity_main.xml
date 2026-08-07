@@ -61,6 +61,18 @@
                 android:textSize="10sp" />
 
             <TextView
+                android:id="@+id/calibrateButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_hud_ghost_button"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:text="Cal"
+                android:textColor="@color/text_muted"
+                android:textSize="10sp" />
+
+            <TextView
                 android:id="@+id/gpsChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -297,6 +309,100 @@
                 android:orientation="horizontal" />
         </HorizontalScrollView>
     </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/calibrationOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/calibrationTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:layout_marginTop="88dp"
+            android:gravity="center"
+            android:paddingHorizontal="24dp"
+            android:shadowColor="#CC000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="4"
+            android:text="Center the Sun in the crosshair"
+            android:textColor="@color/accent_yellow"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/calibrationHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:layout_marginTop="116dp"
+            android:gravity="center"
+            android:paddingHorizontal="28dp"
+            android:shadowColor="#CC000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="4"
+            android:text="Do not stare at the Sun — glance to align, then confirm"
+            android:textColor="#DDFFFFFF"
+            android:textSize="12sp" />
+
+        <ImageView
+            android:id="@+id/calibrationCrosshair"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="center"
+            android:contentDescription="Aiming crosshair"
+            android:src="@drawable/ic_calibration_crosshair" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="#CC0B1C2C"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="28dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/calibrationCancelButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minHeight="0dp"
+                android:text="Cancel"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:cornerRadius="6dp"
+                app:strokeColor="#66FFFFFF"
+                app:strokeWidth="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/calibrationConfirmButton"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minHeight="0dp"
+                android:text="Confirm"
+                android:textAllCaps="false"
+                android:textColor="#0B1C2C"
+                app:backgroundTint="@color/accent_yellow"
+                app:cornerRadius="6dp" />
+        </LinearLayout>
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/permissionGate"

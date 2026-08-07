@@ -14,6 +14,7 @@ import com.towerscope.ar.location.HighAccuracyLocationClient
 import com.towerscope.ar.location.UserLocation
 import com.towerscope.ar.ui.EarthTrackingQuality
 import com.towerscope.ar.ui.HudTheme
+import com.towerscope.ar.util.CelestialBodies
 import com.towerscope.ar.util.GeoUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -65,6 +66,15 @@ data class TowerUiState(
     val useKmlAltitude: Boolean = false,
     /** Bottom HUD search/range/controls expanded. */
     val hudExpanded: Boolean = true,
+    /**
+     * Degrees added to device compass heading after sun/moon calibration.
+     * Null = not calibrated. Not applied when Geospatial heading is trusted.
+     */
+    val headingCalibrationOffsetDegrees: Double? = null,
+    val calibrationActive: Boolean = false,
+    val calibrationBody: CelestialBodies.Body? = null,
+    val calibrationTargetAzimuthDegrees: Double? = null,
+    val calibrationTargetElevationDegrees: Double? = null,
     val sourceName: String? = null,
     val statusMessage: String? = null,
     val errorMessage: String? = null,
@@ -72,6 +82,9 @@ data class TowerUiState(
 ) {
     val needsCompassCalibration: Boolean
         get() = compassSensorAccuracy <= android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW
+
+    val isHeadingCalibrated: Boolean
+        get() = headingCalibrationOffsetDegrees != null
 
     /**
      * Prefer Earth camera lat/lng whenever Geospatial is placing anchors so HUD/overlays
@@ -92,11 +105,15 @@ data class TowerUiState(
     }
 
     /**
-     * Camera look heading. Never uses GPS course — that is travel direction, not facing,
-     * and caused large angular marker errors when stationary.
+     * Camera look heading. Never uses GPS course — that is travel direction, not facing.
+     * Sun/moon offset applies only to the device compass (Earth heading is independent).
      */
-    fun effectiveHeadingDegrees(): Double? =
-        cameraHeadingDegrees ?: deviceHeadingDegrees
+    fun effectiveHeadingDegrees(): Double? {
+        cameraHeadingDegrees?.let { return it }
+        val device = deviceHeadingDegrees ?: return null
+        val offset = headingCalibrationOffsetDegrees ?: 0.0
+        return CelestialBodies.normalizeDegrees(device + offset)
+    }
 
     /** Direction cues for the AR overlay (in-range towers with known distance/bearing). */
     fun directionIndicators(): List<Triple<Tower, Double, Double>> {
@@ -207,7 +224,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         TowerUiState(
             hudTheme = loadHudTheme(),
             useKmlAltitude = prefs.getBoolean(KEY_USE_KML_ALTITUDE, false),
-            hudExpanded = prefs.getBoolean(KEY_HUD_EXPANDED, true)
+            hudExpanded = prefs.getBoolean(KEY_HUD_EXPANDED, true),
+            headingCalibrationOffsetDegrees = loadHeadingOffset()
         )
     )
     val uiState: StateFlow<TowerUiState> = _uiState.asStateFlow()
@@ -222,6 +240,12 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private fun loadHudTheme(): HudTheme {
         val raw = prefs.getString(KEY_HUD_THEME, HudTheme.NIGHT.name) ?: HudTheme.NIGHT.name
         return runCatching { HudTheme.valueOf(raw) }.getOrDefault(HudTheme.NIGHT)
+    }
+
+    private fun loadHeadingOffset(): Double? {
+        if (!prefs.contains(KEY_HEADING_OFFSET)) return null
+        val value = prefs.getFloat(KEY_HEADING_OFFSET, 0f).toDouble()
+        return if (value.isFinite()) value else null
     }
 
     private fun restorePersistedTowers() {
@@ -333,6 +357,115 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
 
     fun markOnboardingComplete() {
         prefs.edit().putBoolean(KEY_ONBOARDING_DONE, true).apply()
+    }
+
+    /** Enter sun/moon aiming mode when a body is high enough above the horizon. */
+    fun beginHeadingCalibration() {
+        val location = _uiState.value.positioningLocation() ?: _uiState.value.userLocation
+        if (location == null) {
+            _uiState.update {
+                it.copy(statusMessage = "Need GPS before sun/moon calibration")
+            }
+            return
+        }
+        val target = CelestialBodies.preferredCalibrationTarget(
+            latitude = location.latitude,
+            longitude = location.longitude
+        )
+        if (target == null) {
+            _uiState.update {
+                it.copy(
+                    statusMessage =
+                        "Sun/moon too low — try again when one is clearly visible"
+                )
+            }
+            return
+        }
+        _uiState.update {
+            it.copy(
+                calibrationActive = true,
+                calibrationBody = target.body,
+                calibrationTargetAzimuthDegrees = target.azimuthDegrees,
+                calibrationTargetElevationDegrees = target.elevationDegrees,
+                statusMessage = null,
+                errorMessage = null
+            )
+        }
+    }
+
+    fun cancelHeadingCalibration() {
+        _uiState.update {
+            it.copy(
+                calibrationActive = false,
+                calibrationBody = null,
+                calibrationTargetAzimuthDegrees = null,
+                calibrationTargetElevationDegrees = null
+            )
+        }
+    }
+
+    /**
+     * User centered the sun/moon in the crosshair. Offset = celestial azimuth − device heading.
+     */
+    fun confirmHeadingCalibration() {
+        val state = _uiState.value
+        val targetAzimuth = state.calibrationTargetAzimuthDegrees
+        val deviceHeading = state.deviceHeadingDegrees
+        if (targetAzimuth == null || deviceHeading == null) {
+            _uiState.update {
+                it.copy(statusMessage = "Hold still — waiting for compass reading")
+            }
+            return
+        }
+        // Refresh celestial solution at confirm time for a tighter fix.
+        val location = state.positioningLocation() ?: state.userLocation
+        val body = state.calibrationBody
+        val refreshedAzimuth = if (location != null && body != null) {
+            when (body) {
+                CelestialBodies.Body.SUN ->
+                    CelestialBodies.sunPosition(location.latitude, location.longitude).azimuthDegrees
+                CelestialBodies.Body.MOON ->
+                    CelestialBodies.moonPosition(location.latitude, location.longitude).azimuthDegrees
+            }
+        } else {
+            targetAzimuth
+        }
+        val offset = CelestialBodies.signedDeltaDegrees(deviceHeading, refreshedAzimuth)
+        prefs.edit().putFloat(KEY_HEADING_OFFSET, offset.toFloat()).apply()
+        val bodyLabel = when (body) {
+            CelestialBodies.Body.SUN -> "Sun"
+            CelestialBodies.Body.MOON -> "Moon"
+            null -> "Sky"
+        }
+        _uiState.update {
+            it.copy(
+                headingCalibrationOffsetDegrees = offset,
+                calibrationActive = false,
+                calibrationBody = null,
+                calibrationTargetAzimuthDegrees = null,
+                calibrationTargetElevationDegrees = null,
+                statusMessage = String.format(
+                    java.util.Locale.US,
+                    "%s calibration saved (%+.0f°)",
+                    bodyLabel,
+                    offset
+                )
+            )
+        }
+    }
+
+    fun clearHeadingCalibration() {
+        prefs.edit().remove(KEY_HEADING_OFFSET).apply()
+        _uiState.update {
+            it.copy(
+                headingCalibrationOffsetDegrees = null,
+                calibrationActive = false,
+                calibrationBody = null,
+                calibrationTargetAzimuthDegrees = null,
+                calibrationTargetElevationDegrees = null,
+                statusMessage = "Heading calibration cleared"
+            )
+        }
     }
 
     fun setEarthTracking(tracking: Boolean) {
@@ -513,6 +646,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_USE_KML_ALTITUDE = "use_kml_altitude"
         private const val KEY_HUD_EXPANDED = "hud_expanded"
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
+        private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
 
         private fun earthPoseEquivalent(a: EarthCameraPose?, b: EarthCameraPose?): Boolean {
             if (a === b) return true

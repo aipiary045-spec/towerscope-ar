@@ -32,10 +32,12 @@ import com.towerscope.ar.ui.HudThemeApplier
 import com.towerscope.ar.ui.OffScreenTowerOverlay
 import com.towerscope.ar.ui.TowerArSceneBinding
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
+import com.towerscope.ar.util.CelestialBodies
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -50,6 +52,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var trackingWarning: TextView
     private lateinit var appTitle: TextView
     private lateinit var themeButton: TextView
+    private lateinit var calibrateButton: TextView
     private lateinit var gpsChip: TextView
     private lateinit var earthChip: TextView
     private lateinit var headingLabel: TextView
@@ -68,6 +71,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var towerChips: LinearLayout
     private lateinit var arContainer: FrameLayout
     private lateinit var directionOverlay: OffScreenTowerOverlay
+    private lateinit var calibrationOverlay: View
+    private lateinit var calibrationTitle: TextView
+    private lateinit var calibrationHint: TextView
+    private lateinit var calibrationConfirmButton: MaterialButton
+    private lateinit var calibrationCancelButton: MaterialButton
 
     private var bottomPanelBasePadding = 0
     private var topChromeBasePadding = 0
@@ -111,6 +119,7 @@ class MainActivity : AppCompatActivity() {
         trackingWarning = findViewById(R.id.trackingWarning)
         appTitle = findViewById(R.id.appTitle)
         themeButton = findViewById(R.id.themeButton)
+        calibrateButton = findViewById(R.id.calibrateButton)
         gpsChip = findViewById(R.id.gpsChip)
         earthChip = findViewById(R.id.earthChip)
         headingLabel = findViewById(R.id.headingLabel)
@@ -129,6 +138,11 @@ class MainActivity : AppCompatActivity() {
         towerChips = findViewById(R.id.towerChips)
         arContainer = findViewById(R.id.arContainer)
         directionOverlay = findViewById(R.id.directionOverlay)
+        calibrationOverlay = findViewById(R.id.calibrationOverlay)
+        calibrationTitle = findViewById(R.id.calibrationTitle)
+        calibrationHint = findViewById(R.id.calibrationHint)
+        calibrationConfirmButton = findViewById(R.id.calibrationConfirmButton)
+        calibrationCancelButton = findViewById(R.id.calibrationCancelButton)
         directionOverlay.setOnTowerSelectedListener { towerId -> openTowerDetails(towerId) }
 
         bottomPanelBasePadding = bottomPanel.paddingBottom
@@ -156,6 +170,17 @@ class MainActivity : AppCompatActivity() {
     private fun wireActions() {
         findViewById<MaterialButton>(R.id.grantPermissionsButton).setOnClickListener { requestPermissions() }
         themeButton.setOnClickListener { viewModel.cycleHudTheme() }
+        calibrateButton.setOnClickListener { viewModel.beginHeadingCalibration() }
+        calibrateButton.setOnLongClickListener {
+            if (viewModel.uiState.value.isHeadingCalibrated) {
+                viewModel.clearHeadingCalibration()
+                true
+            } else {
+                false
+            }
+        }
+        calibrationConfirmButton.setOnClickListener { viewModel.confirmHeadingCalibration() }
+        calibrationCancelButton.setOnClickListener { viewModel.cancelHeadingCalibration() }
         hudExpandButton.setOnClickListener { viewModel.toggleHudExpanded() }
         altitudeModeButton.setOnClickListener { viewModel.toggleUseKmlAltitude() }
         dataButton.setOnClickListener {
@@ -198,6 +223,7 @@ class MainActivity : AppCompatActivity() {
         renderTrackingChips(state)
         renderCompass(state)
         renderTheme(state)
+        renderCalibration(state)
 
         visibleCount.text = buildString {
             append("Visible ${visible.size} / ${state.towers.size}")
@@ -377,10 +403,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderCompass(state: TowerUiState) {
         val heading = state.effectiveHeadingDegrees()
+        val calTag = when {
+            state.cameraHeadingDegrees != null -> ""
+            state.isHeadingCalibrated -> "  ·  cal"
+            else -> ""
+        }
         headingLabel.text = if (heading != null) {
-            "HEADING  ${GeoUtils.formatBearing(heading)}"
+            "HEADING  ${GeoUtils.formatBearing(heading)}$calTag"
         } else {
-            "HEADING  —"
+            "HEADING  —$calTag"
         }
 
         val focus = state.focusTower()
@@ -419,9 +450,41 @@ class MainActivity : AppCompatActivity() {
             nearestHeader = nearestHeader,
             searchField = searchField,
             themeButton = themeButton,
+            calibrateButton = calibrateButton,
             dataButton = dataButton,
             showHiddenButton = showHiddenButton
         )
+    }
+
+    private fun renderCalibration(state: TowerUiState) {
+        calibrationOverlay.isVisible = state.calibrationActive
+        directionOverlay.isVisible = !state.calibrationActive
+        topChrome.isVisible = !state.calibrationActive
+        bottomPanel.isVisible = !state.calibrationActive
+
+        calibrateButton.text = if (state.isHeadingCalibrated) "Cal✓" else "Cal"
+
+        if (!state.calibrationActive) return
+
+        val bodyLabel = when (state.calibrationBody) {
+            CelestialBodies.Body.SUN -> "Sun"
+            CelestialBodies.Body.MOON -> "Moon"
+            null -> "sky body"
+        }
+        calibrationTitle.text = "Center the $bodyLabel in the crosshair"
+        val elev = state.calibrationTargetElevationDegrees
+        val elevText = if (elev != null) {
+            String.format(Locale.US, "Elev %.0f° · ", elev)
+        } else {
+            ""
+        }
+        calibrationHint.text = when (state.calibrationBody) {
+            CelestialBodies.Body.SUN ->
+                "${elevText}Do not stare at the Sun — glance to align, then Confirm"
+            CelestialBodies.Body.MOON ->
+                "${elevText}Center the Moon, hold steady, then Confirm"
+            null -> "Align, then Confirm"
+        }
     }
 
     private fun openTowerDetails(towerId: String) {
@@ -485,9 +548,10 @@ class MainActivity : AppCompatActivity() {
                 "1. Load your KML/KMZ from Tower data.\n" +
                     "2. Go outdoors with a clear view of the sky.\n" +
                     "3. Walk slowly until Earth shows Ready (≤12 m).\n" +
-                    "4. Labels mark Earth/terrain pins; GPS labels are last-resort only.\n" +
-                    "5. Keep Ground mode unless your KML altitudes are true WGS84 HAE.\n" +
-                    "6. Tap NEARBY chips to hide or show only one tower.\n\n" +
+                    "4. Tap Cal and center the Sun (or Moon at night) to fix compass heading.\n" +
+                    "5. Labels mark Earth/terrain pins; GPS labels are last-resort only.\n" +
+                    "6. Keep Ground mode unless your KML altitudes are true WGS84 HAE.\n" +
+                    "7. Tap NEARBY chips to hide or show only one tower.\n\n" +
                     "Precision needs Earth Ready — GPS-only markers can be far off."
             )
             .setPositiveButton("Got it") { _, _ ->

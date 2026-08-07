@@ -64,6 +64,7 @@ object HudThemeApplier {
         nearestHeader: TextView,
         searchField: EditText,
         themeButton: TextView,
+        calibrateButton: TextView,
         dataButton: MaterialButton,
         showHiddenButton: MaterialButton
     ) {
@@ -91,13 +92,15 @@ object HudThemeApplier {
         )
 
         themeButton.text = theme.label
-        themeButton.setTextColor(c.mutedText)
-        themeButton.background = roundedRect(
-            fill = if (theme == HudTheme.DAY) Color.argb(30, 0, 0, 0) else Color.argb(30, 255, 255, 255),
-            stroke = Color.TRANSPARENT,
-            radiusDp = 8f,
-            view = themeButton
-        )
+        listOf(themeButton, calibrateButton).forEach { button ->
+            button.setTextColor(c.mutedText)
+            button.background = roundedRect(
+                fill = if (theme == HudTheme.DAY) Color.argb(30, 0, 0, 0) else Color.argb(30, 255, 255, 255),
+                stroke = Color.TRANSPARENT,
+                radiusDp = 8f,
+                view = button
+            )
+        }
 
         dataButton.setBackgroundColor(c.accent)
         dataButton.setTextColor(
