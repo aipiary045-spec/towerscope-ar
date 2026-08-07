@@ -7,6 +7,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.towerscope.ar.ar.GeospatialAccuracy
 import com.towerscope.ar.data.KmlParser
+import com.towerscope.ar.data.LosProfile
+import com.towerscope.ar.data.LosProfileService
 import com.towerscope.ar.data.Tower
 import com.towerscope.ar.data.TowerFileStore
 import com.towerscope.ar.location.DeviceHeadingClient
@@ -75,6 +77,12 @@ data class TowerUiState(
     val calibrationBody: CelestialBodies.Body? = null,
     val calibrationTargetAzimuthDegrees: Double? = null,
     val calibrationTargetElevationDegrees: Double? = null,
+    /** USGS LOS elevation profile for the selected tower (null until loaded). */
+    val losProfile: LosProfile? = null,
+    val losProfileLoading: Boolean = false,
+    val losProfileError: String? = null,
+    /** Extra vegetation / clutter height added on top of USGS terrain (meters). */
+    val clutterHeightMeters: Float = DEFAULT_CLUTTER_METERS,
     val sourceName: String? = null,
     val statusMessage: String? = null,
     val errorMessage: String? = null,
@@ -211,6 +219,8 @@ data class TowerUiState(
         /** 10 miles in meters. */
         const val MAX_DISTANCE_METERS = (10.0 * GeoUtils.METERS_PER_MILE).toFloat()
         const val DEFAULT_MAX_DISTANCE_METERS = 2_000f
+        const val DEFAULT_CLUTTER_METERS = 0f
+        const val MAX_CLUTTER_METERS = 40f
     }
 }
 
@@ -219,19 +229,23 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private val locationClient = HighAccuracyLocationClient(application)
     private val headingClient = DeviceHeadingClient(application)
     private val fileStore = TowerFileStore(application)
+    private val losProfileService = LosProfileService()
     private val prefs = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private val _uiState = MutableStateFlow(
         TowerUiState(
             hudTheme = loadHudTheme(),
             useKmlAltitude = prefs.getBoolean(KEY_USE_KML_ALTITUDE, false),
             hudExpanded = prefs.getBoolean(KEY_HUD_EXPANDED, true),
-            headingCalibrationOffsetDegrees = loadHeadingOffset()
+            headingCalibrationOffsetDegrees = loadHeadingOffset(),
+            clutterHeightMeters = prefs.getFloat(KEY_CLUTTER_HEIGHT, TowerUiState.DEFAULT_CLUTTER_METERS)
         )
     )
     val uiState: StateFlow<TowerUiState> = _uiState.asStateFlow()
 
     private var locationJob: Job? = null
     private var headingJob: Job? = null
+    private var losJob: Job? = null
+    private var losLoadingTowerId: String? = null
 
     init {
         restorePersistedTowers()
@@ -320,6 +334,93 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
 
     fun selectTower(towerId: String?) {
         _uiState.update { it.copy(selectedTowerId = towerId) }
+        if (towerId != null) {
+            loadLosProfile(towerId)
+        } else {
+            clearLosProfile()
+        }
+    }
+
+    fun setClutterHeightMeters(meters: Float) {
+        val clamped = meters.coerceIn(0f, TowerUiState.MAX_CLUTTER_METERS)
+        prefs.edit().putFloat(KEY_CLUTTER_HEIGHT, clamped).apply()
+        _uiState.update { it.copy(clutterHeightMeters = clamped) }
+    }
+
+    fun clearLosProfile() {
+        losJob?.cancel()
+        losJob = null
+        losLoadingTowerId = null
+        _uiState.update {
+            it.copy(
+                losProfile = null,
+                losProfileLoading = false,
+                losProfileError = null
+            )
+        }
+    }
+
+    /**
+     * Sample 50 geodesic points to [towerId], query USGS elevations, apply Earth curvature.
+     */
+    fun loadLosProfile(towerId: String) {
+        val tower = _uiState.value.towerById(towerId) ?: return
+        val location = _uiState.value.positioningLocation()
+        if (location == null) {
+            _uiState.update {
+                it.copy(
+                    losProfile = null,
+                    losProfileLoading = false,
+                    losProfileError = "Need GPS to build line-of-sight profile"
+                )
+            }
+            return
+        }
+        // Skip reload if we already have this tower's profile or its fetch is in flight.
+        val existing = _uiState.value.losProfile
+        if (existing != null && existing.towerId == towerId) return
+        if (losLoadingTowerId == towerId && losJob?.isActive == true) return
+
+        losJob?.cancel()
+        losLoadingTowerId = towerId
+        _uiState.update {
+            it.copy(
+                losProfileLoading = true,
+                losProfileError = null,
+                losProfile = if (existing?.towerId == towerId) existing else null
+            )
+        }
+        losJob = viewModelScope.launch {
+            val result = runCatching {
+                withContext(Dispatchers.IO) {
+                    losProfileService.buildProfile(
+                        tower = tower,
+                        observerLat = location.latitude,
+                        observerLon = location.longitude
+                    )
+                }
+            }
+            if (losLoadingTowerId != towerId) return@launch
+            _uiState.update { state ->
+                result.fold(
+                    onSuccess = { profile ->
+                        state.copy(
+                            losProfile = profile,
+                            losProfileLoading = false,
+                            losProfileError = null
+                        )
+                    },
+                    onFailure = { error ->
+                        state.copy(
+                            losProfile = null,
+                            losProfileLoading = false,
+                            losProfileError = error.message ?: "Elevation query failed"
+                        )
+                    }
+                )
+            }
+            losLoadingTowerId = null
+        }
     }
 
     fun cycleHudTheme() {
@@ -637,6 +738,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
 
     override fun onCleared() {
         stopLocationUpdates()
+        losJob?.cancel()
         super.onCleared()
     }
 
@@ -647,6 +749,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_HUD_EXPANDED = "hud_expanded"
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
         private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
+        private const val KEY_CLUTTER_HEIGHT = "clutter_height_meters"
 
         private fun earthPoseEquivalent(a: EarthCameraPose?, b: EarthCameraPose?): Boolean {
             if (a === b) return true

@@ -10,16 +10,23 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.FrameLayout
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.towerscope.ar.R
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
+import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -40,6 +47,18 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
         savedInstanceState: Bundle?
     ): View = inflater.inflate(R.layout.bottom_sheet_tower_details, container, false)
 
+    override fun onStart() {
+        super.onStart()
+        val dialog = dialog as? BottomSheetDialog ?: return
+        val sheet = dialog.findViewById<FrameLayout>(
+            com.google.android.material.R.id.design_bottom_sheet
+        ) ?: return
+        BottomSheetBehavior.from(sheet).apply {
+            state = BottomSheetBehavior.STATE_EXPANDED
+            skipCollapsed = true
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val detailName = view.findViewById<TextView>(R.id.detailName)
@@ -47,6 +66,10 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
         val detailBearing = view.findViewById<TextView>(R.id.detailBearing)
         val detailCoords = view.findViewById<TextView>(R.id.detailCoords)
         val detailAltitude = view.findViewById<TextView>(R.id.detailAltitude)
+        val losStatus = view.findViewById<TextView>(R.id.losStatus)
+        val losChart = view.findViewById<LosProfileChartView>(R.id.losChart)
+        val clutterLabel = view.findViewById<TextView>(R.id.clutterLabel)
+        val clutterSlider = view.findViewById<SeekBar>(R.id.clutterSlider)
 
         view.findViewById<Button>(R.id.closeSheetButton).setOnClickListener { dismiss() }
         view.findViewById<Button>(R.id.showOnlyButton).setOnClickListener {
@@ -87,6 +110,19 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
             startActivity(Intent(Intent.ACTION_VIEW, uri))
         }
 
+        clutterSlider.max = TowerUiState.MAX_CLUTTER_METERS.toInt()
+        clutterSlider.progress = viewModel.uiState.value.clutterHeightMeters.toInt()
+        clutterSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) viewModel.setClutterHeightMeters(progress.toFloat())
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+
+        // Ensure profile load even if selectTower already ran with stale cache skip.
+        viewModel.loadLosProfile(towerId)
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
@@ -121,7 +157,68 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
                     detailAltitude.text = tower.altitudeMeters?.let {
                         String.format(Locale.US, "Altitude  %.1f m", it)
                     } ?: "Altitude  —"
+
+                    renderLos(state, losStatus, losChart, clutterLabel, clutterSlider)
                 }
+            }
+        }
+    }
+
+    private fun renderLos(
+        state: TowerUiState,
+        losStatus: TextView,
+        losChart: LosProfileChartView,
+        clutterLabel: TextView,
+        clutterSlider: SeekBar
+    ) {
+        val clutter = state.clutterHeightMeters.toDouble()
+        clutterLabel.text = String.format(Locale.US, "Clutter (trees)  %.0f m", clutter)
+        if (clutterSlider.progress != state.clutterHeightMeters.toInt()) {
+            clutterSlider.progress = state.clutterHeightMeters.toInt()
+        }
+
+        when {
+            state.losProfileLoading && state.losProfile == null -> {
+                losStatus.text = "Querying USGS elevations (50 points)…"
+                losStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_muted))
+                losChart.isVisible = false
+            }
+            state.losProfileError != null && state.losProfile == null -> {
+                losStatus.text = state.losProfileError
+                losStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.chip_poor))
+                losChart.isVisible = false
+            }
+            state.losProfile != null -> {
+                val profile = state.losProfile
+                val clearance = profile.minClearanceMeters(clutter)
+                val clear = clearance > 0.0
+                losStatus.text = if (clear) {
+                    String.format(
+                        Locale.US,
+                        "Clear LOS · min clearance %.0f m · %d samples",
+                        clearance,
+                        profile.sampleCount
+                    )
+                } else {
+                    String.format(
+                        Locale.US,
+                        "Blocked · terrain/clutter clears LOS by %.0f m",
+                        -clearance
+                    )
+                }
+                losStatus.setTextColor(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        if (clear) R.color.chip_good else R.color.chip_poor
+                    )
+                )
+                losChart.isVisible = true
+                losChart.setProfile(profile, clutter)
+            }
+            else -> {
+                losStatus.text = "Line-of-sight profile unavailable"
+                losStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_muted))
+                losChart.isVisible = false
             }
         }
     }
