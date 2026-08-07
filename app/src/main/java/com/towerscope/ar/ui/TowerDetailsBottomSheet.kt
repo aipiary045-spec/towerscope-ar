@@ -70,6 +70,7 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
         val losChart = view.findViewById<LosProfileChartView>(R.id.losChart)
         val clutterLabel = view.findViewById<TextView>(R.id.clutterLabel)
         val clutterSlider = view.findViewById<SeekBar>(R.id.clutterSlider)
+        val losSection = view.findViewById<View>(R.id.losSection)
 
         view.findViewById<Button>(R.id.closeSheetButton).setOnClickListener { dismiss() }
         view.findViewById<Button>(R.id.showOnlyButton).setOnClickListener {
@@ -158,7 +159,7 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
                         String.format(Locale.US, "Altitude  %.1f m", it)
                     } ?: "Altitude  —"
 
-                    renderLos(state, losStatus, losChart, clutterLabel, clutterSlider)
+                    renderLos(state, losSection, losStatus, losChart, clutterLabel, clutterSlider)
                 }
             }
         }
@@ -166,11 +167,18 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
 
     private fun renderLos(
         state: TowerUiState,
+        losSection: View,
         losStatus: TextView,
         losChart: LosProfileChartView,
         clutterLabel: TextView,
         clutterSlider: SeekBar
     ) {
+        if (!state.showElevationProfile) {
+            losSection.isVisible = false
+            return
+        }
+        losSection.isVisible = true
+
         val clutter = state.clutterHeightMeters.toDouble()
         clutterLabel.text = String.format(Locale.US, "Clutter (trees)  %.0f m", clutter)
         if (clutterSlider.progress != state.clutterHeightMeters.toInt()) {

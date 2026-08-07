@@ -62,54 +62,61 @@
             android:textColor="@color/text_muted"
             android:textSize="13sp" />
 
-        <TextView
+        <LinearLayout
+            android:id="@+id/losSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:letterSpacing="0.06"
-            android:text="LINE OF SIGHT"
-            android:textColor="@color/text_muted"
-            android:textSize="10sp" />
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/losStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/text_primary"
-            android:textSize="12sp" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:letterSpacing="0.06"
+                android:text="LINE OF SIGHT"
+                android:textColor="@color/text_muted"
+                android:textSize="10sp" />
 
-        <com.towerscope.ar.ui.LosProfileChartView
-            android:id="@+id/losChart"
-            android:layout_width="match_parent"
-            android:layout_height="180dp"
-            android:layout_marginTop="8dp"
-            android:background="#1A000000" />
+            <TextView
+                android:id="@+id/losStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
 
-        <TextView
-            android:id="@+id/clutterLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="Clutter (trees)  0 m"
-            android:textColor="@color/accent_yellow"
-            android:textSize="11sp" />
+            <com.towerscope.ar.ui.LosProfileChartView
+                android:id="@+id/losChart"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:layout_marginTop="8dp"
+                android:background="#1A000000" />
 
-        <SeekBar
-            android:id="@+id/clutterSlider"
-            android:layout_width="match_parent"
-            android:layout_height="32dp"
-            android:max="40"
-            android:progress="0"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp" />
+            <TextView
+                android:id="@+id/clutterLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Clutter (trees)  0 m"
+                android:textColor="@color/accent_yellow"
+                android:textSize="11sp" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Adds tree/vegetation height on top of USGS terrain for the LOS check."
-            android:textColor="@color/text_muted"
-            android:textSize="10sp" />
+            <SeekBar
+                android:id="@+id/clutterSlider"
+                android:layout_width="match_parent"
+                android:layout_height="32dp"
+                android:max="40"
+                android:progress="0"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Adds tree/vegetation height on top of USGS terrain for the LOS check."
+                android:textColor="@color/text_muted"
+                android:textSize="10sp" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/showOnlyButton"

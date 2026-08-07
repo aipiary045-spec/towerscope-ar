@@ -1,19 +1,16 @@
 package com.towerscope.ar
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.View
 import android.view.WindowManager
-import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -30,6 +27,7 @@ import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.ui.EarthTrackingQuality
 import com.towerscope.ar.ui.HudThemeApplier
 import com.towerscope.ar.ui.OffScreenTowerOverlay
+import com.towerscope.ar.ui.SettingsBottomSheet
 import com.towerscope.ar.ui.TowerArSceneBinding
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.CelestialBodies
@@ -51,22 +49,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bottomPanel: View
     private lateinit var trackingWarning: TextView
     private lateinit var appTitle: TextView
-    private lateinit var themeButton: TextView
-    private lateinit var calibrateButton: TextView
+    private lateinit var settingsButton: ImageButton
     private lateinit var gpsChip: TextView
     private lateinit var earthChip: TextView
     private lateinit var headingLabel: TextView
     private lateinit var focusTowerLabel: TextView
-    private lateinit var messageBanner: TextView
     private lateinit var visibleCount: TextView
-    private lateinit var bottomExtras: View
-    private lateinit var hudExpandButton: TextView
-    private lateinit var altitudeModeButton: TextView
-    private lateinit var searchField: EditText
-    private lateinit var distanceLabel: TextView
-    private lateinit var distanceSlider: SeekBar
-    private lateinit var dataButton: MaterialButton
-    private lateinit var showHiddenButton: MaterialButton
     private lateinit var nearestHeader: TextView
     private lateinit var towerChips: LinearLayout
     private lateinit var arContainer: FrameLayout
@@ -79,9 +67,9 @@ class MainActivity : AppCompatActivity() {
 
     private var bottomPanelBasePadding = 0
     private var topChromeBasePadding = 0
-
-    private var suppressSearchCallback = false
     private var onboardingShownThisSession = false
+    private var lastToastMessage: String? = null
+    private var lastChipSignature: String? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -118,22 +106,12 @@ class MainActivity : AppCompatActivity() {
         bottomPanel = findViewById(R.id.bottomPanel)
         trackingWarning = findViewById(R.id.trackingWarning)
         appTitle = findViewById(R.id.appTitle)
-        themeButton = findViewById(R.id.themeButton)
-        calibrateButton = findViewById(R.id.calibrateButton)
+        settingsButton = findViewById(R.id.settingsButton)
         gpsChip = findViewById(R.id.gpsChip)
         earthChip = findViewById(R.id.earthChip)
         headingLabel = findViewById(R.id.headingLabel)
         focusTowerLabel = findViewById(R.id.focusTowerLabel)
-        messageBanner = findViewById(R.id.messageBanner)
         visibleCount = findViewById(R.id.visibleCount)
-        bottomExtras = findViewById(R.id.bottomExtras)
-        hudExpandButton = findViewById(R.id.hudExpandButton)
-        altitudeModeButton = findViewById(R.id.altitudeModeButton)
-        searchField = findViewById(R.id.searchField)
-        distanceLabel = findViewById(R.id.distanceLabel)
-        distanceSlider = findViewById(R.id.distanceSlider)
-        dataButton = findViewById(R.id.dataButton)
-        showHiddenButton = findViewById(R.id.showHiddenButton)
         nearestHeader = findViewById(R.id.nearestHeader)
         towerChips = findViewById(R.id.towerChips)
         arContainer = findViewById(R.id.arContainer)
@@ -147,10 +125,6 @@ class MainActivity : AppCompatActivity() {
 
         bottomPanelBasePadding = bottomPanel.paddingBottom
         topChromeBasePadding = topChrome.paddingTop
-
-        distanceSlider.max = (TowerUiState.MAX_DISTANCE_METERS - TowerUiState.MIN_DISTANCE_METERS).toInt()
-        distanceSlider.progress =
-            (TowerUiState.DEFAULT_MAX_DISTANCE_METERS - TowerUiState.MIN_DISTANCE_METERS).toInt()
     }
 
     private fun applySystemBarInsets() {
@@ -169,43 +143,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun wireActions() {
         findViewById<MaterialButton>(R.id.grantPermissionsButton).setOnClickListener { requestPermissions() }
-        themeButton.setOnClickListener { viewModel.cycleHudTheme() }
-        calibrateButton.setOnClickListener { viewModel.beginHeadingCalibration() }
-        calibrateButton.setOnLongClickListener {
-            if (viewModel.uiState.value.isHeadingCalibrated) {
-                viewModel.clearHeadingCalibration()
-                true
-            } else {
-                false
-            }
-        }
+        settingsButton.setOnClickListener { openSettings() }
         calibrationConfirmButton.setOnClickListener { viewModel.confirmHeadingCalibration() }
         calibrationCancelButton.setOnClickListener { viewModel.cancelHeadingCalibration() }
-        hudExpandButton.setOnClickListener { viewModel.toggleHudExpanded() }
-        altitudeModeButton.setOnClickListener { viewModel.toggleUseKmlAltitude() }
-        dataButton.setOnClickListener {
-            startActivity(Intent(this, DataMenuActivity::class.java))
-        }
-        showHiddenButton.setOnClickListener { viewModel.clearHiddenTowers() }
         focusTowerLabel.setOnClickListener {
             viewModel.uiState.value.focusTower()?.let { openTowerDetails(it.id) }
         }
-        distanceSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val meters = TowerUiState.MIN_DISTANCE_METERS + progress
-                viewModel.setMaxDistanceMeters(meters)
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
-            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
-        })
-        searchField.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
-            override fun afterTextChanged(s: Editable?) {
-                if (suppressSearchCallback) return
-                viewModel.setSearchQuery(s?.toString().orEmpty())
-            }
-        })
     }
 
     private fun observeState() {
@@ -216,14 +159,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private var lastChipSignature: String? = null
-
     private fun render(state: TowerUiState) {
         val visible = state.visibleTowers()
         renderTrackingChips(state)
         renderCompass(state)
         renderTheme(state)
         renderCalibration(state)
+        maybeToastStatus(state)
 
         visibleCount.text = buildString {
             append("Visible ${visible.size} / ${state.towers.size}")
@@ -231,27 +173,6 @@ class MainActivity : AppCompatActivity() {
                 append("  ·  ${state.hiddenTowerIds.size} hidden")
             }
         }
-        distanceLabel.text =
-            "RANGE  ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}"
-        showHiddenButton.isVisible = state.hiddenTowerIds.isNotEmpty()
-
-        if (searchField.text.toString() != state.searchQuery) {
-            suppressSearchCallback = true
-            searchField.setText(state.searchQuery)
-            searchField.setSelection(state.searchQuery.length)
-            suppressSearchCallback = false
-        }
-
-        val message = state.errorMessage ?: state.statusMessage
-        messageBanner.isVisible = message != null
-        messageBanner.text = message.orEmpty()
-        messageBanner.setTextColor(
-            if (state.errorMessage != null) {
-                ContextCompat.getColor(this, R.color.chip_poor)
-            } else {
-                HudThemeApplier.colorsFor(state.hudTheme, messageBanner).secondary
-            }
-        )
 
         renderNearbyChips(state)
 
@@ -264,6 +185,17 @@ class MainActivity : AppCompatActivity() {
         )
 
         renderDirectionOverlay(state)
+    }
+
+    private fun maybeToastStatus(state: TowerUiState) {
+        val message = state.errorMessage ?: state.statusMessage ?: return
+        if (message == lastToastMessage) return
+        lastToastMessage = message
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        // Clear non-error banners so they do not re-toast every collect.
+        if (state.errorMessage == null) {
+            viewModel.clearStatusMessage()
+        }
     }
 
     private fun renderNearbyChips(state: TowerUiState) {
@@ -388,17 +320,13 @@ class MainActivity : AppCompatActivity() {
         if (trackingWarning.isVisible) {
             trackingWarning.text = when {
                 compassHint ->
-                    "Compass needs calibration — figure-8 the phone slowly"
+                    "Compass needs calibration — open Settings → Calibrate"
                 state.earthTrackingQuality == EarthTrackingQuality.LIMITED ->
-                    "Walk slowly outdoors until Earth ≤12 m (towers pinned, still refining)"
+                    "Walk slowly outdoors until Earth ≤12 m"
                 else ->
-                    "Outdoors with clear sky — wait for Earth lock for precise towers"
+                    "Outdoors with clear sky — wait for Earth Ready"
             }
         }
-
-        bottomExtras.isVisible = state.hudExpanded
-        hudExpandButton.text = if (state.hudExpanded) "Less" else "More"
-        altitudeModeButton.text = if (state.useKmlAltitude) "KML alt" else "Ground"
     }
 
     private fun renderCompass(state: TowerUiState) {
@@ -441,18 +369,11 @@ class MainActivity : AppCompatActivity() {
             compassStrip = compassStrip,
             bottomPanel = bottomPanel,
             trackingWarning = trackingWarning,
-            messageBanner = messageBanner,
             appTitle = appTitle,
             headingLabel = headingLabel,
             focusTowerLabel = focusTowerLabel,
             visibleCount = visibleCount,
-            distanceLabel = distanceLabel,
-            nearestHeader = nearestHeader,
-            searchField = searchField,
-            themeButton = themeButton,
-            calibrateButton = calibrateButton,
-            dataButton = dataButton,
-            showHiddenButton = showHiddenButton
+            nearestHeader = nearestHeader
         )
     }
 
@@ -461,8 +382,6 @@ class MainActivity : AppCompatActivity() {
         directionOverlay.isVisible = !state.calibrationActive
         topChrome.isVisible = !state.calibrationActive
         bottomPanel.isVisible = !state.calibrationActive
-
-        calibrateButton.text = if (state.isHeadingCalibrated) "Cal✓" else "Cal"
 
         if (!state.calibrationActive) return
 
@@ -485,6 +404,15 @@ class MainActivity : AppCompatActivity() {
                 "${elevText}Center the Moon, hold steady, then Confirm"
             null -> "Align, then Confirm"
         }
+    }
+
+    private fun openSettings() {
+        val existing = supportFragmentManager.findFragmentByTag(SettingsBottomSheet.TAG)
+        if (existing is SettingsBottomSheet) {
+            existing.dismissAllowingStateLoss()
+        }
+        SettingsBottomSheet.newInstance()
+            .show(supportFragmentManager, SettingsBottomSheet.TAG)
     }
 
     private fun openTowerDetails(towerId: String) {
@@ -545,13 +473,11 @@ class MainActivity : AppCompatActivity() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("TowerScope field tips")
             .setMessage(
-                "1. Load your KML/KMZ from Tower data.\n" +
+                "1. Open Settings (cog) → Tower data to load your KML/KMZ.\n" +
                     "2. Go outdoors with a clear view of the sky.\n" +
                     "3. Walk slowly until Earth shows Ready (≤12 m).\n" +
-                    "4. Tap Cal and center the Sun (or Moon at night) to fix compass heading.\n" +
-                    "5. Labels mark Earth/terrain pins; GPS labels are last-resort only.\n" +
-                    "6. Keep Ground mode unless your KML altitudes are true WGS84 HAE.\n" +
-                    "7. Tap NEARBY chips to hide or show only one tower.\n\n" +
+                    "4. Settings → Calibrate with sun/moon to fix compass heading.\n" +
+                    "5. Tap a tower for details and line-of-sight (toggle in Settings).\n\n" +
                     "Precision needs Earth Ready — GPS-only markers can be far off."
             )
             .setPositiveButton("Got it") { _, _ ->

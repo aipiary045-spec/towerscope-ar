@@ -3,7 +3,6 @@ package com.towerscope.ar
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +11,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import kotlinx.coroutines.launch
 
@@ -33,17 +33,12 @@ class DataMenuActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_data_menu)
-        // Same activity-scoped VM is not shared across activities; use application-scoped
-        // by reading/writing through the same ViewModel class bound to this activity —
-        // persistence is via TowerFileStore, and MainActivity observes its own VM which
-        // restores on create. Prefer ProcessLifecycle-friendly approach: use AndroidViewModel
-        // + file store; MainActivity reloads when resumed.
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
 
         sourceStatus = findViewById(R.id.sourceStatus)
         menuMessage = findViewById(R.id.menuMessage)
 
-        findViewById<Button>(R.id.loadKmlButton).setOnClickListener {
+        findViewById<MaterialButton>(R.id.loadKmlButton).setOnClickListener {
             filePickerLauncher.launch(
                 arrayOf(
                     "application/vnd.google-earth.kml+xml",
@@ -55,8 +50,8 @@ class DataMenuActivity : AppCompatActivity() {
                 )
             )
         }
-        findViewById<Button>(R.id.clearButton).setOnClickListener { viewModel.clearSavedTowers() }
-        findViewById<Button>(R.id.doneButton).setOnClickListener { finish() }
+        findViewById<MaterialButton>(R.id.clearButton).setOnClickListener { viewModel.clearSavedTowers() }
+        findViewById<MaterialButton>(R.id.doneButton).setOnClickListener { finish() }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -67,11 +62,13 @@ class DataMenuActivity : AppCompatActivity() {
                         source != null -> "Loaded ${state.towers.size} towers\nSource: $source"
                         else -> "Loaded ${state.towers.size} towers"
                     }
-                    val message = state.errorMessage ?: state.statusMessage
+                    // Prefer error; avoid duplicating the same loaded/restored line already in the card.
+                    val message = state.errorMessage
+                        ?: state.statusMessage?.takeIf { !it.startsWith("Loaded") && !it.startsWith("Restored") }
                     menuMessage.isVisible = message != null
                     menuMessage.text = message.orEmpty()
                     menuMessage.setTextColor(
-                        if (state.errorMessage != null) 0xFFFF6B6B.toInt() else 0xFFFFFFFF.toInt()
+                        if (state.errorMessage != null) 0xFFFF6B6B.toInt() else 0xFF9AA4B2.toInt()
                     )
                 }
             }

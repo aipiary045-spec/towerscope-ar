@@ -83,6 +83,8 @@ data class TowerUiState(
     val losProfileError: String? = null,
     /** Extra vegetation / clutter height added on top of USGS terrain (meters). */
     val clutterHeightMeters: Float = DEFAULT_CLUTTER_METERS,
+    /** When false, tower details hide LOS chart and skip USGS elevation queries. */
+    val showElevationProfile: Boolean = true,
     val sourceName: String? = null,
     val statusMessage: String? = null,
     val errorMessage: String? = null,
@@ -237,7 +239,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             useKmlAltitude = prefs.getBoolean(KEY_USE_KML_ALTITUDE, false),
             hudExpanded = prefs.getBoolean(KEY_HUD_EXPANDED, true),
             headingCalibrationOffsetDegrees = loadHeadingOffset(),
-            clutterHeightMeters = prefs.getFloat(KEY_CLUTTER_HEIGHT, TowerUiState.DEFAULT_CLUTTER_METERS)
+            clutterHeightMeters = prefs.getFloat(KEY_CLUTTER_HEIGHT, TowerUiState.DEFAULT_CLUTTER_METERS),
+            showElevationProfile = prefs.getBoolean(KEY_SHOW_ELEVATION_PROFILE, true)
         )
     )
     val uiState: StateFlow<TowerUiState> = _uiState.asStateFlow()
@@ -347,6 +350,20 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(clutterHeightMeters = clamped) }
     }
 
+    fun setShowElevationProfile(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_SHOW_ELEVATION_PROFILE, enabled).apply()
+        _uiState.update { it.copy(showElevationProfile = enabled) }
+        if (!enabled) {
+            clearLosProfile()
+        } else {
+            _uiState.value.selectedTowerId?.let { loadLosProfile(it) }
+        }
+    }
+
+    fun clearStatusMessage() {
+        _uiState.update { it.copy(statusMessage = null) }
+    }
+
     fun clearLosProfile() {
         losJob?.cancel()
         losJob = null
@@ -364,6 +381,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
      * Sample 50 geodesic points to [towerId], query USGS elevations, apply Earth curvature.
      */
     fun loadLosProfile(towerId: String) {
+        if (!_uiState.value.showElevationProfile) {
+            clearLosProfile()
+            return
+        }
         val tower = _uiState.value.towerById(towerId) ?: return
         val location = _uiState.value.positioningLocation()
         if (location == null) {
@@ -750,6 +771,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
         private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
         private const val KEY_CLUTTER_HEIGHT = "clutter_height_meters"
+        private const val KEY_SHOW_ELEVATION_PROFILE = "show_elevation_profile"
 
         private fun earthPoseEquivalent(a: EarthCameraPose?, b: EarthCameraPose?): Boolean {
             if (a === b) return true
