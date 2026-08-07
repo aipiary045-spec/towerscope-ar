@@ -375,6 +375,8 @@ class MainActivity : AppCompatActivity() {
             visibleCount = visibleCount,
             nearestHeader = nearestHeader
         )
+        val colors = HudThemeApplier.colorsFor(state.hudTheme, settingsButton)
+        settingsButton.imageTintList = android.content.res.ColorStateList.valueOf(colors.secondary)
     }
 
     private fun renderCalibration(state: TowerUiState) {
@@ -382,6 +384,7 @@ class MainActivity : AppCompatActivity() {
         directionOverlay.isVisible = !state.calibrationActive
         topChrome.isVisible = !state.calibrationActive
         bottomPanel.isVisible = !state.calibrationActive
+        settingsButton.isVisible = !state.calibrationActive
 
         if (!state.calibrationActive) return
 

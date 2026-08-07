@@ -238,6 +238,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private val prefs = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private val _uiState = MutableStateFlow(
         TowerUiState(
+            maxDistanceMeters = loadMaxDistanceMeters(),
             hudTheme = loadHudTheme(),
             useKmlAltitude = prefs.getBoolean(KEY_USE_KML_ALTITUDE, false),
             hudExpanded = prefs.getBoolean(KEY_HUD_EXPANDED, true),
@@ -260,6 +261,12 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private fun loadHudTheme(): HudTheme {
         val raw = prefs.getString(KEY_HUD_THEME, HudTheme.NIGHT.name) ?: HudTheme.NIGHT.name
         return runCatching { HudTheme.valueOf(raw) }.getOrDefault(HudTheme.NIGHT)
+    }
+
+    private fun loadMaxDistanceMeters(): Float {
+        if (!prefs.contains(KEY_MAX_DISTANCE)) return TowerUiState.DEFAULT_MAX_DISTANCE_METERS
+        return prefs.getFloat(KEY_MAX_DISTANCE, TowerUiState.DEFAULT_MAX_DISTANCE_METERS)
+            .coerceIn(TowerUiState.MIN_DISTANCE_METERS, TowerUiState.MAX_DISTANCE_METERS)
     }
 
     private fun loadHeadingOffset(): Double? {
@@ -324,14 +331,12 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun setMaxDistanceMeters(meters: Float) {
-        _uiState.update {
-            it.copy(
-                maxDistanceMeters = meters.coerceIn(
-                    TowerUiState.MIN_DISTANCE_METERS,
-                    TowerUiState.MAX_DISTANCE_METERS
-                )
-            )
-        }
+        val clamped = meters.coerceIn(
+            TowerUiState.MIN_DISTANCE_METERS,
+            TowerUiState.MAX_DISTANCE_METERS
+        )
+        prefs.edit().putFloat(KEY_MAX_DISTANCE, clamped).apply()
+        _uiState.update { it.copy(maxDistanceMeters = clamped) }
     }
 
     fun setSearchQuery(query: String) {
@@ -775,6 +780,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
         private const val KEY_CLUTTER_HEIGHT = "clutter_height_meters"
         private const val KEY_SHOW_ELEVATION_PROFILE = "show_elevation_profile"
+        private const val KEY_MAX_DISTANCE = "max_distance_meters"
 
         private fun earthPoseEquivalent(a: EarthCameraPose?, b: EarthCameraPose?): Boolean {
             if (a === b) return true
