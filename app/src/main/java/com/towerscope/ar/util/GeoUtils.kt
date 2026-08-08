@@ -187,6 +187,16 @@ object GeoUtils {
         }
     }
 
+    /** Larger Aim HUD cue: ON TARGET / TURN LEFT 12° / TURN RIGHT 12°. */
+    fun formatAimTurn(relativeBearingDegrees: Double): String {
+        val abs = kotlin.math.abs(relativeBearingDegrees)
+        return when {
+            abs <= 12.0 -> "ON TARGET"
+            relativeBearingDegrees < 0 -> String.format(Locale.US, "TURN LEFT  %.0f°", abs)
+            else -> String.format(Locale.US, "TURN RIGHT  %.0f°", abs)
+        }
+    }
+
     private fun angularDistanceRadians(
         φ1: Double,
         λ1: Double,

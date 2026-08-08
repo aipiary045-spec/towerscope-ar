@@ -10,7 +10,7 @@
         android:id="@+id/compassRadar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="108dp"
+        android:layout_marginTop="148dp"
         android:layout_marginBottom="118dp"
         android:layout_marginHorizontal="12dp" />
 
@@ -99,7 +99,7 @@
                 android:letterSpacing="0.02"
                 android:text="HEADING  —"
                 android:textColor="@color/accent_teal"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -109,11 +109,63 @@
                 android:layout_marginTop="4dp"
                 android:ellipsize="end"
                 android:fontFamily="@font/source_sans3_semibold"
-                android:maxLines="2"
+                android:maxLines="1"
                 android:text="No tower in range"
                 android:textColor="@color/text_primary"
                 android:textSize="15sp"
                 android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/aimFocusHud"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/aimTurnLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1.2"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="—"
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/aimDistanceLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:gravity="end"
+                        android:text="—"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/aimSignalLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="monospace"
+                        android:gravity="end"
+                        android:text="Est.  —"
+                        android:textColor="@color/accent_teal"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 

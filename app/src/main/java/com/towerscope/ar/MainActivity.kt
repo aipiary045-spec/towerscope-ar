@@ -30,6 +30,7 @@ import com.towerscope.ar.ui.HudThemeApplier
 import com.towerscope.ar.ui.SettingsBottomSheet
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.GeoUtils
+import com.towerscope.ar.util.LinkEstimate
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -51,6 +52,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var compassChip: TextView
     private lateinit var headingLabel: TextView
     private lateinit var focusTowerLabel: TextView
+    private lateinit var aimFocusHud: View
+    private lateinit var aimTurnLabel: TextView
+    private lateinit var aimDistanceLabel: TextView
+    private lateinit var aimSignalLabel: TextView
     private lateinit var visibleCount: TextView
     private lateinit var nearestHeader: TextView
     private lateinit var towerChips: LinearLayout
@@ -112,6 +117,10 @@ class MainActivity : AppCompatActivity() {
         compassChip = findViewById(R.id.compassChip)
         headingLabel = findViewById(R.id.headingLabel)
         focusTowerLabel = findViewById(R.id.focusTowerLabel)
+        aimFocusHud = findViewById(R.id.aimFocusHud)
+        aimTurnLabel = findViewById(R.id.aimTurnLabel)
+        aimDistanceLabel = findViewById(R.id.aimDistanceLabel)
+        aimSignalLabel = findViewById(R.id.aimSignalLabel)
         visibleCount = findViewById(R.id.visibleCount)
         nearestHeader = findViewById(R.id.nearestHeader)
         towerChips = findViewById(R.id.towerChips)
@@ -354,22 +363,65 @@ class MainActivity : AppCompatActivity() {
         }
 
         val focus = state.focusTower()
-        focusTowerLabel.text = if (focus == null) {
-            "No tower in range"
+        if (focus == null) {
+            focusTowerLabel.text = "No tower in range"
+            aimFocusHud.isVisible = false
+            return
+        }
+
+        focusTowerLabel.text = focus.name
+        aimFocusHud.isVisible = true
+
+        val distance = state.distanceTo(focus)
+        val bearing = state.bearingTo(focus)
+        val relative = if (heading != null && bearing != null) {
+            GeoUtils.relativeBearingDegrees(heading, bearing)
         } else {
-            val distance = state.distanceTo(focus)
-            val bearing = state.bearingTo(focus)
-            val turn = if (heading != null && bearing != null) {
-                GeoUtils.formatRelativeTurn(GeoUtils.relativeBearingDegrees(heading, bearing))
-            } else {
-                null
-            }
-            buildString {
-                append(focus.name)
-                if (distance != null) append("  ·  ").append(GeoUtils.formatDistance(distance))
-                if (bearing != null) append("  ·  ").append(GeoUtils.formatAzimuthPadded(bearing))
-                if (turn != null) append("  ·  ").append(turn)
-            }
+            null
+        }
+
+        aimTurnLabel.text = if (relative != null) {
+            GeoUtils.formatAimTurn(relative)
+        } else {
+            "AIM —"
+        }
+        aimTurnLabel.setTextColor(
+            ContextCompat.getColor(
+                this,
+                when {
+                    relative == null -> R.color.text_muted
+                    kotlin.math.abs(relative) <= 12.0 -> R.color.status_clear
+                    else -> R.color.accent_yellow
+                }
+            )
+        )
+
+        aimDistanceLabel.text = distance?.let { GeoUtils.formatDistance(it) } ?: "—"
+
+        if (distance != null) {
+            val dbm = LinkEstimate.estimatedReceiveLevelDbm(
+                distanceMeters = distance,
+                frequencyGhz = state.frequencyGhz.toDouble(),
+                txPowerDbm = state.txPowerDbm.toDouble(),
+                apGainDbi = state.apAntennaGainDbi.toDouble(),
+                cpeGainDbi = state.cpeAntennaGainDbi.toDouble()
+            )
+            aimSignalLabel.text = LinkEstimate.formatReceiveLevel(dbm)
+            val quality = LinkEstimate.signalQuality(dbm)
+            aimSignalLabel.setTextColor(
+                ContextCompat.getColor(
+                    this,
+                    when (quality) {
+                        LinkEstimate.SignalQuality.STRONG,
+                        LinkEstimate.SignalQuality.OK -> R.color.accent_teal
+                        LinkEstimate.SignalQuality.WEAK -> R.color.accent_yellow
+                        LinkEstimate.SignalQuality.POOR -> R.color.chip_poor
+                    }
+                )
+            )
+        } else {
+            aimSignalLabel.text = "Est.  —"
+            aimSignalLabel.setTextColor(ContextCompat.getColor(this, R.color.text_muted))
         }
     }
 
