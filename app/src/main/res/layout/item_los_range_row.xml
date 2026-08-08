@@ -43,7 +43,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:ellipsize="end"
-                android:fontFamily="sans-serif-condensed"
+                android:fontFamily="@font/source_sans3_semibold"
                 android:maxLines="1"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp"
@@ -55,7 +55,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_pill_clear"
-                android:fontFamily="sans-serif-condensed"
+                android:fontFamily="@font/source_sans3_semibold"
                 android:letterSpacing="0.06"
                 android:minHeight="28dp"
                 android:gravity="center"
@@ -80,10 +80,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:fontFamily="sans-serif"
+            android:fontFamily="@font/source_sans3_semibold"
             android:textColor="@color/accent_yellow"
             android:textSize="13sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/rowLinkEstimate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/source_sans3_regular"
+            android:textColor="@color/text_muted"
+            android:textSize="12sp"
+            android:visibility="gone" />
 
         <View
             android:id="@+id/rowShimmer"

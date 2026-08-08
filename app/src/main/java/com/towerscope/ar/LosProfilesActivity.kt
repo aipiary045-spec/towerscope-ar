@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.LinearLayout
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +27,7 @@ import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.CardinalSector
 import com.towerscope.ar.util.GeoUtils
+import com.towerscope.ar.util.LinkEstimate
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -40,7 +42,13 @@ class LosProfilesActivity : AppCompatActivity() {
     private lateinit var subtitle: TextView
     private lateinit var status: TextView
     private lateinit var list: LinearLayout
+    private lateinit var frequencyLabel: TextView
+    private lateinit var frequencySlider: SeekBar
+    private lateinit var cpeHeightLabel: TextView
+    private lateinit var cpeHeightSlider: SeekBar
     private var startedScan = false
+    private var lastCpeHeight: Float? = null
+    private val frequencyPresets = listOf(2.4f, 3.65f, 5.2f, 5.8f, 6.0f, 24.0f, 60.0f)
     private val shimmerAnimators = mutableListOf<ObjectAnimator>()
 
     private val permissionLauncher = registerForActivityResult(
@@ -69,6 +77,41 @@ class LosProfilesActivity : AppCompatActivity() {
         subtitle = findViewById(R.id.losRangeSubtitle)
         status = findViewById(R.id.losRangeStatus)
         list = findViewById(R.id.losRangeList)
+        frequencyLabel = findViewById(R.id.losFrequencyLabel)
+        frequencySlider = findViewById(R.id.losFrequencySlider)
+        cpeHeightLabel = findViewById(R.id.losCpeHeightLabel)
+        cpeHeightSlider = findViewById(R.id.losCpeHeightSlider)
+
+        frequencySlider.max = frequencyPresets.lastIndex
+        cpeHeightSlider.max =
+            (TowerUiState.MAX_CPE_ANTENNA_AGL_METERS - TowerUiState.MIN_CPE_ANTENNA_AGL_METERS).toInt()
+        frequencySlider.progressDrawable =
+            ContextCompat.getDrawable(this, R.drawable.bg_seekbar_progress)
+        frequencySlider.thumb = ContextCompat.getDrawable(this, R.drawable.bg_seekbar_thumb)
+        cpeHeightSlider.progressDrawable =
+            ContextCompat.getDrawable(this, R.drawable.bg_seekbar_progress)
+        cpeHeightSlider.thumb = ContextCompat.getDrawable(this, R.drawable.bg_seekbar_thumb)
+
+        frequencySlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val ghz = frequencyPresets[progress.coerceIn(0, frequencyPresets.lastIndex)]
+                frequencyLabel.text = String.format(Locale.US, "FREQ  %.1f GHz", ghz)
+                if (!fromUser) return
+                viewModel.setFrequencyGhz(ghz)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+        cpeHeightSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val meters = TowerUiState.MIN_CPE_ANTENNA_AGL_METERS + progress
+                cpeHeightLabel.text = String.format(Locale.US, "CPE height  %.0f m", meters)
+                if (!fromUser) return
+                viewModel.setCpeAntennaAglMeters(meters)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
 
         findViewById<MaterialButton>(R.id.losRangeHomeButton).setOnClickListener { finish() }
         findViewById<MaterialButton>(R.id.losRangeRefreshButton).setOnClickListener {
@@ -81,13 +124,38 @@ class LosProfilesActivity : AppCompatActivity() {
                 viewModel.uiState.collect { state ->
                     subtitle.text = String.format(
                         Locale.US,
-                        "%s · %.1f GHz · CPE %.0f m · clutter %.0f m",
+                        "%s · %.1f GHz · CPE height %.0f m · clutter %.0f m",
                         if (state.hasInstallSite) "From install site" else "From GPS",
                         state.frequencyGhz,
                         state.cpeAntennaAglMeters,
                         state.clutterHeightMeters
                     )
                     status.text = state.losRangeStatus.orEmpty()
+
+                    val freqIndex = frequencyPresets.indexOfFirst {
+                        kotlin.math.abs(it - state.frequencyGhz) < 0.05f
+                    }.let { if (it < 0) 3 else it }
+                    if (frequencySlider.progress != freqIndex) {
+                        frequencySlider.progress = freqIndex
+                    }
+                    frequencyLabel.text =
+                        String.format(Locale.US, "FREQ  %.1f GHz", state.frequencyGhz)
+                    val cpeProgress =
+                        (state.cpeAntennaAglMeters - TowerUiState.MIN_CPE_ANTENNA_AGL_METERS).toInt()
+                    if (cpeHeightSlider.progress != cpeProgress) {
+                        cpeHeightSlider.progress = cpeProgress
+                    }
+                    cpeHeightLabel.text = String.format(
+                        Locale.US,
+                        "CPE height  %.0f m",
+                        state.cpeAntennaAglMeters
+                    )
+
+                    if (lastCpeHeight != null && lastCpeHeight != state.cpeAntennaAglMeters) {
+                        startedScan = false
+                    }
+                    lastCpeHeight = state.cpeAntennaAglMeters
+
                     renderRows(state)
                     maybeStartScan()
                 }
@@ -211,6 +279,7 @@ class LosProfilesActivity : AppCompatActivity() {
                 "${GeoUtils.formatDistance(row.distanceMeters)}  ·  Az $az  ·  $height$sectorLabel"
 
             val clearanceView = view.findViewById<TextView>(R.id.rowClearance)
+            val linkEstimateView = view.findViewById<TextView>(R.id.rowLinkEstimate)
             val chart = view.findViewById<LosProfileChartView>(R.id.rowChart)
             when {
                 row.loading -> {
@@ -218,6 +287,7 @@ class LosProfilesActivity : AppCompatActivity() {
                     statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.text_dim))
                     clearanceView.text = "Profiling elevation…"
                     clearanceView.setTextColor(ContextCompat.getColor(this, R.color.text_muted))
+                    linkEstimateView.isVisible = false
                     chart.isVisible = false
                     shimmer1.isVisible = true
                     shimmer2.isVisible = true
@@ -229,6 +299,7 @@ class LosProfilesActivity : AppCompatActivity() {
                     statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.status_blocked))
                     clearanceView.text = row.error
                     clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
+                    linkEstimateView.isVisible = false
                     chart.isVisible = false
                     shimmer1.isVisible = false
                     shimmer2.isVisible = false
@@ -275,6 +346,8 @@ class LosProfilesActivity : AppCompatActivity() {
                             clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
                         }
                     }
+                    linkEstimateView.isVisible = true
+                    linkEstimateView.text = LinkEstimate.formatEstimate(row.distanceMeters, freq)
                     chart.isVisible = true
                     chart.setProfile(row.profile, clutter, freq)
                     shimmer1.isVisible = false
@@ -283,6 +356,7 @@ class LosProfilesActivity : AppCompatActivity() {
                 else -> {
                     pill.isVisible = false
                     clearanceView.text = "—"
+                    linkEstimateView.isVisible = false
                     chart.isVisible = false
                     shimmer1.isVisible = false
                     shimmer2.isVisible = false

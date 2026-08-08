@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.towerscope.ar.data.CsvTowerParser
 import com.towerscope.ar.data.KmlParser
 import com.towerscope.ar.data.LosProfile
 import com.towerscope.ar.data.LosProfileDiskCache
@@ -15,7 +16,9 @@ import com.towerscope.ar.location.DeviceHeadingClient
 import com.towerscope.ar.location.HighAccuracyLocationClient
 import com.towerscope.ar.location.UserLocation
 import com.towerscope.ar.ui.HudTheme
-import com.towerscope.ar.util.CelestialBodies
+import com.towerscope.ar.util.CoordinateFormat
+import com.towerscope.ar.util.DisplayUnits
+import com.towerscope.ar.util.DistanceUnitSystem
 import com.towerscope.ar.util.GeoUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -63,20 +66,20 @@ data class TowerUiState(
     val frequencyGhz: Float = DEFAULT_FREQUENCY_GHZ,
     /** CPE / customer antenna height above ground (meters). */
     val cpeAntennaAglMeters: Float = DEFAULT_CPE_ANTENNA_AGL_METERS,
+    val distanceUnitSystem: DistanceUnitSystem = DistanceUnitSystem.IMPERIAL,
+    val coordinateFormat: CoordinateFormat = CoordinateFormat.DECIMAL,
     val deviceHeadingDegrees: Double? = null,
     val compassSensorAccuracy: Int = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM,
     val hudTheme: HudTheme = HudTheme.NIGHT,
     /** Bottom HUD search/range/controls expanded. */
     val hudExpanded: Boolean = true,
     /**
-     * Degrees added to device compass heading after sun/moon calibration.
-     * Null = not calibrated.
+     * Degrees added to device compass heading (manual fine-tune).
+     * Null = no offset applied.
      */
     val headingCalibrationOffsetDegrees: Double? = null,
-    val calibrationActive: Boolean = false,
-    val calibrationBody: CelestialBodies.Body? = null,
-    val calibrationTargetAzimuthDegrees: Double? = null,
-    val calibrationTargetElevationDegrees: Double? = null,
+    /** Figure-8 / tilt coaching overlay visible on Aim. */
+    val compassImproveActive: Boolean = false,
     /** LOS elevation profile for the selected tower (null until loaded). */
     val losProfile: LosProfile? = null,
     val losProfileLoading: Boolean = false,
@@ -125,13 +128,13 @@ data class TowerUiState(
     }
 
     /**
-     * Facing heading from the device compass, plus optional sun/moon calibration offset.
+     * Facing heading from the device compass, plus optional manual offset.
      * Never uses GPS course — that is travel direction, not facing.
      */
     fun effectiveHeadingDegrees(): Double? {
         val device = deviceHeadingDegrees ?: return null
         val offset = headingCalibrationOffsetDegrees ?: 0.0
-        return CelestialBodies.normalizeDegrees(device + offset)
+        return GeoUtils.normalizeBearing(device + offset)
     }
 
     /** Towers with known distance/bearing for the radar disc (relative to heading). */
@@ -287,12 +290,16 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 KEY_CPE_ANTENNA_AGL,
                 TowerUiState.DEFAULT_CPE_ANTENNA_AGL_METERS
             ),
+            distanceUnitSystem = loadDistanceUnitSystem(),
+            coordinateFormat = loadCoordinateFormat(),
             installLatitude = prefs.getFloat(KEY_INSTALL_LAT, Float.NaN)
                 .takeIf { !it.isNaN() }?.toDouble(),
             installLongitude = prefs.getFloat(KEY_INSTALL_LON, Float.NaN)
                 .takeIf { !it.isNaN() }?.toDouble()
         )
-    )
+    ).also { flow ->
+        DisplayUnits.apply(flow.value.distanceUnitSystem, flow.value.coordinateFormat)
+    }
     val uiState: StateFlow<TowerUiState> = _uiState.asStateFlow()
 
     private var locationJob: Job? = null
@@ -320,6 +327,18 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         if (!prefs.contains(KEY_HEADING_OFFSET)) return null
         val value = prefs.getFloat(KEY_HEADING_OFFSET, 0f).toDouble()
         return if (value.isFinite()) value else null
+    }
+
+    private fun loadDistanceUnitSystem(): DistanceUnitSystem {
+        val raw = prefs.getString(KEY_DISTANCE_UNITS, DistanceUnitSystem.IMPERIAL.name)
+            ?: DistanceUnitSystem.IMPERIAL.name
+        return runCatching { DistanceUnitSystem.valueOf(raw) }.getOrDefault(DistanceUnitSystem.IMPERIAL)
+    }
+
+    private fun loadCoordinateFormat(): CoordinateFormat {
+        val raw = prefs.getString(KEY_COORD_FORMAT, CoordinateFormat.DECIMAL.name)
+            ?: CoordinateFormat.DECIMAL.name
+        return runCatching { CoordinateFormat.valueOf(raw) }.getOrDefault(CoordinateFormat.DECIMAL)
     }
 
     private fun restorePersistedTowers() {
@@ -436,8 +455,14 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             TowerUiState.MAX_CPE_ANTENNA_AGL_METERS
         )
         prefs.edit().putFloat(KEY_CPE_ANTENNA_AGL, clamped).apply()
-        _uiState.update { it.copy(cpeAntennaAglMeters = clamped) }
-        // Eye height changes the profile — clear cached chart for selected tower.
+        _uiState.update {
+            it.copy(
+                cpeAntennaAglMeters = clamped,
+                // Eye height changes profiles — force Check LOS to re-scan.
+                losRangeRows = emptyList(),
+                losRangeStatus = "CPE height updated — refreshing…"
+            )
+        }
         clearLosProfile()
         _uiState.value.selectedTowerId?.let { loadLosProfile(it) }
     }
@@ -477,6 +502,27 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         }
         clearLosProfile()
         clearLosRangeProfiles()
+    }
+
+    fun cycleDistanceUnitSystem() {
+        val next = when (_uiState.value.distanceUnitSystem) {
+            DistanceUnitSystem.IMPERIAL -> DistanceUnitSystem.METRIC
+            DistanceUnitSystem.METRIC -> DistanceUnitSystem.IMPERIAL
+        }
+        prefs.edit().putString(KEY_DISTANCE_UNITS, next.name).apply()
+        _uiState.update { it.copy(distanceUnitSystem = next) }
+        DisplayUnits.apply(next, _uiState.value.coordinateFormat)
+    }
+
+    fun cycleCoordinateFormat() {
+        val next = when (_uiState.value.coordinateFormat) {
+            CoordinateFormat.DECIMAL -> CoordinateFormat.DMS
+            CoordinateFormat.DMS -> CoordinateFormat.DECIMAL
+        }
+        prefs.edit().putString(KEY_COORD_FORMAT, next.name).apply()
+        _uiState.update { it.copy(coordinateFormat = next) }
+        // Avoid stale DisplayUnits if cycleCoordinateFormat runs after reading distance from old state
+        DisplayUnits.apply(_uiState.value.distanceUnitSystem, next)
     }
 
     fun setShowElevationProfile(enabled: Boolean) {
@@ -724,114 +770,53 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         prefs.edit().putBoolean(KEY_ONBOARDING_DONE, true).apply()
     }
 
-    /** Enter sun/moon aiming mode when a body is high enough above the horizon. */
-    fun beginHeadingCalibration() {
-        val location = _uiState.value.positioningLocation() ?: _uiState.value.userLocation
-        if (location == null) {
-            _uiState.update {
-                it.copy(statusMessage = "Need GPS before sun/moon calibration")
-            }
-            return
-        }
-        val target = CelestialBodies.preferredCalibrationTarget(
-            latitude = location.latitude,
-            longitude = location.longitude
-        )
-        if (target == null) {
-            _uiState.update {
-                it.copy(
-                    statusMessage =
-                        "Sun/moon too low — try again when one is clearly visible"
-                )
-            }
-            return
-        }
+    /** Show figure-8 / tilt coaching overlay on Aim. */
+    fun beginCompassImprove() {
         _uiState.update {
             it.copy(
-                calibrationActive = true,
-                calibrationBody = target.body,
-                calibrationTargetAzimuthDegrees = target.azimuthDegrees,
-                calibrationTargetElevationDegrees = target.elevationDegrees,
+                compassImproveActive = true,
                 statusMessage = null,
                 errorMessage = null
             )
         }
     }
 
-    fun cancelHeadingCalibration() {
-        _uiState.update {
-            it.copy(
-                calibrationActive = false,
-                calibrationBody = null,
-                calibrationTargetAzimuthDegrees = null,
-                calibrationTargetElevationDegrees = null
-            )
-        }
+    fun dismissCompassImprove() {
+        _uiState.update { it.copy(compassImproveActive = false) }
     }
 
-    /**
-     * User pointed the top of the phone at the sun/moon. Offset = celestial azimuth − device heading.
-     */
-    fun confirmHeadingCalibration() {
-        val state = _uiState.value
-        val targetAzimuth = state.calibrationTargetAzimuthDegrees
-        val deviceHeading = state.deviceHeadingDegrees
-        if (targetAzimuth == null || deviceHeading == null) {
-            _uiState.update {
-                it.copy(statusMessage = "Hold still — waiting for compass reading")
-            }
-            return
-        }
-        // Refresh celestial solution at confirm time for a tighter fix.
-        val location = state.positioningLocation() ?: state.userLocation
-        val body = state.calibrationBody
-        val refreshedAzimuth = if (location != null && body != null) {
-            when (body) {
-                CelestialBodies.Body.SUN ->
-                    CelestialBodies.sunPosition(location.latitude, location.longitude).azimuthDegrees
-                CelestialBodies.Body.MOON ->
-                    CelestialBodies.moonPosition(location.latitude, location.longitude).azimuthDegrees
-            }
-        } else {
-            targetAzimuth
-        }
-        val offset = CelestialBodies.signedDeltaDegrees(deviceHeading, refreshedAzimuth)
-        prefs.edit().putFloat(KEY_HEADING_OFFSET, offset.toFloat()).apply()
-        val bodyLabel = when (body) {
-            CelestialBodies.Body.SUN -> "Sun"
-            CelestialBodies.Body.MOON -> "Moon"
-            null -> "Sky"
-        }
+    fun setHeadingOffsetDegrees(offsetDegrees: Double) {
+        val clamped = offsetDegrees.coerceIn(-180.0, 180.0)
+        prefs.edit().putFloat(KEY_HEADING_OFFSET, clamped.toFloat()).apply()
         _uiState.update {
             it.copy(
-                headingCalibrationOffsetDegrees = offset,
-                calibrationActive = false,
-                calibrationBody = null,
-                calibrationTargetAzimuthDegrees = null,
-                calibrationTargetElevationDegrees = null,
+                headingCalibrationOffsetDegrees = clamped,
                 statusMessage = String.format(
                     java.util.Locale.US,
-                    "%s calibration saved (%+.0f°)",
-                    bodyLabel,
-                    offset
+                    "Heading offset %+.0f°",
+                    clamped
                 )
             )
         }
     }
 
-    fun clearHeadingCalibration() {
+    fun nudgeHeadingOffset(deltaDegrees: Double) {
+        val current = _uiState.value.headingCalibrationOffsetDegrees ?: 0.0
+        setHeadingOffsetDegrees(current + deltaDegrees)
+    }
+
+    fun clearHeadingOffset() {
         prefs.edit().remove(KEY_HEADING_OFFSET).apply()
         _uiState.update {
             it.copy(
                 headingCalibrationOffsetDegrees = null,
-                calibrationActive = false,
-                calibrationBody = null,
-                calibrationTargetAzimuthDegrees = null,
-                calibrationTargetElevationDegrees = null,
-                statusMessage = "Heading calibration cleared"
+                statusMessage = "Heading offset cleared"
             )
         }
     }
+
+    /** @deprecated Use [clearHeadingOffset]. */
+    fun clearHeadingCalibration() = clearHeadingOffset()
 
     fun hideTower(towerId: String) {
         _uiState.update {
@@ -879,8 +864,17 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                     val displayName = resolver.query(uri, null, null, null, null)?.use { cursor ->
                         val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                         if (cursor.moveToFirst() && index >= 0) cursor.getString(index) else null
-                    } ?: uri.lastPathSegment ?: "import.kml"
-                    val towers = KmlParser.parseUri(getApplication(), uri)
+                    } ?: uri.lastPathSegment ?: "import"
+                    val lower = displayName.lowercase()
+                    val mime = resolver.getType(uri).orEmpty().lowercase()
+                    val isCsv = lower.endsWith(".csv") ||
+                        mime.contains("text/csv") ||
+                        mime.contains("comma-separated")
+                    val towers = if (isCsv || looksLikeCsv(bytes)) {
+                        CsvTowerParser.parseUri(getApplication(), uri)
+                    } else {
+                        KmlParser.parseUri(getApplication(), uri)
+                    }
                     if (towers.isNotEmpty()) {
                         fileStore.saveImport(displayName, uri, towers, bytes)
                     }
@@ -890,7 +884,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 if (towers.isEmpty()) {
                     _uiState.update {
                         it.copy(
-                            errorMessage = "No placemarks with Point coordinates found",
+                            errorMessage = "No sites found — use KML/KMZ or CSV with name, lat, lon",
                             isLoadingFile = false
                         )
                     }
@@ -902,7 +896,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                             selectedTowerId = null,
                             sourceName = name,
                             towersUpdatedAtMs = fileStore.lastUpdatedEpochMs(),
-                            statusMessage = "Loaded ${towers.size} towers from $name (saved)",
+                            statusMessage = "Loaded ${towers.size} sites from $name (saved)",
                             isLoadingFile = false
                         )
                     }
@@ -910,12 +904,17 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
-                        errorMessage = e.message ?: "Failed to parse KML/KMZ",
+                        errorMessage = e.message ?: "Failed to parse file",
                         isLoadingFile = false
                     )
                 }
             }
         }
+    }
+
+    private fun looksLikeCsv(bytes: ByteArray): Boolean {
+        val head = bytes.decodeToString(0, minOf(bytes.size, 200)).lowercase()
+        return head.contains("lat") && (head.contains("lon") || head.contains("lng"))
     }
 
     fun clearSavedTowers() {
@@ -987,6 +986,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_CPE_ANTENNA_AGL = "cpe_antenna_agl_meters"
         private const val KEY_INSTALL_LAT = "install_latitude"
         private const val KEY_INSTALL_LON = "install_longitude"
+        private const val KEY_DISTANCE_UNITS = "distance_unit_system"
+        private const val KEY_COORD_FORMAT = "coordinate_format"
         private const val MAX_LOS_RANGE_TOWERS = 40
         private const val LOS_RANGE_CONCURRENCY = 2
 

@@ -1,6 +1,7 @@
 package com.towerscope.ar.ui
 
 import android.content.Intent
+import android.hardware.SensorManager
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -11,6 +12,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.SeekBar
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -23,13 +25,15 @@ import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.DataMenuActivity
 import com.towerscope.ar.MainActivity
 import com.towerscope.ar.R
+import com.towerscope.ar.util.CoordinateFormat
+import com.towerscope.ar.util.DistanceUnitSystem
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
 
 /**
- * Secondary controls (data, theme, cal, filters).
+ * Secondary controls (data, theme, compass, filters).
  */
 class SettingsBottomSheet : BottomSheetDialogFragment() {
 
@@ -60,8 +64,14 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         val status = view.findViewById<TextView>(R.id.settingsStatus)
         val dataButton = view.findViewById<MaterialButton>(R.id.settingsDataButton)
         val themeButton = view.findViewById<TextView>(R.id.settingsThemeButton)
+        val distanceUnitsButton = view.findViewById<TextView>(R.id.settingsDistanceUnitsButton)
+        val coordFormatButton = view.findViewById<TextView>(R.id.settingsCoordFormatButton)
         val calibrateButton = view.findViewById<MaterialButton>(R.id.settingsCalibrateButton)
         val calibrateState = view.findViewById<TextView>(R.id.settingsCalibrateState)
+        val offsetLabel = view.findViewById<TextView>(R.id.settingsOffsetLabel)
+        val offsetMinus = view.findViewById<MaterialButton>(R.id.settingsOffsetMinusButton)
+        val offsetPlus = view.findViewById<MaterialButton>(R.id.settingsOffsetPlusButton)
+        val clearOffset = view.findViewById<MaterialButton>(R.id.settingsClearOffsetButton)
         val searchField = view.findViewById<EditText>(R.id.settingsSearchField)
         val distanceLabel = view.findViewById<TextView>(R.id.settingsDistanceLabel)
         val distanceSlider = view.findViewById<SeekBar>(R.id.settingsDistanceSlider)
@@ -82,30 +92,34 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         distanceSlider.max =
             (TowerUiState.MAX_DISTANCE_METERS - TowerUiState.MIN_DISTANCE_METERS).toInt()
 
+        distanceSlider.progressDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
+        distanceSlider.thumb = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
+        frequencySlider.progressDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
+        frequencySlider.thumb = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
+        cpeHeightSlider.progressDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
+        cpeHeightSlider.thumb = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
+
         dataButton.setOnClickListener {
             startActivity(Intent(requireContext(), DataMenuActivity::class.java))
             dismiss()
         }
         themeButton.setOnClickListener { viewModel.cycleHudTheme() }
+        distanceUnitsButton.setOnClickListener { viewModel.cycleDistanceUnitSystem() }
+        coordFormatButton.setOnClickListener { viewModel.cycleCoordinateFormat() }
         calibrateButton.setOnClickListener {
             dismiss()
             if (activity is MainActivity) {
-                viewModel.beginHeadingCalibration()
+                viewModel.beginCompassImprove()
             } else {
                 startActivity(
                     Intent(requireContext(), MainActivity::class.java)
-                        .putExtra(MainActivity.EXTRA_START_CALIBRATION, true)
+                        .putExtra(MainActivity.EXTRA_START_COMPASS_IMPROVE, true)
                 )
             }
         }
-        calibrateButton.setOnLongClickListener {
-            if (viewModel.uiState.value.isHeadingCalibrated) {
-                viewModel.clearHeadingCalibration()
-                true
-            } else {
-                false
-            }
-        }
+        offsetMinus.setOnClickListener { viewModel.nudgeHeadingOffset(-1.0) }
+        offsetPlus.setOnClickListener { viewModel.nudgeHeadingOffset(1.0) }
+        clearOffset.setOnClickListener { viewModel.clearHeadingOffset() }
         showHiddenButton.setOnClickListener { viewModel.clearHiddenTowers() }
         clearInstallButton.setOnClickListener { viewModel.clearInstallSite() }
         closeButton.setOnClickListener { dismiss() }
@@ -136,7 +150,7 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         cpeHeightSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val meters = TowerUiState.MIN_CPE_ANTENNA_AGL_METERS + progress
-                cpeHeightLabel.text = String.format(java.util.Locale.US, "CPE AGL  %.0f m", meters)
+                cpeHeightLabel.text = String.format(java.util.Locale.US, "CPE height  %.0f m", meters)
                 if (!fromUser) return
                 viewModel.setCpeAntennaAglMeters(meters)
             }
@@ -157,24 +171,41 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     themeButton.text = state.hudTheme.label
-                    calibrateButton.text = if (state.isHeadingCalibrated) {
-                        "Recalibrate with sun / moon"
-                    } else {
-                        "Calibrate with sun / moon"
+                    distanceUnitsButton.text = when (state.distanceUnitSystem) {
+                        DistanceUnitSystem.IMPERIAL -> "mi / ft"
+                        DistanceUnitSystem.METRIC -> "km / m"
                     }
-                    if (state.isHeadingCalibrated) {
-                        calibrateState.text = "STATUS  Calibrated"
-                        calibrateState.setTextColor(
-                            requireContext().getColor(R.color.status_clear)
-                        )
-                        calibrateState.setBackgroundResource(R.drawable.bg_cal_state_ok)
-                    } else {
-                        calibrateState.text = "STATUS  Not calibrated"
-                        calibrateState.setTextColor(
-                            requireContext().getColor(R.color.accent_yellow)
-                        )
+                    coordFormatButton.text = when (state.coordinateFormat) {
+                        CoordinateFormat.DECIMAL -> "Decimal"
+                        CoordinateFormat.DMS -> "DMS"
+                    }
+
+                    val sensorLabel = when {
+                        state.deviceHeadingDegrees == null -> "SENSOR  —"
+                        state.compassSensorAccuracy >= SensorManager.SENSOR_STATUS_ACCURACY_HIGH ->
+                            "SENSOR  High"
+                        state.compassSensorAccuracy >= SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM ->
+                            "SENSOR  OK"
+                        state.compassSensorAccuracy == SensorManager.SENSOR_STATUS_ACCURACY_LOW ->
+                            "SENSOR  Low — improve"
+                        else -> "SENSOR  Unreliable"
+                    }
+                    calibrateState.text = sensorLabel
+                    if (state.needsCompassCalibration || state.deviceHeadingDegrees == null) {
+                        calibrateState.setTextColor(requireContext().getColor(R.color.accent_yellow))
                         calibrateState.setBackgroundResource(R.drawable.bg_cal_state_needed)
+                    } else {
+                        calibrateState.setTextColor(requireContext().getColor(R.color.status_clear))
+                        calibrateState.setBackgroundResource(R.drawable.bg_cal_state_ok)
                     }
+
+                    val offset = state.headingCalibrationOffsetDegrees
+                    offsetLabel.text = if (offset != null) {
+                        String.format(java.util.Locale.US, "OFFSET  %+.0f°", offset)
+                    } else {
+                        "OFFSET  none"
+                    }
+                    clearOffset.isVisible = offset != null
 
                     distanceLabel.text =
                         "RANGE  ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}"
@@ -200,7 +231,7 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                     }
                     cpeHeightLabel.text = String.format(
                         java.util.Locale.US,
-                        "CPE AGL  %.0f m",
+                        "CPE height  %.0f m",
                         state.cpeAntennaAglMeters
                     )
 

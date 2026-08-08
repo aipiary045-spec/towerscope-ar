@@ -15,5 +15,5 @@
     <string name="home_job_los">Check LOS</string>
     <string name="home_job_los_sub">Rank APs by Fresnel · from install or GPS</string>
     <string name="home_settings">Settings</string>
-    <string name="home_settings_hint">Network data, range, theme, calibration</string>
+    <string name="home_settings_hint">Network data, range, theme, compass</string>
 </resources>

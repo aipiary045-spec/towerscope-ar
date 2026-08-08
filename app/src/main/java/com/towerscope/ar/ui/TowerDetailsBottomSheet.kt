@@ -75,6 +75,23 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
         val clutterSlider = view.findViewById<SeekBar>(R.id.clutterSlider)
         val losSection = view.findViewById<View>(R.id.losSection)
         val losSwitch = view.findViewById<SwitchMaterial>(R.id.detailLosSwitch)
+        val frequencyLabel = view.findViewById<TextView>(R.id.detailFrequencyLabel)
+        val frequencySlider = view.findViewById<SeekBar>(R.id.detailFrequencySlider)
+        val cpeHeightLabel = view.findViewById<TextView>(R.id.detailCpeHeightLabel)
+        val cpeHeightSlider = view.findViewById<SeekBar>(R.id.detailCpeHeightSlider)
+
+        val frequencyPresets = listOf(2.4f, 3.65f, 5.2f, 5.8f, 6.0f, 24.0f, 60.0f)
+        frequencySlider.max = frequencyPresets.lastIndex
+        cpeHeightSlider.max =
+            (TowerUiState.MAX_CPE_ANTENNA_AGL_METERS - TowerUiState.MIN_CPE_ANTENNA_AGL_METERS).toInt()
+        frequencySlider.progressDrawable =
+            ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
+        frequencySlider.thumb =
+            ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
+        cpeHeightSlider.progressDrawable =
+            ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
+        cpeHeightSlider.thumb =
+            ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
 
         view.findViewById<Button>(R.id.closeSheetButton).setOnClickListener { dismiss() }
         view.findViewById<Button>(R.id.showOnlyButton).setOnClickListener {
@@ -125,6 +142,27 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
         })
 
+        frequencySlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val ghz = frequencyPresets[progress.coerceIn(0, frequencyPresets.lastIndex)]
+                frequencyLabel.text = String.format(Locale.US, "FREQ  %.1f GHz", ghz)
+                if (!fromUser) return
+                viewModel.setFrequencyGhz(ghz)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+        cpeHeightSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val meters = TowerUiState.MIN_CPE_ANTENNA_AGL_METERS + progress
+                cpeHeightLabel.text = String.format(Locale.US, "CPE height  %.0f m", meters)
+                if (!fromUser) return
+                viewModel.setCpeAntennaAglMeters(meters)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+
         losSwitch.isChecked = viewModel.uiState.value.showElevationProfile
         losSwitch.setOnCheckedChangeListener { _, checked ->
             if (suppressLosSwitchCallback) return@setOnCheckedChangeListener
@@ -160,15 +198,32 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
                         bearing != null -> "Bearing  ${GeoUtils.formatBearing(bearing)}"
                         else -> "Bearing  —"
                     }
-                    detailCoords.text = String.format(
-                        Locale.US,
-                        "Lat/Lon  %.6f, %.6f",
+                    detailCoords.text = "Lat/Lon  " + GeoUtils.formatCoordinates(
                         tower.latitude,
                         tower.longitude
                     )
                     detailAltitude.text = tower.altitudeMeters?.let {
                         String.format(Locale.US, "Altitude  %.1f m", it)
                     } ?: "Altitude  —"
+
+                    val freqIndex = frequencyPresets.indexOfFirst {
+                        kotlin.math.abs(it - state.frequencyGhz) < 0.05f
+                    }.let { if (it < 0) 3 else it }
+                    if (frequencySlider.progress != freqIndex) {
+                        frequencySlider.progress = freqIndex
+                    }
+                    frequencyLabel.text =
+                        String.format(Locale.US, "FREQ  %.1f GHz", state.frequencyGhz)
+                    val cpeProgress =
+                        (state.cpeAntennaAglMeters - TowerUiState.MIN_CPE_ANTENNA_AGL_METERS).toInt()
+                    if (cpeHeightSlider.progress != cpeProgress) {
+                        cpeHeightSlider.progress = cpeProgress
+                    }
+                    cpeHeightLabel.text = String.format(
+                        Locale.US,
+                        "CPE height  %.0f m",
+                        state.cpeAntennaAglMeters
+                    )
 
                     if (losSwitch.isChecked != state.showElevationProfile) {
                         suppressLosSwitchCallback = true

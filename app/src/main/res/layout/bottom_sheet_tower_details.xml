@@ -94,6 +94,62 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:letterSpacing="0.06"
+                android:text="LINK SETTINGS"
+                android:textColor="@color/text_muted"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/detailFrequencyLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="monospace"
+                android:text="FREQ  5.8 GHz"
+                android:textColor="@color/accent_teal"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/detailFrequencySlider"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:max="6"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:progress="3" />
+
+            <TextView
+                android:id="@+id/detailCpeHeightLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="monospace"
+                android:text="CPE height  4 m"
+                android:textColor="@color/accent_teal"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/detailCpeHeightSlider"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:max="29"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:progress="3" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Height of the customer radio above ground"
+                android:textColor="@color/text_muted"
+                android:textSize="10sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:letterSpacing="0.06"
                 android:text="LINE OF SIGHT"
                 android:textColor="@color/text_muted"
                 android:textSize="10sp" />
@@ -141,46 +197,27 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/showOnlyButton"
-            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+            style="@style/Widget.TowerScope.Button.Primary"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="18dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="Show only this tower"
-            android:textAllCaps="false"
-            android:textColor="#0B1C2C"
-            app:backgroundTint="@color/accent_yellow"
-            app:cornerRadius="8dp" />
+            android:text="Show only this tower" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/openMapsButton"
-            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+            style="@style/Widget.TowerScope.Button.Secondary"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="8dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="Open in Maps"
-            android:textAllCaps="false"
-            android:textColor="#0B1C2C"
-            app:backgroundTint="@color/accent_cyan"
-            app:cornerRadius="8dp" />
+            android:text="Open in Maps" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/copyCoordsButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            style="@style/Widget.TowerScope.Button.Ghost"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="8dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="Copy coordinates"
-            android:textAllCaps="false"
-            android:textColor="@color/text_primary"
-            app:cornerRadius="8dp"
-            app:strokeColor="#66FFFFFF"
-            app:strokeWidth="1dp" />
+            android:text="Copy coordinates" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/hideTowerButton"

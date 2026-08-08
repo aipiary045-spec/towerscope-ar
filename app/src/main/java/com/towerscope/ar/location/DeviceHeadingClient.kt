@@ -21,7 +21,7 @@ data class DeviceHeading(
  * Device heading in degrees clockwise from true north for portrait compass use.
  *
  * Remaps so azimuth follows the direction the **top of the phone** points when held
- * upright (screen toward user) — for radar display and sun/moon calibration aiming.
+ * upright (screen toward user) — for radar display and compass aiming.
  *
  * Magnetic azimuth is corrected with [GeomagneticField] declination when using
  * [Sensor.TYPE_ROTATION_VECTOR]. [Sensor.TYPE_GAME_ROTATION_VECTOR] has no geomagnetic

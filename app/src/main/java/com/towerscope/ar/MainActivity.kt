@@ -29,12 +29,10 @@ import com.towerscope.ar.ui.CompassRadarView
 import com.towerscope.ar.ui.HudThemeApplier
 import com.towerscope.ar.ui.SettingsBottomSheet
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
-import com.towerscope.ar.util.CelestialBodies
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -57,11 +55,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var nearestHeader: TextView
     private lateinit var towerChips: LinearLayout
     private lateinit var compassRadar: CompassRadarView
-    private lateinit var calibrationOverlay: View
-    private lateinit var calibrationTitle: TextView
-    private lateinit var calibrationHint: TextView
-    private lateinit var calibrationConfirmButton: MaterialButton
-    private lateinit var calibrationCancelButton: MaterialButton
+    private lateinit var compassImproveOverlay: View
+    private lateinit var compassImproveStatus: TextView
+    private lateinit var compassImproveDoneButton: MaterialButton
 
     private var bottomPanelBasePadding = 0
     private var topChromeBasePadding = 0
@@ -93,9 +89,12 @@ class MainActivity : AppCompatActivity() {
         wireActions()
         observeState()
         ensurePermissions()
-        if (intent.getBooleanExtra(EXTRA_START_CALIBRATION, false)) {
+        if (intent.getBooleanExtra(EXTRA_START_COMPASS_IMPROVE, false) ||
+            intent.getBooleanExtra(EXTRA_START_CALIBRATION, false)
+        ) {
+            intent.removeExtra(EXTRA_START_COMPASS_IMPROVE)
             intent.removeExtra(EXTRA_START_CALIBRATION)
-            viewModel.beginHeadingCalibration()
+            viewModel.beginCompassImprove()
         }
     }
 
@@ -117,11 +116,9 @@ class MainActivity : AppCompatActivity() {
         nearestHeader = findViewById(R.id.nearestHeader)
         towerChips = findViewById(R.id.towerChips)
         compassRadar = findViewById(R.id.compassRadar)
-        calibrationOverlay = findViewById(R.id.calibrationOverlay)
-        calibrationTitle = findViewById(R.id.calibrationTitle)
-        calibrationHint = findViewById(R.id.calibrationHint)
-        calibrationConfirmButton = findViewById(R.id.calibrationConfirmButton)
-        calibrationCancelButton = findViewById(R.id.calibrationCancelButton)
+        compassImproveOverlay = findViewById(R.id.compassImproveOverlay)
+        compassImproveStatus = findViewById(R.id.compassImproveStatus)
+        compassImproveDoneButton = findViewById(R.id.compassImproveDoneButton)
         compassRadar.setOnTowerSelectedListener { towerId -> openTowerDetails(towerId) }
 
         bottomPanelBasePadding = bottomPanel.paddingBottom
@@ -137,7 +134,6 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(bottomPanel) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.updatePadding(bottom = bottomPanelBasePadding + bars.bottom)
-            // Keep radar clear of bottom chrome + FABs
             val fabClearance = (170 * resources.displayMetrics.density).toInt()
             compassRadar.setPadding(0, 0, 0, bars.bottom + fabClearance / 4)
             insets
@@ -148,18 +144,17 @@ class MainActivity : AppCompatActivity() {
     private fun wireActions() {
         findViewById<MaterialButton>(R.id.grantPermissionsButton).setOnClickListener { requestPermissions() }
         settingsButton.setOnClickListener { openSettings() }
-        calibrateButton.setOnClickListener { viewModel.beginHeadingCalibration() }
+        calibrateButton.setOnClickListener { viewModel.beginCompassImprove() }
         calibrateButton.setOnLongClickListener {
             if (viewModel.uiState.value.isHeadingCalibrated) {
-                viewModel.clearHeadingCalibration()
-                Toast.makeText(this, "Calibration cleared", Toast.LENGTH_SHORT).show()
+                viewModel.clearHeadingOffset()
+                Toast.makeText(this, "Heading offset cleared", Toast.LENGTH_SHORT).show()
                 true
             } else {
                 false
             }
         }
-        calibrationConfirmButton.setOnClickListener { viewModel.confirmHeadingCalibration() }
-        calibrationCancelButton.setOnClickListener { viewModel.cancelHeadingCalibration() }
+        compassImproveDoneButton.setOnClickListener { viewModel.dismissCompassImprove() }
         focusTowerLabel.setOnClickListener {
             viewModel.uiState.value.focusTower()?.let { openTowerDetails(it.id) }
         }
@@ -178,7 +173,7 @@ class MainActivity : AppCompatActivity() {
         renderTrackingChips(state)
         renderCompass(state)
         renderTheme(state)
-        renderCalibration(state)
+        renderCompassImprove(state)
         maybeToastStatus(state)
         renderRadar(state)
 
@@ -314,8 +309,13 @@ class MainActivity : AppCompatActivity() {
                 "Compass · Fair" to R.color.chip_fair
             else -> "Compass · Weak" to R.color.chip_poor
         }
-        val calibratedTag = if (state.isHeadingCalibrated) " ✓" else ""
-        compassChip.text = "$compassLabel$calibratedTag"
+        val offset = state.headingCalibrationOffsetDegrees
+        val offsetTag = if (offset != null) {
+            String.format(java.util.Locale.US, " · %+d°", offset.toInt())
+        } else {
+            ""
+        }
+        compassChip.text = "$compassLabel$offsetTag"
         val compassColor = ContextCompat.getColor(this, compassColorRes)
         compassChip.setTextColor(compassColor)
         compassChip.background = HudThemeApplier.statusChipBackground(compassChip, compassColor)
@@ -329,7 +329,7 @@ class MainActivity : AppCompatActivity() {
         if (trackingWarning.isVisible) {
             trackingWarning.text = when {
                 state.needsCompassCalibration ->
-                    "Compass needs calibration — tap the sun button"
+                    "Compass needs calibration — tap Improve compass"
                 state.userLocation == null ->
                     "Waiting for GPS — go outdoors with a clear sky"
                 else ->
@@ -340,12 +340,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderCompass(state: TowerUiState) {
         val heading = state.effectiveHeadingDegrees()
-        val calTag = if (state.isHeadingCalibrated) "  · CAL" else ""
+        val offset = state.headingCalibrationOffsetDegrees
+        val offsetTag = if (offset != null) {
+            String.format(java.util.Locale.US, "  ·  %+d°", offset.toInt())
+        } else {
+            ""
+        }
         headingLabel.text = if (heading != null) {
             val reciprocal = GeoUtils.reciprocalBearingDegrees(heading)
-            "HDG  ${GeoUtils.formatAzimuthPadded(heading)}  ·  REC  ${GeoUtils.formatAzimuthPadded(reciprocal)}$calTag"
+            "HDG  ${GeoUtils.formatAzimuthPadded(heading)}  ·  REC  ${GeoUtils.formatAzimuthPadded(reciprocal)}$offsetTag"
         } else {
-            "HDG  —  ·  REC  —$calTag"
+            "HDG  —  ·  REC  —$offsetTag"
         }
 
         val focus = state.focusTower()
@@ -386,35 +391,32 @@ class MainActivity : AppCompatActivity() {
         calibrateButton.imageTintList = android.content.res.ColorStateList.valueOf(colors.accent)
     }
 
-    private fun renderCalibration(state: TowerUiState) {
-        calibrationOverlay.isVisible = state.calibrationActive
-        compassRadar.isVisible = !state.calibrationActive
-        topChrome.isVisible = !state.calibrationActive
-        bottomPanel.isVisible = !state.calibrationActive
-        settingsButton.isVisible = !state.calibrationActive
-        calibrateButton.isVisible = !state.calibrationActive
+    private fun renderCompassImprove(state: TowerUiState) {
+        val active = state.compassImproveActive
+        compassImproveOverlay.isVisible = active
+        compassRadar.isVisible = !active
+        topChrome.isVisible = !active
+        bottomPanel.isVisible = !active
+        settingsButton.isVisible = !active
+        calibrateButton.isVisible = !active
 
-        if (!state.calibrationActive) return
+        if (!active) return
 
-        val bodyLabel = when (state.calibrationBody) {
-            CelestialBodies.Body.SUN -> "Sun"
-            CelestialBodies.Body.MOON -> "Moon"
-            null -> "sky body"
+        val (label, colorRes, bgRes) = when {
+            state.deviceHeadingDegrees == null ->
+                Triple("STATUS  Waiting for sensor…", R.color.accent_yellow, R.drawable.bg_cal_state_needed)
+            state.compassSensorAccuracy >= SensorManager.SENSOR_STATUS_ACCURACY_HIGH ->
+                Triple("STATUS  High — looking good", R.color.status_clear, R.drawable.bg_cal_state_ok)
+            state.compassSensorAccuracy >= SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM ->
+                Triple("STATUS  OK — keep moving if it drifts", R.color.status_clear, R.drawable.bg_cal_state_ok)
+            state.compassSensorAccuracy == SensorManager.SENSOR_STATUS_ACCURACY_LOW ->
+                Triple("STATUS  Low — keep the figure-8 going", R.color.accent_yellow, R.drawable.bg_cal_state_needed)
+            else ->
+                Triple("STATUS  Unreliable — move away from metal", R.color.chip_poor, R.drawable.bg_cal_state_needed)
         }
-        calibrationTitle.text = "Point the top of the phone at the $bodyLabel"
-        val elev = state.calibrationTargetElevationDegrees
-        val elevText = if (elev != null) {
-            String.format(Locale.US, "Elev %.0f° · ", elev)
-        } else {
-            ""
-        }
-        calibrationHint.text = when (state.calibrationBody) {
-            CelestialBodies.Body.SUN ->
-                "${elevText}Do not stare at the Sun — glance to align, then Confirm"
-            CelestialBodies.Body.MOON ->
-                "${elevText}Aim at the Moon, hold steady, then Confirm"
-            null -> "Aim, then Confirm"
-        }
+        compassImproveStatus.text = label
+        compassImproveStatus.setTextColor(ContextCompat.getColor(this, colorRes))
+        compassImproveStatus.setBackgroundResource(bgRes)
     }
 
     private fun openSettings() {
@@ -476,7 +478,7 @@ class MainActivity : AppCompatActivity() {
                 "1. Import network sites from Home (or Settings → Import / manage sites).\n" +
                     "2. Go outdoors for a clear GPS fix.\n" +
                     "3. Hold the phone upright — the top of the disc is the direction you face.\n" +
-                    "4. Tap the sun button to calibrate with the sun or moon for best accuracy.\n" +
+                    "4. Tap Improve compass and move the phone in a figure-8 if aiming feels off.\n" +
                     "5. Tap a site on the radar for details, or use Check LOS for ranked profiles."
             )
             .setPositiveButton("Got it") { _, _ ->
@@ -492,6 +494,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+        const val EXTRA_START_COMPASS_IMPROVE = "start_compass_improve"
+        /** Legacy intent key — still honored as improve-compass. */
         const val EXTRA_START_CALIBRATION = "start_calibration"
     }
 }

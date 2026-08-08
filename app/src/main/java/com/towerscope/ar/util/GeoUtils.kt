@@ -119,14 +119,11 @@ object GeoUtils {
         return delta
     }
 
-    fun formatDistance(meters: Double): String {
-        val miles = meters / METERS_PER_MILE
-        return when {
-            miles >= 0.1 -> String.format(Locale.US, "%.1f mi", miles)
-            meters >= 1.0 -> String.format(Locale.US, "%.0f m", meters)
-            else -> String.format(Locale.US, "%.1f m", meters)
-        }
-    }
+    fun formatDistance(meters: Double): String =
+        UnitFormat.formatDistance(meters)
+
+    fun formatCoordinates(latitude: Double, longitude: Double): String =
+        UnitFormat.formatCoordinates(latitude, longitude)
 
     fun cardinalFromDegrees(degrees: Double): String {
         val normalized = ((degrees % 360.0) + 360.0) % 360.0

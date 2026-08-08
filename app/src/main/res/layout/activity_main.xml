@@ -25,7 +25,7 @@
             android:id="@+id/topBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/hud_panel"
+            android:background="@drawable/bg_hud_panel"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="12dp"
@@ -38,6 +38,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:ellipsize="end"
+                android:fontFamily="@font/source_sans3_semibold"
                 android:maxLines="1"
                 android:text="@string/hud_title"
                 android:textColor="@color/text_primary"
@@ -72,9 +73,10 @@
             android:id="@+id/trackingWarning"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/hud_panel"
+            android:background="@drawable/bg_hud_panel"
             android:paddingHorizontal="12dp"
             android:paddingBottom="6dp"
+            android:fontFamily="@font/source_sans3_regular"
             android:text="Compass needs calibration"
             android:textColor="@color/chip_poor"
             android:textSize="11sp"
@@ -84,7 +86,7 @@
             android:id="@+id/compassStrip"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/hud_panel"
+            android:background="@drawable/bg_hud_panel"
             android:orientation="vertical"
             android:paddingHorizontal="12dp"
             android:paddingBottom="8dp">
@@ -106,7 +108,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:ellipsize="end"
-                android:fontFamily="sans-serif-condensed"
+                android:fontFamily="@font/source_sans3_semibold"
                 android:maxLines="2"
                 android:text="No tower in range"
                 android:textColor="@color/text_primary"
@@ -120,7 +122,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/hud_panel"
+        android:background="@drawable/bg_hud_panel"
         android:orientation="vertical"
         android:paddingHorizontal="12dp"
         android:paddingTop="8dp"
@@ -130,6 +132,7 @@
             android:id="@+id/visibleCount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/source_sans3_semibold"
             android:text="Visible 0 / 0"
             android:textColor="@color/text_primary"
             android:textSize="11sp"
@@ -140,6 +143,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:fontFamily="@font/source_sans3_regular"
             android:letterSpacing="0.06"
             android:text="NEARBY"
             android:textColor="@color/text_muted"
@@ -159,38 +163,42 @@
         </HorizontalScrollView>
     </LinearLayout>
 
-    <ImageButton
-        android:id="@+id/calibrateButton"
-        android:layout_width="@dimen/fab_size"
-        android:layout_height="@dimen/fab_size"
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="178dp"
-        android:background="@drawable/bg_settings_fab"
-        android:contentDescription="Calibrate compass with sun or moon"
-        android:elevation="8dp"
-        android:padding="14dp"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_calibrate_sun"
-        android:tint="@color/accent_yellow" />
+        android:layout_marginBottom="128dp"
+        android:orientation="vertical">
 
-    <ImageButton
-        android:id="@+id/settingsButton"
-        android:layout_width="@dimen/fab_size"
-        android:layout_height="@dimen/fab_size"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="112dp"
-        android:background="@drawable/bg_settings_fab"
-        android:contentDescription="Settings"
-        android:elevation="8dp"
-        android:padding="15dp"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_settings_cog"
-        android:tint="@color/accent_teal" />
+        <ImageButton
+            android:id="@+id/calibrateButton"
+            android:layout_width="@dimen/fab_size"
+            android:layout_height="@dimen/fab_size"
+            android:background="@drawable/bg_settings_fab"
+            android:contentDescription="Improve compass accuracy"
+            android:elevation="8dp"
+            android:padding="14dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_compass_rose"
+            android:tint="@color/accent_yellow" />
+
+        <ImageButton
+            android:id="@+id/settingsButton"
+            android:layout_width="@dimen/fab_size"
+            android:layout_height="@dimen/fab_size"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_settings_fab"
+            android:contentDescription="Settings"
+            android:elevation="8dp"
+            android:padding="15dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_settings_cog"
+            android:tint="@color/accent_teal" />
+    </LinearLayout>
 
     <FrameLayout
-        android:id="@+id/calibrationOverlay"
+        android:id="@+id/compassImproveOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#E60B1C2C"
@@ -198,49 +206,70 @@
         android:focusable="true"
         android:visibility="gone">
 
-        <TextView
-            android:id="@+id/calibrationTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top"
-            android:layout_marginTop="88dp"
-            android:gravity="center"
-            android:paddingHorizontal="24dp"
-            android:text="Point the top of the phone at the Sun"
-            android:textColor="@color/accent_yellow"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/calibrationHint"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top"
-            android:layout_marginTop="116dp"
-            android:gravity="center"
-            android:paddingHorizontal="28dp"
-            android:text="Do not stare at the Sun — glance to align, then Confirm"
-            android:textColor="#DDFFFFFF"
-            android:textSize="12sp" />
-
-        <ImageView
-            android:id="@+id/calibrationCrosshair"
-            android:layout_width="96dp"
-            android:layout_height="96dp"
-            android:layout_gravity="center"
-            android:contentDescription="Aiming guide"
-            android:src="@drawable/ic_calibration_crosshair" />
-
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="72dp"
-            android:gravity="center"
-            android:paddingHorizontal="32dp"
-            android:text="Hold the phone upright and aim the top edge"
-            android:textColor="@color/text_muted"
-            android:textSize="12sp" />
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="28dp">
+
+            <ImageView
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_compass_rose"
+                android:tint="@color/accent_yellow" />
+
+            <TextView
+                android:id="@+id/compassImproveTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:gravity="center"
+                android:text="Improve compass"
+                android:textColor="@color/accent_yellow"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/compassImproveHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:fontFamily="@font/source_sans3_regular"
+                android:gravity="center"
+                android:lineSpacingExtra="3dp"
+                android:text="Move the phone in a figure-8 pattern and tilt it. Stay away from metal and magnets."
+                android:textColor="#DDFFFFFF"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/compassImproveStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_cal_state_needed"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:gravity="center"
+                android:minHeight="40dp"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="10dp"
+                android:text="STATUS  Waiting…"
+                android:textColor="@color/accent_yellow"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:fontFamily="@font/source_sans3_regular"
+                android:gravity="center"
+                android:text="Optional: set a manual heading offset in Settings if the compass is still off."
+                android:textColor="@color/text_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -254,36 +283,12 @@
             android:paddingBottom="28dp">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/calibrationCancelButton"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:id="@+id/compassImproveDoneButton"
+                style="@style/Widget.TowerScope.Button.Primary"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_marginEnd="8dp"
+                android:layout_height="48dp"
                 android:layout_weight="1"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minHeight="0dp"
-                android:text="Cancel"
-                android:textAllCaps="false"
-                android:textColor="@color/text_primary"
-                app:cornerRadius="6dp"
-                app:strokeColor="#66FFFFFF"
-                app:strokeWidth="1dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/calibrationConfirmButton"
-                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minHeight="0dp"
-                android:text="Confirm"
-                android:textAllCaps="false"
-                android:textColor="#0B1C2C"
-                app:backgroundTint="@color/accent_yellow"
-                app:cornerRadius="6dp" />
+                android:text="Done" />
         </LinearLayout>
     </FrameLayout>
 
@@ -317,17 +322,10 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/grantPermissionsButton"
-            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+            style="@style/Widget.TowerScope.Button.Primary"
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
+            android:layout_height="48dp"
             android:layout_marginTop="20dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:minHeight="0dp"
-            android:text="Grant permissions"
-            android:textAllCaps="false"
-            android:textColor="#0B1C2C"
-            app:backgroundTint="@color/accent_yellow"
-            app:cornerRadius="6dp" />
+            android:text="Grant permissions" />
     </LinearLayout>
 </FrameLayout>

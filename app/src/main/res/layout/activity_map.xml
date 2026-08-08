@@ -22,7 +22,7 @@
         android:id="@+id/mapTopChrome"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/hud_panel"
+        android:background="@drawable/bg_hud_panel"
         android:orientation="vertical"
         android:paddingHorizontal="14dp"
         android:paddingTop="10dp"
@@ -46,7 +46,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:ellipsize="end"
-            android:fontFamily="sans-serif-condensed"
+            android:fontFamily="@font/source_sans3_semibold"
             android:maxLines="2"
             android:text="Waiting for GPS…"
             android:textColor="@color/text_primary"
@@ -62,6 +62,15 @@
             android:text="—"
             android:textColor="@color/accent_teal"
             android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="@font/source_sans3_regular"
+            android:text="Long-press map to pin install · pin FAB = GPS"
+            android:textColor="@color/text_dim"
+            android:textSize="11sp" />
     </LinearLayout>
 
     <LinearLayout
@@ -126,7 +135,7 @@
         android:id="@+id/mapBottomPanel"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/hud_panel"
+        android:background="@drawable/bg_hud_panel"
         android:orientation="vertical"
         android:paddingHorizontal="14dp"
         android:paddingTop="10dp"
@@ -138,6 +147,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/source_sans3_regular"
             android:letterSpacing="0.06"
             android:text="NEARBY IN RANGE"
             android:textColor="@color/text_muted"

@@ -1,11 +1,12 @@
 package com.towerscope.ar
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
@@ -13,12 +14,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.data.CsvTowerParser
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import kotlinx.coroutines.launch
-
 /**
- * Separate screen for importing / clearing KML-KMZ tower data.
+ * Import / clear network site files (KML, KMZ, vendor CSV).
  */
 class DataMenuActivity : AppCompatActivity() {
 
@@ -47,12 +48,18 @@ class DataMenuActivity : AppCompatActivity() {
                 arrayOf(
                     "application/vnd.google-earth.kml+xml",
                     "application/vnd.google-earth.kmz",
+                    "text/csv",
+                    "text/comma-separated-values",
+                    "text/plain",
                     "application/xml",
                     "text/xml",
                     "application/zip",
                     "*/*"
                 )
             )
+        }
+        findViewById<MaterialButton>(R.id.shareCsvTemplateButton).setOnClickListener {
+            shareCsvTemplate()
         }
         findViewById<MaterialButton>(R.id.clearButton).setOnClickListener { viewModel.clearSavedTowers() }
         findViewById<MaterialButton>(R.id.doneButton).setOnClickListener { finish() }
@@ -62,20 +69,33 @@ class DataMenuActivity : AppCompatActivity() {
                 viewModel.uiState.collect { state ->
                     val source = state.sourceName
                     sourceStatus.text = when {
-                        state.towers.isEmpty() -> "No towers loaded"
-                        source != null -> "Loaded ${state.towers.size} towers\nSource: $source"
-                        else -> "Loaded ${state.towers.size} towers"
+                        state.towers.isEmpty() -> "No sites loaded"
+                        source != null -> "Loaded ${state.towers.size} sites\nSource: $source"
+                        else -> "Loaded ${state.towers.size} sites"
                     }
-                    // Prefer error; avoid duplicating the same loaded/restored line already in the card.
                     val message = state.errorMessage
-                        ?: state.statusMessage?.takeIf { !it.startsWith("Loaded") && !it.startsWith("Restored") }
+                        ?: state.statusMessage?.takeIf {
+                            !it.startsWith("Loaded") && !it.startsWith("Restored")
+                        }
                     menuMessage.isVisible = message != null
                     menuMessage.text = message.orEmpty()
                     menuMessage.setTextColor(
-                        if (state.errorMessage != null) 0xFFFF6B6B.toInt() else 0xFF9AA4B2.toInt()
+                        ContextCompat.getColor(
+                            this@DataMenuActivity,
+                            if (state.errorMessage != null) R.color.status_blocked else R.color.text_muted
+                        )
                     )
                 }
             }
         }
+    }
+
+    private fun shareCsvTemplate() {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "TowerScope CSV site template")
+            putExtra(Intent.EXTRA_TEXT, CsvTowerParser.templateCsv())
+        }
+        startActivity(Intent.createChooser(intent, "Share CSV template"))
     }
 }

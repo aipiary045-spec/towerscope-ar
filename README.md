@@ -22,7 +22,7 @@ Android field app that loads tower locations from **KML/KMZ** and shows them on 
 3. **Aim** — compass bearings; hold upright; sun/moon calibrate for best heading
 4. **Locate** — satellite map; pin an **install site**; assumed **N/E/S/W 90° sectors** on the focused AP (highlight = sector facing install)
 5. **Check LOS** — ranked APs by 60% first Fresnel (freq + CPE height in Settings)
-6. Drag **range / frequency / CPE AGL** in Settings (persists across launches)
+6. Drag **range / frequency / CPE height** in Settings (persists across launches)
 
 ## LOS elevation (LiDAR + DEM)
 
