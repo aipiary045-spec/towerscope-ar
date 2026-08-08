@@ -28,6 +28,7 @@ import com.towerscope.ar.R
 import com.towerscope.ar.util.CoordinateFormat
 import com.towerscope.ar.util.DistanceUnitSystem
 import com.towerscope.ar.util.GeoUtils
+import com.towerscope.ar.util.LinkEstimate
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -79,6 +80,12 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         val frequencySlider = view.findViewById<SeekBar>(R.id.settingsFrequencySlider)
         val cpeHeightLabel = view.findViewById<TextView>(R.id.settingsCpeHeightLabel)
         val cpeHeightSlider = view.findViewById<SeekBar>(R.id.settingsCpeHeightSlider)
+        val txPowerLabel = view.findViewById<TextView>(R.id.settingsTxPowerLabel)
+        val txPowerSlider = view.findViewById<SeekBar>(R.id.settingsTxPowerSlider)
+        val apGainLabel = view.findViewById<TextView>(R.id.settingsApGainLabel)
+        val apGainSlider = view.findViewById<SeekBar>(R.id.settingsApGainSlider)
+        val cpeGainLabel = view.findViewById<TextView>(R.id.settingsCpeGainLabel)
+        val cpeGainSlider = view.findViewById<SeekBar>(R.id.settingsCpeGainSlider)
         val installStatus = view.findViewById<TextView>(R.id.settingsInstallStatus)
         val clearInstallButton = view.findViewById<MaterialButton>(R.id.settingsClearInstallButton)
         val showHiddenButton = view.findViewById<MaterialButton>(R.id.settingsShowHiddenButton)
@@ -88,6 +95,9 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         frequencySlider.max = frequencyPresets.lastIndex
         cpeHeightSlider.max =
             (TowerUiState.MAX_CPE_ANTENNA_AGL_METERS - TowerUiState.MIN_CPE_ANTENNA_AGL_METERS).toInt()
+        txPowerSlider.max = LinkEstimate.MAX_TX_POWER_DBM.toInt()
+        apGainSlider.max = LinkEstimate.MAX_ANTENNA_GAIN_DBI.toInt()
+        cpeGainSlider.max = LinkEstimate.MAX_ANTENNA_GAIN_DBI.toInt()
 
         distanceSlider.max =
             (TowerUiState.MAX_DISTANCE_METERS - TowerUiState.MIN_DISTANCE_METERS).toInt()
@@ -98,6 +108,12 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         frequencySlider.thumb = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
         cpeHeightSlider.progressDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
         cpeHeightSlider.thumb = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
+        txPowerSlider.progressDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
+        txPowerSlider.thumb = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
+        apGainSlider.progressDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
+        apGainSlider.thumb = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
+        cpeGainSlider.progressDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
+        cpeGainSlider.thumb = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
 
         dataButton.setOnClickListener {
             startActivity(Intent(requireContext(), DataMenuActivity::class.java))
@@ -153,6 +169,34 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                 cpeHeightLabel.text = String.format(java.util.Locale.US, "CPE height  %.0f m", meters)
                 if (!fromUser) return
                 viewModel.setCpeAntennaAglMeters(meters)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+
+        txPowerSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                txPowerLabel.text = String.format(java.util.Locale.US, "TX POWER  %d dBm", progress)
+                if (!fromUser) return
+                viewModel.setTxPowerDbm(progress.toFloat())
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+        apGainSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                apGainLabel.text = String.format(java.util.Locale.US, "AP GAIN  %d dBi", progress)
+                if (!fromUser) return
+                viewModel.setApAntennaGainDbi(progress.toFloat())
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+        cpeGainSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                cpeGainLabel.text = String.format(java.util.Locale.US, "CPE GAIN  %d dBi", progress)
+                if (!fromUser) return
+                viewModel.setCpeAntennaGainDbi(progress.toFloat())
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
@@ -234,6 +278,21 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                         "CPE height  %.0f m",
                         state.cpeAntennaAglMeters
                     )
+
+                    val txProgress = state.txPowerDbm.toInt()
+                    if (txPowerSlider.progress != txProgress) txPowerSlider.progress = txProgress
+                    txPowerLabel.text =
+                        String.format(java.util.Locale.US, "TX POWER  %.0f dBm", state.txPowerDbm)
+                    val apGainProgress = state.apAntennaGainDbi.toInt()
+                    if (apGainSlider.progress != apGainProgress) apGainSlider.progress = apGainProgress
+                    apGainLabel.text =
+                        String.format(java.util.Locale.US, "AP GAIN  %.0f dBi", state.apAntennaGainDbi)
+                    val cpeGainProgress = state.cpeAntennaGainDbi.toInt()
+                    if (cpeGainSlider.progress != cpeGainProgress) {
+                        cpeGainSlider.progress = cpeGainProgress
+                    }
+                    cpeGainLabel.text =
+                        String.format(java.util.Locale.US, "CPE GAIN  %.0f dBi", state.cpeAntennaGainDbi)
 
                     if (state.hasInstallSite) {
                         installStatus.text = String.format(

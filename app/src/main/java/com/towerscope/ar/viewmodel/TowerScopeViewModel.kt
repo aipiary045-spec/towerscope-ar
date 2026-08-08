@@ -20,6 +20,7 @@ import com.towerscope.ar.util.CoordinateFormat
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.DistanceUnitSystem
 import com.towerscope.ar.util.GeoUtils
+import com.towerscope.ar.util.LinkEstimate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -66,6 +67,12 @@ data class TowerUiState(
     val frequencyGhz: Float = DEFAULT_FREQUENCY_GHZ,
     /** CPE / customer antenna height above ground (meters). */
     val cpeAntennaAglMeters: Float = DEFAULT_CPE_ANTENNA_AGL_METERS,
+    /** Transmit power at the AP (dBm). */
+    val txPowerDbm: Float = LinkEstimate.DEFAULT_TX_POWER_DBM,
+    /** Access-point antenna gain (dBi). */
+    val apAntennaGainDbi: Float = LinkEstimate.DEFAULT_AP_GAIN_DBI,
+    /** Customer radio antenna gain (dBi). */
+    val cpeAntennaGainDbi: Float = LinkEstimate.DEFAULT_CPE_GAIN_DBI,
     val distanceUnitSystem: DistanceUnitSystem = DistanceUnitSystem.IMPERIAL,
     val coordinateFormat: CoordinateFormat = CoordinateFormat.DECIMAL,
     val deviceHeadingDegrees: Double? = null,
@@ -290,6 +297,9 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 KEY_CPE_ANTENNA_AGL,
                 TowerUiState.DEFAULT_CPE_ANTENNA_AGL_METERS
             ),
+            txPowerDbm = prefs.getFloat(KEY_TX_POWER_DBM, LinkEstimate.DEFAULT_TX_POWER_DBM),
+            apAntennaGainDbi = prefs.getFloat(KEY_AP_GAIN_DBI, LinkEstimate.DEFAULT_AP_GAIN_DBI),
+            cpeAntennaGainDbi = prefs.getFloat(KEY_CPE_GAIN_DBI, LinkEstimate.DEFAULT_CPE_GAIN_DBI),
             distanceUnitSystem = loadDistanceUnitSystem(),
             coordinateFormat = loadCoordinateFormat(),
             installLatitude = prefs.getFloat(KEY_INSTALL_LAT, Float.NaN)
@@ -465,6 +475,24 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         }
         clearLosProfile()
         _uiState.value.selectedTowerId?.let { loadLosProfile(it) }
+    }
+
+    fun setTxPowerDbm(dbm: Float) {
+        val clamped = dbm.coerceIn(LinkEstimate.MIN_TX_POWER_DBM, LinkEstimate.MAX_TX_POWER_DBM)
+        prefs.edit().putFloat(KEY_TX_POWER_DBM, clamped).apply()
+        _uiState.update { it.copy(txPowerDbm = clamped) }
+    }
+
+    fun setApAntennaGainDbi(dbi: Float) {
+        val clamped = dbi.coerceIn(LinkEstimate.MIN_ANTENNA_GAIN_DBI, LinkEstimate.MAX_ANTENNA_GAIN_DBI)
+        prefs.edit().putFloat(KEY_AP_GAIN_DBI, clamped).apply()
+        _uiState.update { it.copy(apAntennaGainDbi = clamped) }
+    }
+
+    fun setCpeAntennaGainDbi(dbi: Float) {
+        val clamped = dbi.coerceIn(LinkEstimate.MIN_ANTENNA_GAIN_DBI, LinkEstimate.MAX_ANTENNA_GAIN_DBI)
+        prefs.edit().putFloat(KEY_CPE_GAIN_DBI, clamped).apply()
+        _uiState.update { it.copy(cpeAntennaGainDbi = clamped) }
     }
 
     fun setInstallSite(latitude: Double, longitude: Double) {
@@ -984,6 +1012,9 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_MAX_DISTANCE = "max_distance_meters"
         private const val KEY_FREQUENCY_GHZ = "frequency_ghz"
         private const val KEY_CPE_ANTENNA_AGL = "cpe_antenna_agl_meters"
+        private const val KEY_TX_POWER_DBM = "tx_power_dbm"
+        private const val KEY_AP_GAIN_DBI = "ap_antenna_gain_dbi"
+        private const val KEY_CPE_GAIN_DBI = "cpe_antenna_gain_dbi"
         private const val KEY_INSTALL_LAT = "install_latitude"
         private const val KEY_INSTALL_LON = "install_longitude"
         private const val KEY_DISTANCE_UNITS = "distance_unit_system"

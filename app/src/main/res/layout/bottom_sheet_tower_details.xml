@@ -146,6 +146,66 @@
                 android:textSize="10sp" />
 
             <TextView
+                android:id="@+id/detailTxPowerLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="monospace"
+                android:text="TX POWER  20 dBm"
+                android:textColor="@color/accent_teal"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/detailTxPowerSlider"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:max="30"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:progress="20" />
+
+            <TextView
+                android:id="@+id/detailApGainLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="monospace"
+                android:text="AP GAIN  20 dBi"
+                android:textColor="@color/accent_teal"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/detailApGainSlider"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:max="40"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:progress="20" />
+
+            <TextView
+                android:id="@+id/detailCpeGainLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="monospace"
+                android:text="CPE GAIN  20 dBi"
+                android:textColor="@color/accent_teal"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/detailCpeGainSlider"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:max="40"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:progress="20" />
+
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"

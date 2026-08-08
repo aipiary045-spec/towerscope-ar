@@ -46,6 +46,16 @@ class LosProfilesActivity : AppCompatActivity() {
     private lateinit var frequencySlider: SeekBar
     private lateinit var cpeHeightLabel: TextView
     private lateinit var cpeHeightSlider: SeekBar
+    private lateinit var txPowerLabel: TextView
+    private lateinit var txPowerSlider: SeekBar
+    private lateinit var apGainLabel: TextView
+    private lateinit var apGainSlider: SeekBar
+    private lateinit var cpeGainLabel: TextView
+    private lateinit var cpeGainSlider: SeekBar
+    private lateinit var linkSettingsSummary: TextView
+    private lateinit var linkSettingsToggle: TextView
+    private lateinit var linkSettingsExpanded: View
+    private var linkSettingsOpen = false
     private var startedScan = false
     private var lastCpeHeight: Float? = null
     private val frequencyPresets = listOf(2.4f, 3.65f, 5.2f, 5.8f, 6.0f, 24.0f, 60.0f)
@@ -81,16 +91,34 @@ class LosProfilesActivity : AppCompatActivity() {
         frequencySlider = findViewById(R.id.losFrequencySlider)
         cpeHeightLabel = findViewById(R.id.losCpeHeightLabel)
         cpeHeightSlider = findViewById(R.id.losCpeHeightSlider)
+        txPowerLabel = findViewById(R.id.losTxPowerLabel)
+        txPowerSlider = findViewById(R.id.losTxPowerSlider)
+        apGainLabel = findViewById(R.id.losApGainLabel)
+        apGainSlider = findViewById(R.id.losApGainSlider)
+        cpeGainLabel = findViewById(R.id.losCpeGainLabel)
+        cpeGainSlider = findViewById(R.id.losCpeGainSlider)
+        linkSettingsSummary = findViewById(R.id.losLinkSettingsSummary)
+        linkSettingsToggle = findViewById(R.id.losLinkSettingsToggle)
+        linkSettingsExpanded = findViewById(R.id.losLinkSettingsExpanded)
 
         frequencySlider.max = frequencyPresets.lastIndex
         cpeHeightSlider.max =
             (TowerUiState.MAX_CPE_ANTENNA_AGL_METERS - TowerUiState.MIN_CPE_ANTENNA_AGL_METERS).toInt()
-        frequencySlider.progressDrawable =
-            ContextCompat.getDrawable(this, R.drawable.bg_seekbar_progress)
-        frequencySlider.thumb = ContextCompat.getDrawable(this, R.drawable.bg_seekbar_thumb)
-        cpeHeightSlider.progressDrawable =
-            ContextCompat.getDrawable(this, R.drawable.bg_seekbar_progress)
-        cpeHeightSlider.thumb = ContextCompat.getDrawable(this, R.drawable.bg_seekbar_thumb)
+        txPowerSlider.max = LinkEstimate.MAX_TX_POWER_DBM.toInt()
+        apGainSlider.max = LinkEstimate.MAX_ANTENNA_GAIN_DBI.toInt()
+        cpeGainSlider.max = LinkEstimate.MAX_ANTENNA_GAIN_DBI.toInt()
+        listOf(frequencySlider, cpeHeightSlider, txPowerSlider, apGainSlider, cpeGainSlider).forEach { bar ->
+            bar.progressDrawable = ContextCompat.getDrawable(this, R.drawable.bg_seekbar_progress)
+            bar.thumb = ContextCompat.getDrawable(this, R.drawable.bg_seekbar_thumb)
+        }
+
+        val toggleLinkSettings = View.OnClickListener {
+            linkSettingsOpen = !linkSettingsOpen
+            applyLinkSettingsExpanded()
+        }
+        findViewById<View>(R.id.losLinkSettingsHeader).setOnClickListener(toggleLinkSettings)
+        linkSettingsToggle.setOnClickListener(toggleLinkSettings)
+        applyLinkSettingsExpanded()
 
         frequencySlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -112,6 +140,33 @@ class LosProfilesActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
         })
+        txPowerSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                txPowerLabel.text = String.format(Locale.US, "TX POWER  %d dBm", progress)
+                if (!fromUser) return
+                viewModel.setTxPowerDbm(progress.toFloat())
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+        apGainSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                apGainLabel.text = String.format(Locale.US, "AP GAIN  %d dBi", progress)
+                if (!fromUser) return
+                viewModel.setApAntennaGainDbi(progress.toFloat())
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+        cpeGainSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                cpeGainLabel.text = String.format(Locale.US, "CPE GAIN  %d dBi", progress)
+                if (!fromUser) return
+                viewModel.setCpeAntennaGainDbi(progress.toFloat())
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
 
         findViewById<MaterialButton>(R.id.losRangeHomeButton).setOnClickListener { finish() }
         findViewById<MaterialButton>(R.id.losRangeRefreshButton).setOnClickListener {
@@ -122,15 +177,21 @@ class LosProfilesActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    subtitle.text = String.format(
+                    subtitle.text = if (state.hasInstallSite) {
+                        "Rank APs by estimated signal · from install site"
+                    } else {
+                        "Rank APs by estimated signal · from GPS"
+                    }
+                    status.text = state.losRangeStatus.orEmpty()
+                    linkSettingsSummary.text = String.format(
                         Locale.US,
-                        "%s · %.1f GHz · CPE height %.0f m · clutter %.0f m",
-                        if (state.hasInstallSite) "From install site" else "From GPS",
+                        "%.1f GHz · CPE %.0f m · Tx %.0f · AP %.0f · CPE %.0f dBi",
                         state.frequencyGhz,
                         state.cpeAntennaAglMeters,
-                        state.clutterHeightMeters
+                        state.txPowerDbm,
+                        state.apAntennaGainDbi,
+                        state.cpeAntennaGainDbi
                     )
-                    status.text = state.losRangeStatus.orEmpty()
 
                     val freqIndex = frequencyPresets.indexOfFirst {
                         kotlin.math.abs(it - state.frequencyGhz) < 0.05f
@@ -150,6 +211,20 @@ class LosProfilesActivity : AppCompatActivity() {
                         "CPE height  %.0f m",
                         state.cpeAntennaAglMeters
                     )
+                    val txProgress = state.txPowerDbm.toInt()
+                    if (txPowerSlider.progress != txProgress) txPowerSlider.progress = txProgress
+                    txPowerLabel.text =
+                        String.format(Locale.US, "TX POWER  %.0f dBm", state.txPowerDbm)
+                    val apGainProgress = state.apAntennaGainDbi.toInt()
+                    if (apGainSlider.progress != apGainProgress) apGainSlider.progress = apGainProgress
+                    apGainLabel.text =
+                        String.format(Locale.US, "AP GAIN  %.0f dBi", state.apAntennaGainDbi)
+                    val cpeGainProgress = state.cpeAntennaGainDbi.toInt()
+                    if (cpeGainSlider.progress != cpeGainProgress) {
+                        cpeGainSlider.progress = cpeGainProgress
+                    }
+                    cpeGainLabel.text =
+                        String.format(Locale.US, "CPE GAIN  %.0f dBi", state.cpeAntennaGainDbi)
 
                     if (lastCpeHeight != null && lastCpeHeight != state.cpeAntennaAglMeters) {
                         startedScan = false
@@ -163,6 +238,11 @@ class LosProfilesActivity : AppCompatActivity() {
         }
 
         ensureLocationPermission()
+    }
+
+    private fun applyLinkSettingsExpanded() {
+        linkSettingsExpanded.isVisible = linkSettingsOpen
+        linkSettingsToggle.text = if (linkSettingsOpen) "Done" else "Edit"
     }
 
     override fun onStart() {
@@ -307,47 +387,61 @@ class LosProfilesActivity : AppCompatActivity() {
                 row.profile != null -> {
                     val geometric = row.profile.minClearanceMeters(clutter)
                     val fresnel = row.profile.minFresnelClearanceMeters(clutter, freq)
-                    val fresnelClear = fresnel > 0.0
-                    val geoClear = geometric > 0.0
+                    val obstruction = LinkEstimate.obstructionLossDb(geometric, fresnel)
+                    val dbm = LinkEstimate.estimatedReceiveLevelDbm(
+                        distanceMeters = row.distanceMeters,
+                        frequencyGhz = freq,
+                        txPowerDbm = state.txPowerDbm.toDouble(),
+                        apGainDbi = state.apAntennaGainDbi.toDouble(),
+                        cpeGainDbi = state.cpeAntennaGainDbi.toDouble(),
+                        geometricClearanceMeters = geometric,
+                        fresnelClearanceMeters = fresnel
+                    )
+                    val quality = LinkEstimate.signalQuality(dbm)
                     pill.isVisible = true
-                    when {
-                        fresnelClear -> {
-                            pill.text = "F1 OK"
+                    pill.text = quality.label
+                    when (quality) {
+                        LinkEstimate.SignalQuality.STRONG -> {
                             pill.setTextColor(ContextCompat.getColor(this, R.color.status_clear))
                             pill.setBackgroundResource(R.drawable.bg_pill_clear)
                             statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.status_clear))
-                            clearanceView.text = String.format(
-                                Locale.US,
-                                "60%% F1 +%.0f m · geo %.0f m",
-                                fresnel,
-                                geometric
-                            )
                             clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_clear))
                         }
-                        geoClear -> {
-                            pill.text = "TIGHT"
+                        LinkEstimate.SignalQuality.OK -> {
+                            pill.setTextColor(ContextCompat.getColor(this, R.color.status_clear))
+                            pill.setBackgroundResource(R.drawable.bg_pill_clear)
+                            statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.accent_teal))
+                            clearanceView.setTextColor(ContextCompat.getColor(this, R.color.accent_teal))
+                        }
+                        LinkEstimate.SignalQuality.WEAK -> {
                             pill.setTextColor(ContextCompat.getColor(this, R.color.accent_yellow))
                             pill.setBackgroundResource(R.drawable.bg_pill_clear)
                             statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.accent_yellow))
-                            clearanceView.text = String.format(
-                                Locale.US,
-                                "Geo clear %.0f m · F1 short %.0f m",
-                                geometric,
-                                -fresnel
-                            )
                             clearanceView.setTextColor(ContextCompat.getColor(this, R.color.accent_yellow))
                         }
-                        else -> {
-                            pill.text = "BLOCKED"
+                        LinkEstimate.SignalQuality.POOR -> {
                             pill.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
                             pill.setBackgroundResource(R.drawable.bg_pill_blocked)
                             statusBar.setBackgroundColor(ContextCompat.getColor(this, R.color.status_blocked))
-                            clearanceView.text = String.format(Locale.US, "Short by  %.0f m", -geometric)
                             clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
                         }
                     }
+                    clearanceView.text = LinkEstimate.formatReceiveLevel(dbm)
                     linkEstimateView.isVisible = true
-                    linkEstimateView.text = LinkEstimate.formatEstimate(row.distanceMeters, freq)
+                    val pathNote = when {
+                        obstruction >= 20.0 -> " · path blocked"
+                        obstruction >= 6.0 -> " · Fresnel tight"
+                        else -> ""
+                    }
+                    linkEstimateView.text = String.format(
+                        Locale.US,
+                        "%.1f GHz · Tx %.0f · AP %.0f · CPE %.0f dBi%s",
+                        freq,
+                        state.txPowerDbm,
+                        state.apAntennaGainDbi,
+                        state.cpeAntennaGainDbi,
+                        pathNote
+                    )
                     chart.isVisible = true
                     chart.setProfile(row.profile, clutter, freq)
                     shimmer1.isVisible = false

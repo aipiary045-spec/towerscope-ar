@@ -12,8 +12,33 @@ class LinkEstimateTest {
         val higherBand = LinkEstimate.freeSpacePathLossDb(1_000.0, 24.0)
         assertTrue(long > short)
         assertTrue(higherBand > short)
-        // ~1 km @ 5.8 GHz ≈ 107.7 dB
         assertEquals(107.7, short, 1.0)
+    }
+
+    @Test
+    fun receiveLevel_usesLinkBudgetAndWorsensWhenBlocked() {
+        val clear = LinkEstimate.estimatedReceiveLevelDbm(
+            distanceMeters = 1_000.0,
+            frequencyGhz = 5.8,
+            txPowerDbm = 26.0,
+            apGainDbi = 20.0,
+            cpeGainDbi = 20.0,
+            geometricClearanceMeters = 10.0,
+            fresnelClearanceMeters = 5.0
+        )
+        val blocked = LinkEstimate.estimatedReceiveLevelDbm(
+            distanceMeters = 1_000.0,
+            frequencyGhz = 5.8,
+            txPowerDbm = 26.0,
+            apGainDbi = 20.0,
+            cpeGainDbi = 20.0,
+            geometricClearanceMeters = -5.0,
+            fresnelClearanceMeters = -5.0
+        )
+        // 26 + 20 + 20 - ~107.7 ≈ -41.7 dBm clear path
+        assertEquals(-41.7, clear, 1.5)
+        assertTrue(blocked < clear - 20.0)
+        assertTrue(LinkEstimate.formatReceiveLevel(clear).contains("dBm"))
     }
 }
 

@@ -27,6 +27,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.towerscope.ar.R
 import com.towerscope.ar.data.ElevationSource
 import com.towerscope.ar.util.GeoUtils
+import com.towerscope.ar.util.LinkEstimate
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -79,19 +80,25 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
         val frequencySlider = view.findViewById<SeekBar>(R.id.detailFrequencySlider)
         val cpeHeightLabel = view.findViewById<TextView>(R.id.detailCpeHeightLabel)
         val cpeHeightSlider = view.findViewById<SeekBar>(R.id.detailCpeHeightSlider)
+        val txPowerLabel = view.findViewById<TextView>(R.id.detailTxPowerLabel)
+        val txPowerSlider = view.findViewById<SeekBar>(R.id.detailTxPowerSlider)
+        val apGainLabel = view.findViewById<TextView>(R.id.detailApGainLabel)
+        val apGainSlider = view.findViewById<SeekBar>(R.id.detailApGainSlider)
+        val cpeGainLabel = view.findViewById<TextView>(R.id.detailCpeGainLabel)
+        val cpeGainSlider = view.findViewById<SeekBar>(R.id.detailCpeGainSlider)
 
         val frequencyPresets = listOf(2.4f, 3.65f, 5.2f, 5.8f, 6.0f, 24.0f, 60.0f)
         frequencySlider.max = frequencyPresets.lastIndex
         cpeHeightSlider.max =
             (TowerUiState.MAX_CPE_ANTENNA_AGL_METERS - TowerUiState.MIN_CPE_ANTENNA_AGL_METERS).toInt()
-        frequencySlider.progressDrawable =
-            ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
-        frequencySlider.thumb =
-            ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
-        cpeHeightSlider.progressDrawable =
-            ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
-        cpeHeightSlider.thumb =
-            ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
+        txPowerSlider.max = LinkEstimate.MAX_TX_POWER_DBM.toInt()
+        apGainSlider.max = LinkEstimate.MAX_ANTENNA_GAIN_DBI.toInt()
+        cpeGainSlider.max = LinkEstimate.MAX_ANTENNA_GAIN_DBI.toInt()
+        listOf(frequencySlider, cpeHeightSlider, txPowerSlider, apGainSlider, cpeGainSlider).forEach { bar ->
+            bar.progressDrawable =
+                ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_progress)
+            bar.thumb = ContextCompat.getDrawable(requireContext(), R.drawable.bg_seekbar_thumb)
+        }
 
         view.findViewById<Button>(R.id.closeSheetButton).setOnClickListener { dismiss() }
         view.findViewById<Button>(R.id.showOnlyButton).setOnClickListener {
@@ -162,6 +169,33 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
         })
+        txPowerSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                txPowerLabel.text = String.format(Locale.US, "TX POWER  %d dBm", progress)
+                if (!fromUser) return
+                viewModel.setTxPowerDbm(progress.toFloat())
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+        apGainSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                apGainLabel.text = String.format(Locale.US, "AP GAIN  %d dBi", progress)
+                if (!fromUser) return
+                viewModel.setApAntennaGainDbi(progress.toFloat())
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+        cpeGainSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                cpeGainLabel.text = String.format(Locale.US, "CPE GAIN  %d dBi", progress)
+                if (!fromUser) return
+                viewModel.setCpeAntennaGainDbi(progress.toFloat())
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
 
         losSwitch.isChecked = viewModel.uiState.value.showElevationProfile
         losSwitch.setOnCheckedChangeListener { _, checked ->
@@ -224,6 +258,20 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
                         "CPE height  %.0f m",
                         state.cpeAntennaAglMeters
                     )
+                    val txProgress = state.txPowerDbm.toInt()
+                    if (txPowerSlider.progress != txProgress) txPowerSlider.progress = txProgress
+                    txPowerLabel.text =
+                        String.format(Locale.US, "TX POWER  %.0f dBm", state.txPowerDbm)
+                    val apGainProgress = state.apAntennaGainDbi.toInt()
+                    if (apGainSlider.progress != apGainProgress) apGainSlider.progress = apGainProgress
+                    apGainLabel.text =
+                        String.format(Locale.US, "AP GAIN  %.0f dBi", state.apAntennaGainDbi)
+                    val cpeGainProgress = state.cpeAntennaGainDbi.toInt()
+                    if (cpeGainSlider.progress != cpeGainProgress) {
+                        cpeGainSlider.progress = cpeGainProgress
+                    }
+                    cpeGainLabel.text =
+                        String.format(Locale.US, "CPE GAIN  %.0f dBi", state.cpeAntennaGainDbi)
 
                     if (losSwitch.isChecked != state.showElevationProfile) {
                         suppressLosSwitchCallback = true
@@ -287,49 +335,49 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
                 val freq = state.frequencyGhz.toDouble()
                 val clearance = profile.minClearanceMeters(clutter)
                 val fresnel = profile.minFresnelClearanceMeters(clutter, freq)
-                val clear = clearance > 0.0
-                val fresnelClear = fresnel > 0.0
+                val distance = state.towerById(towerId)?.let { state.distanceTo(it) }
+                    ?: profile.totalDistanceMeters
+                val obstruction = LinkEstimate.obstructionLossDb(clearance, fresnel)
+                val dbm = LinkEstimate.estimatedReceiveLevelDbm(
+                    distanceMeters = distance,
+                    frequencyGhz = freq,
+                    txPowerDbm = state.txPowerDbm.toDouble(),
+                    apGainDbi = state.apAntennaGainDbi.toDouble(),
+                    cpeGainDbi = state.cpeAntennaGainDbi.toDouble(),
+                    geometricClearanceMeters = clearance,
+                    fresnelClearanceMeters = fresnel
+                )
+                val quality = LinkEstimate.signalQuality(dbm)
                 val sourceLabel = when {
-                    profile.lidarCoverageFraction >= 0.9 -> "LiDAR surface"
+                    profile.lidarCoverageFraction >= 0.9 -> "LiDAR"
                     profile.usesLidar -> String.format(
                         Locale.US,
-                        "LiDAR+DEM · %.0f%% LiDAR",
+                        "LiDAR+DEM · %.0f%%",
                         profile.lidarCoverageFraction * 100.0
                     )
                     else -> "3DEP DEM"
                 }
-                losStatus.text = when {
-                    fresnelClear -> String.format(
-                        Locale.US,
-                        "F1 OK · +%.0f m (60%%) · geo %.0f m · %.1f GHz · %s",
-                        fresnel,
-                        clearance,
-                        freq,
-                        sourceLabel
-                    )
-                    clear -> String.format(
-                        Locale.US,
-                        "Geo clear %.0f m · F1 short %.0f m · %.1f GHz · %s",
-                        clearance,
-                        -fresnel,
-                        freq,
-                        sourceLabel
-                    )
-                    else -> String.format(
-                        Locale.US,
-                        "Blocked · short %.0f m · %.1f GHz · %s",
-                        -clearance,
-                        freq,
-                        sourceLabel
-                    )
+                val pathNote = when {
+                    obstruction >= 20.0 -> "path blocked"
+                    obstruction >= 6.0 -> "Fresnel tight"
+                    else -> "path clear"
                 }
+                losStatus.text = String.format(
+                    Locale.US,
+                    "%s · %s · %s · %s",
+                    LinkEstimate.formatReceiveLevel(dbm),
+                    quality.label,
+                    pathNote,
+                    sourceLabel
+                )
                 losStatus.setTextColor(
                     ContextCompat.getColor(
                         requireContext(),
-                        when {
-                            fresnelClear -> R.color.chip_good
-                            clear -> R.color.chip_fair
-                            else -> R.color.chip_poor
+                        when (quality) {
+                            LinkEstimate.SignalQuality.STRONG,
+                            LinkEstimate.SignalQuality.OK -> R.color.chip_good
+                            LinkEstimate.SignalQuality.WEAK -> R.color.chip_fair
+                            LinkEstimate.SignalQuality.POOR -> R.color.chip_poor
                         }
                     )
                 )

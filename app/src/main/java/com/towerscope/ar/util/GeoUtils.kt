@@ -11,6 +11,7 @@ object GeoUtils {
 
     const val EARTH_RADIUS_METERS = 6_371_000.0
     const val METERS_PER_MILE = 1609.344
+    const val METERS_PER_FOOT = 0.3048
 
     data class LatLng(
         val latitude: Double,

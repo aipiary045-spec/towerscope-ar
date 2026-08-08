@@ -328,7 +328,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="2.4 · 3.65 · 5.2 · 5.8 · 6 · 24 · 60 GHz — used for Fresnel"
+            android:text="2.4 · 3.65 · 5.2 · 5.8 · 6 · 24 · 60 GHz — used for signal estimate"
             android:textColor="@color/text_muted"
             android:textSize="11sp" />
 
@@ -356,6 +356,87 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Height of the customer radio above ground (1–30 m)."
+            android:textColor="@color/text_muted"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/settingsTxPowerLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="monospace"
+            android:text="TX POWER  20 dBm"
+            android:textColor="@color/accent_teal"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/settingsTxPowerSlider"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:max="30"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:progress="20" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="AP radio transmit power (0–30 dBm)."
+            android:textColor="@color/text_muted"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/settingsApGainLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="monospace"
+            android:text="AP GAIN  20 dBi"
+            android:textColor="@color/accent_teal"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/settingsApGainSlider"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:max="40"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:progress="20" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Access point antenna gain (0–40 dBi)."
+            android:textColor="@color/text_muted"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/settingsCpeGainLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="monospace"
+            android:text="CPE GAIN  20 dBi"
+            android:textColor="@color/accent_teal"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/settingsCpeGainSlider"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:max="40"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:progress="20" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Customer radio antenna gain (0–40 dBi). Used for estimated signal."
             android:textColor="@color/text_muted"
             android:textSize="11sp" />
 
