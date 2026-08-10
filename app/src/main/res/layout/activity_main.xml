@@ -10,7 +10,7 @@
         android:id="@+id/compassRadar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="196dp"
+        android:layout_marginTop="168dp"
         android:layout_marginBottom="118dp"
         android:layout_marginHorizontal="12dp" />
 
@@ -163,113 +163,6 @@
                         android:text="Est.  —"
                         android:textColor="@color/accent_teal"
                         android:textSize="14sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/aimClinometerStrip"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_clinometer_strip"
-                android:orientation="horizontal"
-                android:paddingHorizontal="4dp"
-                android:paddingVertical="10dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:letterSpacing="0.1"
-                        android:text="ELEV"
-                        android:textColor="@color/text_dim"
-                        android:textSize="10sp" />
-
-                    <TextView
-                        android:id="@+id/aimElevValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:fontFamily="monospace"
-                        android:text="—"
-                        android:textColor="@color/accent_teal"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginVertical="2dp"
-                    android:background="@color/border_luminous" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:letterSpacing="0.1"
-                        android:text="ROLL"
-                        android:textColor="@color/text_dim"
-                        android:textSize="10sp" />
-
-                    <TextView
-                        android:id="@+id/aimRollValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:fontFamily="monospace"
-                        android:text="—"
-                        android:textColor="@color/accent_yellow"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginVertical="2dp"
-                    android:background="@color/border_luminous" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:letterSpacing="0.1"
-                        android:text="SLOPE"
-                        android:textColor="@color/text_dim"
-                        android:textSize="10sp" />
-
-                    <TextView
-                        android:id="@+id/aimSlopeValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:fontFamily="monospace"
-                        android:text="—"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>

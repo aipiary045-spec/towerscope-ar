@@ -54,6 +54,11 @@ data class TowerUiState(
     val towers: List<Tower> = emptyList(),
     val hiddenTowerIds: Set<String> = emptySet(),
     val maxDistanceMeters: Float = DEFAULT_MAX_DISTANCE_METERS,
+    /**
+     * Locate map only: when true, show every loaded site (ignore distance range).
+     * Compass / LOS keep using [maxDistanceMeters].
+     */
+    val mapShowAllSites: Boolean = false,
     val searchQuery: String = "",
     val selectedTowerId: String? = null,
     val userLocation: UserLocation? = null,
@@ -76,10 +81,6 @@ data class TowerUiState(
     val distanceUnitSystem: DistanceUnitSystem = DistanceUnitSystem.IMPERIAL,
     val coordinateFormat: CoordinateFormat = CoordinateFormat.DECIMAL,
     val deviceHeadingDegrees: Double? = null,
-    /** Phone elevation angle (clinometer pitch), degrees. */
-    val devicePitchDegrees: Double? = null,
-    /** Phone side tilt (clinometer roll), degrees. */
-    val deviceRollDegrees: Double? = null,
     val compassSensorAccuracy: Int = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM,
     val hudTheme: HudTheme = HudTheme.NIGHT,
     /** Bottom HUD search/range/controls expanded. */
@@ -159,7 +160,7 @@ data class TowerUiState(
         }.sortedBy { it.third }
     }
 
-    fun visibleTowers(): List<Tower> {
+    fun visibleTowers(ignoreDistanceRange: Boolean = false): List<Tower> {
         val location = positioningLocation()
         val query = searchQuery.trim()
         return towers.filter { tower ->
@@ -167,7 +168,7 @@ data class TowerUiState(
             if (query.isNotEmpty() && !tower.name.contains(query, ignoreCase = true)) {
                 return@filter false
             }
-            if (location == null) return@filter true
+            if (ignoreDistanceRange || location == null) return@filter true
             val distance = GeoUtils.haversineMeters(
                 location.latitude,
                 location.longitude,
@@ -176,6 +177,34 @@ data class TowerUiState(
             )
             distance <= maxDistanceMeters
         }
+    }
+
+    /** Locate map markers / chips — respects [mapShowAllSites] only in this view. */
+    fun mapVisibleTowers(): List<Tower> = visibleTowers(ignoreDistanceRange = mapShowAllSites)
+
+    fun mapNearestMatches(limit: Int = 8): List<Tower> {
+        val location = positioningLocation()
+        val visible = mapVisibleTowers()
+        if (location == null) return visible.take(limit)
+        return visible
+            .sortedBy {
+                GeoUtils.haversineMeters(
+                    location.latitude,
+                    location.longitude,
+                    it.latitude,
+                    it.longitude
+                )
+            }
+            .take(limit)
+    }
+
+    /** Focus site for Locate — when showing all sites, nearest can be outside saved range. */
+    fun mapFocusTower(): Tower? {
+        val selected = selectedTowerId?.let { id -> towers.firstOrNull { it.id == id } }
+        if (selected != null && selected.id !in hiddenTowerIds) {
+            if (mapShowAllSites || selected in visibleTowers()) return selected
+        }
+        return if (mapShowAllSites) mapNearestMatches(1).firstOrNull() else focusTower()
     }
 
     /**
@@ -397,8 +426,6 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 _uiState.update {
                     it.copy(
                         deviceHeadingDegrees = heading.degrees,
-                        devicePitchDegrees = heading.pitchDegrees,
-                        deviceRollDegrees = heading.rollDegrees,
                         compassSensorAccuracy = heading.sensorAccuracy
                     )
                 }
@@ -411,6 +438,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         locationJob = null
         headingJob?.cancel()
         headingJob = null
+    }
+
+    fun setMapShowAllSites(showAll: Boolean) {
+        _uiState.update { it.copy(mapShowAllSites = showAll) }
     }
 
     fun setMaxDistanceMeters(meters: Float) {

@@ -53,6 +53,7 @@ class MapActivity : AppCompatActivity() {
     private lateinit var focusLabel: TextView
     private lateinit var metaLabel: TextView
     private lateinit var towerChips: LinearLayout
+    private lateinit var rangeToggle: MaterialButton
 
     private var losLine: Polyline? = null
     private val towerMarkers = mutableMapOf<String, Marker>()
@@ -94,12 +95,17 @@ class MapActivity : AppCompatActivity() {
         focusLabel = findViewById(R.id.mapFocusLabel)
         metaLabel = findViewById(R.id.mapMetaLabel)
         towerChips = findViewById(R.id.mapTowerChips)
+        rangeToggle = findViewById(R.id.mapRangeToggle)
 
         setupMap()
 
+        rangeToggle.setOnClickListener {
+            val showAll = !viewModel.uiState.value.mapShowAllSites
+            viewModel.setMapShowAllSites(showAll)
+        }
         findViewById<MaterialButton>(R.id.mapHomeButton).setOnClickListener { finish() }
         findViewById<MaterialButton>(R.id.mapDetailsButton).setOnClickListener {
-            viewModel.uiState.value.focusTower()?.id?.let { openTowerDetails(it) }
+            viewModel.uiState.value.mapFocusTower()?.id?.let { openTowerDetails(it) }
         }
         findViewById<android.widget.ImageButton>(R.id.mapFitButton).setOnClickListener {
             fitToYouAndFocus()
@@ -227,11 +233,18 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun render(state: TowerUiState) {
-        val focus = state.focusTower()
+        val focus = state.mapFocusTower()
         val distance = focus?.let { state.distanceTo(it) }
         val bearing = focus?.let { state.bearingTo(it) }
+        val mapSites = state.mapVisibleTowers()
+        rangeToggle.text = if (state.mapShowAllSites) {
+            getString(R.string.map_range_all)
+        } else {
+            getString(R.string.map_range_nearby)
+        }
         focusLabel.text = when {
-            focus == null && state.towers.isEmpty() -> "No sites loaded — import on Home"
+            focus == null && state.towers.isEmpty() -> "No sites loaded — import in Installation Hub"
+            focus == null && state.mapShowAllSites -> "No sites to show"
             focus == null -> "No AP in range"
             else -> focus.name
         }
@@ -247,8 +260,13 @@ class MapActivity : AppCompatActivity() {
                 if (isNotEmpty()) append("  ·  ")
                 append("AP ").append(sector.shortLabel).append(" sector")
             }
-            if (isEmpty()) append("Range ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}")
-            else append("  ·  ").append(state.visibleTowers().size).append(" in range")
+            if (isEmpty()) {
+                if (state.mapShowAllSites) append("All ${mapSites.size} sites")
+                else append("Range ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}")
+            } else {
+                append("  ·  ").append(mapSites.size)
+                append(if (state.mapShowAllSites) " sites" else " in range")
+            }
         }
 
         renderChips(state)
@@ -263,8 +281,8 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun renderChips(state: TowerUiState) {
-        val matches = state.nearestMatches(8)
-        val focusId = state.focusTower()?.id
+        val matches = state.mapNearestMatches(8)
+        val focusId = state.mapFocusTower()?.id
         val signature = matches.joinToString("|") { "${it.id}:${state.distanceTo(it)?.toInt()}" } +
             "|f=$focusId"
         if (signature == lastChipSignature && towerChips.childCount == matches.size) return
@@ -319,8 +337,8 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun renderMapOverlays(state: TowerUiState) {
-        val visible = state.visibleTowers()
-        val focusId = state.focusTower()?.id
+        val visible = state.mapVisibleTowers()
+        val focusId = state.mapFocusTower()?.id
         val visibleIds = visible.map { it.id }.toSet()
 
         val stale = towerMarkers.keys.filter { it !in visibleIds }
@@ -407,7 +425,7 @@ class MapActivity : AppCompatActivity() {
      * Highlight the sector that faces the install site (or live GPS).
      */
     private fun updateSectorWedges(state: TowerUiState) {
-        val focus = state.focusTower()
+        val focus = state.mapFocusTower()
         val origin = state.positioningLocation()
         if (focus == null) {
             clearSectorWedges()
@@ -533,7 +551,7 @@ class MapActivity : AppCompatActivity() {
 
     private fun updateLosLine(state: TowerUiState) {
         val origin = state.positioningLocation()
-        val focus = state.focusTower()
+        val focus = state.mapFocusTower()
         if (origin == null || focus == null) {
             losLine?.let { mapView.overlays.remove(it) }
             losLine = null
@@ -566,9 +584,9 @@ class MapActivity : AppCompatActivity() {
         val points = mutableListOf<GeoPoint>()
         state.positioningLocation()?.let { points.add(GeoPoint(it.latitude, it.longitude)) }
         state.userLocation?.let { points.add(GeoPoint(it.latitude, it.longitude)) }
-        state.focusTower()?.let { points.add(GeoPoint(it.latitude, it.longitude)) }
+        state.mapFocusTower()?.let { points.add(GeoPoint(it.latitude, it.longitude)) }
         if (points.isEmpty()) {
-            state.visibleTowers().forEach {
+            state.mapVisibleTowers().forEach {
                 points.add(GeoPoint(it.latitude, it.longitude))
             }
         }

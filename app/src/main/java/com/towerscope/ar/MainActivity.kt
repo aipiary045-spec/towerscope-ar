@@ -56,9 +56,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var aimTurnLabel: TextView
     private lateinit var aimDistanceLabel: TextView
     private lateinit var aimSignalLabel: TextView
-    private lateinit var aimElevValue: TextView
-    private lateinit var aimRollValue: TextView
-    private lateinit var aimSlopeValue: TextView
     private lateinit var visibleCount: TextView
     private lateinit var nearestHeader: TextView
     private lateinit var towerChips: LinearLayout
@@ -124,9 +121,6 @@ class MainActivity : AppCompatActivity() {
         aimTurnLabel = findViewById(R.id.aimTurnLabel)
         aimDistanceLabel = findViewById(R.id.aimDistanceLabel)
         aimSignalLabel = findViewById(R.id.aimSignalLabel)
-        aimElevValue = findViewById(R.id.aimElevValue)
-        aimRollValue = findViewById(R.id.aimRollValue)
-        aimSlopeValue = findViewById(R.id.aimSlopeValue)
         visibleCount = findViewById(R.id.visibleCount)
         nearestHeader = findViewById(R.id.nearestHeader)
         towerChips = findViewById(R.id.towerChips)
@@ -366,19 +360,6 @@ class MainActivity : AppCompatActivity() {
             "HDG  ${GeoUtils.formatAzimuthPadded(heading)}  ·  REC  ${GeoUtils.formatAzimuthPadded(reciprocal)}$offsetTag"
         } else {
             "HDG  —  ·  REC  —$offsetTag"
-        }
-
-        val pitch = state.devicePitchDegrees
-        val roll = state.deviceRollDegrees
-        if (pitch != null && roll != null) {
-            val slope = kotlin.math.tan(Math.toRadians(pitch)) * 100.0
-            aimElevValue.text = String.format(java.util.Locale.US, "%+.0f°", pitch)
-            aimRollValue.text = String.format(java.util.Locale.US, "%+.0f°", roll)
-            aimSlopeValue.text = String.format(java.util.Locale.US, "%+.0f%%", slope)
-        } else {
-            aimElevValue.text = "—"
-            aimRollValue.text = "—"
-            aimSlopeValue.text = "—"
         }
 
         val focus = state.focusTower()

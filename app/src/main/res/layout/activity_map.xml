@@ -72,6 +72,15 @@
             android:text="Long-press map to pin install · pin FAB = GPS"
             android:textColor="@color/text_dim"
             android:textSize="12sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/mapRangeToggle"
+            style="@style/Widget.TowerScope.Button.Ghost"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="10dp"
+            android:text="@string/map_range_nearby"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <LinearLayout
@@ -150,7 +159,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/source_sans3_regular"
             android:letterSpacing="0.06"
-            android:text="NEARBY IN RANGE"
+            android:text="SITES"
             android:textColor="@color/text_muted"
             android:textSize="10sp" />
 
