@@ -6,16 +6,17 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_topo_screen"
     android:orientation="vertical"
-    android:paddingHorizontal="18dp"
-    android:paddingTop="16dp">
+    android:paddingHorizontal="@dimen/screen_padding"
+    android:paddingTop="18dp">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fontFamily="@font/source_sans3_semibold"
+        android:letterSpacing="0.01"
         android:text="Check LOS"
         android:textColor="@color/text_primary"
-        android:textSize="22sp"
+        android:textSize="@dimen/screen_title"
         android:textStyle="bold" />
 
     <TextView
@@ -26,18 +27,18 @@
         android:fontFamily="@font/source_sans3_regular"
         android:text="Rank APs by estimated signal · from install or GPS"
         android:textColor="@color/text_muted"
-        android:textSize="13sp" />
+        android:textSize="14sp" />
 
     <LinearLayout
         android:id="@+id/losLinkSettings"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:background="@drawable/bg_hud_panel"
+        android:layout_marginTop="14dp"
+        android:background="@drawable/bg_metric_card"
         android:orientation="vertical"
-        android:paddingHorizontal="12dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
+        android:paddingHorizontal="14dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp">
 
         <LinearLayout
             android:id="@+id/losLinkSettingsHeader"

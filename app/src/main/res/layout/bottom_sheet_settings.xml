@@ -8,26 +8,27 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/bg_deep"
+        android:background="@drawable/bg_topo_screen"
         android:orientation="vertical"
-        android:paddingHorizontal="20dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="24dp">
+        android:paddingHorizontal="@dimen/screen_padding"
+        android:paddingTop="14dp"
+        android:paddingBottom="28dp">
 
         <View
-            android:layout_width="36dp"
+            android:layout_width="40dp"
             android:layout_height="4dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="14dp"
-            android:background="#4DFFFFFF" />
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_sheet_handle" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/source_sans3_semibold"
+            android:letterSpacing="0.01"
             android:text="Settings"
             android:textColor="@color/text_primary"
-            android:textSize="24sp"
+            android:textSize="@dimen/screen_title"
             android:textStyle="bold" />
 
         <TextView

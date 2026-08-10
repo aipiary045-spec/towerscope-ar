@@ -8,14 +8,18 @@ import java.util.Locale
 import kotlin.math.round
 
 /**
- * On-device LOS profile disk cache (7-day TTL).
- * Key rounds observer (~25 m) and tower (~1 m), matching the elevation API.
+ * On-device LOS profile disk cache (legacy).
+ * TowerScope no longer reads or writes this — kept only to wipe leftover files.
  */
 class LosProfileDiskCache(
     context: Context,
     private val ttlMs: Long = 7L * 24L * 60L * 60L * 1000L
 ) {
     private val dir = File(context.cacheDir, "los_profiles").also { it.mkdirs() }
+
+    fun clearAll() {
+        dir.listFiles()?.forEach { runCatching { it.delete() } }
+    }
 
     fun cacheKey(
         towerId: String,

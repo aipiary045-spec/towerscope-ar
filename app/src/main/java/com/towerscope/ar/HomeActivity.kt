@@ -20,7 +20,7 @@ import java.text.DateFormat
 import java.util.Date
 
 /**
- * Install-tech hub: import sites, then Aim / Locate / Check LOS.
+ * Install-tech hub: import sites, then Aim / Locate / Check LOS / Wi‑Fi / Speed.
  */
 class HomeActivity : AppCompatActivity() {
 
@@ -48,6 +48,12 @@ class HomeActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.homeLosButton).setOnClickListener {
             startActivity(Intent(this, LosProfilesActivity::class.java))
+        }
+        findViewById<View>(R.id.homeWifiButton).setOnClickListener {
+            startActivity(Intent(this, WifiMonitorActivity::class.java))
+        }
+        findViewById<View>(R.id.homeSpeedButton).setOnClickListener {
+            startActivity(Intent(this, SpeedTestActivity::class.java))
         }
         importButton.setOnClickListener {
             startActivity(Intent(this, DataMenuActivity::class.java))

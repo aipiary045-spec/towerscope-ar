@@ -1,6 +1,8 @@
 # TowerScope Elevation API
 
-LiDAR-first LOS elevation sampling with 3DEP DEM fallback and response cache.
+LiDAR-first LOS elevation sampling with 3DEP DEM fallback.
+
+Optional response cache (7-day TTL) is skipped when the client sends `"bypassCache": true` (TowerScope Android always does).
 
 ## Endpoints
 
@@ -60,5 +62,6 @@ LOS_ELEVATION_API_BASE_URL=https://towerscope-elevation.fly.dev
 ## Notes
 
 - Vertical values are meters. DEM is orthometric (3DEP). EPT Z is used as returned by the resource (typically survey meters); mixed lidar/DEM fills may have small datum offsets.
-- Server cache TTL is 7 days; key rounds observer (~25 m) and tower (~1 m).
+- Optional server cache TTL is 7 days; key rounds observer (~25 m) and tower (~1 m).
+- Clients may set `"bypassCache": true` on `POST /v1/los-profile` to force a live LiDAR/DEM query (TowerScope does this).
 - Rate limit: 30 requests / minute / IP.

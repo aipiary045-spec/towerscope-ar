@@ -4,13 +4,12 @@ import com.towerscope.ar.BuildConfig
 import com.towerscope.ar.util.GeoUtils
 
 /**
- * Builds a LOS elevation profile via elevation API (LiDAR + DEM), disk cache,
- * and on-device 3DEP DEM fallback.
+ * Builds a LOS elevation profile via elevation API (LiDAR + DEM)
+ * and on-device 3DEP DEM fallback. Always live — no disk cache.
  */
 class LosProfileService(
     private val apiClient: LosElevationApiClient? = defaultApiClient(),
-    private val demService: DemElevationService = DemElevationService(),
-    private val diskCache: LosProfileDiskCache? = null
+    private val demService: DemElevationService = DemElevationService()
 ) {
 
     suspend fun buildProfile(
@@ -20,21 +19,7 @@ class LosProfileService(
         eyeHeightAboveGroundMeters: Double = LosProfileBuilder.DEFAULT_EYE_HEIGHT_METERS,
         sampleCount: Int = LosProfileBuilder.DEFAULT_SAMPLE_COUNT
     ): LosProfile {
-        val cache = diskCache
-        val cacheKey = cache?.cacheKey(
-            towerId = tower.id,
-            observerLat = observerLat,
-            observerLon = observerLon,
-            towerLat = tower.latitude,
-            towerLon = tower.longitude,
-            sampleCount = sampleCount,
-            eyeHeightAboveGroundMeters = eyeHeightAboveGroundMeters
-        )
-        if (cache != null && cacheKey != null) {
-            cache.get(cacheKey)?.let { return it.toProfile() }
-        }
-
-        val profile = try {
+        return try {
             if (apiClient != null) {
                 buildFromApi(
                     tower = tower,
@@ -66,22 +51,6 @@ class LosProfileService(
                 throw apiError
             }
         }
-
-        if (cache != null && cacheKey != null) {
-            cache.put(
-                cacheKey,
-                LosProfileDiskCache.CachedLos(
-                    towerId = profile.towerId,
-                    towerName = profile.towerName,
-                    samples = profile.samples,
-                    observerEyeElevationMeters = profile.observerEyeElevationMeters,
-                    towerTipElevationMeters = profile.towerTipElevationMeters,
-                    totalDistanceMeters = profile.totalDistanceMeters,
-                    lidarCoverageFraction = profile.lidarCoverageFraction
-                )
-            )
-        }
-        return profile
     }
 
     private suspend fun buildFromApi(

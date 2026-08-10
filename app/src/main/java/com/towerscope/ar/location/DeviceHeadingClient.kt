@@ -9,16 +9,28 @@ import android.hardware.SensorManager
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlin.math.tan
 
 data class DeviceHeading(
     /** Degrees clockwise from true north when declination is available. */
     val degrees: Double,
+    /**
+     * Elevation of the phone's top edge vs horizon (degrees).
+     * Positive = aiming upward, negative = aiming downward.
+     */
+    val pitchDegrees: Double,
+    /** Side tilt (degrees). Positive = rolled right (clockwise looking forward). */
+    val rollDegrees: Double,
     /** [SensorManager] accuracy: UNRELIABLE / LOW / MEDIUM / HIGH. */
     val sensorAccuracy: Int
-)
+) {
+    /** Approximate grade from pitch: rise/run as percent. */
+    val slopePercent: Double
+        get() = tan(Math.toRadians(pitchDegrees)) * 100.0
+}
 
 /**
- * Device heading in degrees clockwise from true north for portrait compass use.
+ * Device heading + clinometer (pitch/roll) for portrait compass use.
  *
  * Remaps so azimuth follows the direction the **top of the phone** points when held
  * upright (screen toward user) — for radar display and compass aiming.
@@ -62,6 +74,8 @@ class DeviceHeadingClient(context: Context) {
                     SensorManager.getOrientation(matrixForOrientation, orientation)
                     var degrees = Math.toDegrees(orientation[0].toDouble())
                     degrees = (degrees + 360.0) % 360.0
+                    val pitch = Math.toDegrees(orientation[1].toDouble())
+                    val roll = Math.toDegrees(orientation[2].toDouble())
 
                     if (usesGeomagneticNorth) {
                         val location = locationProvider()
@@ -76,7 +90,14 @@ class DeviceHeadingClient(context: Context) {
                         }
                     }
 
-                    trySend(DeviceHeading(degrees = degrees, sensorAccuracy = latestAccuracy))
+                    trySend(
+                        DeviceHeading(
+                            degrees = degrees,
+                            pitchDegrees = pitch,
+                            rollDegrees = roll,
+                            sensorAccuracy = latestAccuracy
+                        )
+                    )
                 }
 
                 override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {

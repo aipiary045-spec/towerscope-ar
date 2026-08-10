@@ -33,9 +33,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="24dp"
-            android:paddingTop="20dp"
-            android:paddingBottom="32dp">
+            android:paddingHorizontal="@dimen/screen_padding"
+            android:paddingTop="22dp"
+            android:paddingBottom="36dp">
 
             <!-- Brand lockup -->
             <LinearLayout
@@ -45,8 +45,8 @@
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="52dp"
-                    android:layout_height="52dp"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
                     android:contentDescription="@string/app_name"
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_brand_mark" />
@@ -62,16 +62,16 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/source_sans3_semibold"
-                        android:letterSpacing="0.02"
+                        android:letterSpacing="0.01"
                         android:text="@string/hud_title"
                         android:textColor="@color/text_primary"
-                        android:textSize="28sp"
+                        android:textSize="30sp"
                         android:textStyle="bold" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
+                        android:layout_marginTop="3dp"
                         android:fontFamily="@font/source_sans3_regular"
                         android:text="@string/home_tagline"
                         android:textColor="@color/accent_teal"
@@ -83,21 +83,20 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
-                android:fontFamily="@font/source_sans3_regular"
-                android:letterSpacing="0.12"
+                android:layout_marginTop="@dimen/section_gap"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:letterSpacing="0.14"
                 android:text="@string/home_network"
                 android:textColor="@color/text_dim"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:textSize="11sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="12dp"
                 android:background="@drawable/bg_network_card"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="@dimen/card_padding_lg">
 
                 <TextView
                     android:id="@+id/homeSourceStatus"
@@ -106,14 +105,14 @@
                     android:fontFamily="@font/source_sans3_semibold"
                     android:text="@string/home_no_sites"
                     android:textColor="@color/text_primary"
-                    android:textSize="17sp"
+                    android:textSize="18sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/homeUpdatedAt"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="5dp"
                     android:fontFamily="@font/source_sans3_regular"
                     android:text="@string/home_import_hint"
                     android:textColor="@color/text_muted"
@@ -136,13 +135,12 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
-                android:fontFamily="@font/source_sans3_regular"
-                android:letterSpacing="0.12"
+                android:layout_marginTop="@dimen/section_gap"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:letterSpacing="0.14"
                 android:text="@string/home_field_tools"
                 android:textColor="@color/text_dim"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:textSize="11sp" />
 
             <!-- Aim -->
             <LinearLayout
@@ -155,9 +153,9 @@
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
                 android:gravity="center_vertical"
-                android:minHeight="76dp"
+                android:minHeight="80dp"
                 android:orientation="horizontal"
-                android:padding="14dp">
+                android:padding="16dp">
 
                 <FrameLayout
                     android:layout_width="48dp"
@@ -212,15 +210,15 @@
                 android:id="@+id/homeMapButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="@dimen/item_gap"
                 android:background="@drawable/bg_mode_card"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
                 android:gravity="center_vertical"
-                android:minHeight="76dp"
+                android:minHeight="80dp"
                 android:orientation="horizontal"
-                android:padding="14dp">
+                android:padding="16dp">
 
                 <FrameLayout
                     android:layout_width="48dp"
@@ -275,15 +273,15 @@
                 android:id="@+id/homeLosButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="@dimen/item_gap"
                 android:background="@drawable/bg_mode_card"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
                 android:gravity="center_vertical"
-                android:minHeight="76dp"
+                android:minHeight="80dp"
                 android:orientation="horizontal"
-                android:padding="14dp">
+                android:padding="16dp">
 
                 <FrameLayout
                     android:layout_width="48dp"
@@ -329,6 +327,132 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/source_sans3_semibold"
                     android:text="03"
+                    android:textColor="@color/text_dim"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Wi-Fi signal -->
+            <LinearLayout
+                android:id="@+id/homeWifiButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/item_gap"
+                android:background="@drawable/bg_mode_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:minHeight="80dp"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_job_icon">
+
+                    <ImageView
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_wifi_signal" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="@string/home_job_wifi"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/source_sans3_regular"
+                        android:text="@string/home_job_wifi_sub"
+                        android:textColor="@color/text_muted"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="04"
+                    android:textColor="@color/text_dim"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Speed test -->
+            <LinearLayout
+                android:id="@+id/homeSpeedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/item_gap"
+                android:background="@drawable/bg_mode_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:minHeight="80dp"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_job_icon">
+
+                    <ImageView
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_speed_test" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="@string/home_job_speed"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/source_sans3_regular"
+                        android:text="@string/home_job_speed_sub"
+                        android:textColor="@color/text_muted"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="05"
                     android:textColor="@color/text_dim"
                     android:textSize="13sp" />
             </LinearLayout>

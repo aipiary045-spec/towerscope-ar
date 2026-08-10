@@ -7,7 +7,7 @@ import java.net.URL
 import java.util.Locale
 
 /**
- * Client for the TowerScope elevation API (LiDAR + DEM + server cache).
+ * Client for the TowerScope elevation API (LiDAR + DEM). Always requests live data.
  */
 class LosElevationApiClient(
     private val baseUrl: String,
@@ -36,18 +36,20 @@ class LosElevationApiClient(
         observerLon: Double,
         towerLat: Double,
         towerLon: Double,
-        sampleCount: Int
+        sampleCount: Int,
+        bypassCache: Boolean = true
     ): ApiProfile = withContext(Dispatchers.IO) {
         val root = baseUrl.trim().trimEnd('/')
         require(root.isNotEmpty()) { "Elevation API base URL is not configured" }
         val body = String.format(
             Locale.US,
-            """{"observer":{"lat":%.8f,"lon":%.8f},"tower":{"lat":%.8f,"lon":%.8f},"sampleCount":%d}""",
+            """{"observer":{"lat":%.8f,"lon":%.8f},"tower":{"lat":%.8f,"lon":%.8f},"sampleCount":%d,"bypassCache":%s}""",
             observerLat,
             observerLon,
             towerLat,
             towerLon,
-            sampleCount
+            sampleCount,
+            if (bypassCache) "true" else "false"
         )
         val connection = (URL("$root/v1/los-profile").openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
@@ -56,6 +58,7 @@ class LosElevationApiClient(
             doOutput = true
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             setRequestProperty("Accept", "application/json")
+            setRequestProperty("Cache-Control", "no-cache")
             setRequestProperty("User-Agent", "TowerScopeAR/1.0 (Android)")
         }
         try {

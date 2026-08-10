@@ -26,7 +26,7 @@ Android field app that loads tower locations from **KML/KMZ** and shows them on 
 
 ## LOS elevation (LiDAR + DEM)
 
-Tower details can show a line-of-sight elevation profile. The app prefers a small elevation API (USGS LiDAR first-return, 3DEP DEM fallback, caches) and falls back to on-device 3DEP DEM if the API is unreachable.
+Tower details can show a line-of-sight elevation profile. The app prefers a small elevation API (USGS LiDAR first-return, 3DEP DEM fallback) and falls back to on-device 3DEP DEM if the API is unreachable. Profiles are always fetched live (no on-device LOS cache; API requests use `bypassCache`).
 
 1. Deploy [`elevation-api/`](elevation-api/README.md) (Docker / Fly.io)
 2. Add to `local.properties` (not committed):

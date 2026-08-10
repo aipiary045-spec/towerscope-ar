@@ -40,6 +40,7 @@ class LosProfileRequest(BaseModel):
     observer: LatLon
     tower: LatLon
     sampleCount: int = Field(50, ge=2, le=200)
+    bypassCache: bool = False
 
 
 class LosSampleOut(BaseModel):
@@ -118,12 +119,13 @@ async def los_profile(
         body.tower.lon,
         body.sampleCount,
     )
-    cached = cache.get(key)
-    if isinstance(cached, dict):
-        response.headers["Cache-Control"] = "public, max-age=604800"
-        response.headers["X-Cache"] = "HIT"
-        data = {**cached, "fromCache": True}
-        return LosProfileResponse(**data)
+    if not body.bypassCache:
+        cached = cache.get(key)
+        if isinstance(cached, dict):
+            response.headers["Cache-Control"] = "public, max-age=604800"
+            response.headers["X-Cache"] = "HIT"
+            data = {**cached, "fromCache": True}
+            return LosProfileResponse(**data)
 
     points = sample_geodesic(
         body.observer.lat,
@@ -216,7 +218,10 @@ async def los_profile(
     )
     to_store = payload.model_dump()
     to_store["fromCache"] = False
-    cache.put(key, to_store)
-    response.headers["Cache-Control"] = "public, max-age=604800"
-    response.headers["X-Cache"] = "MISS"
+    if not body.bypassCache:
+        cache.put(key, to_store)
+        response.headers["Cache-Control"] = "public, max-age=604800"
+    else:
+        response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Cache"] = "BYPASS" if body.bypassCache else "MISS"
     return payload

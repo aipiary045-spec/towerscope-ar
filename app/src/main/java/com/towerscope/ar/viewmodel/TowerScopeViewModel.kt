@@ -76,6 +76,10 @@ data class TowerUiState(
     val distanceUnitSystem: DistanceUnitSystem = DistanceUnitSystem.IMPERIAL,
     val coordinateFormat: CoordinateFormat = CoordinateFormat.DECIMAL,
     val deviceHeadingDegrees: Double? = null,
+    /** Phone elevation angle (clinometer pitch), degrees. */
+    val devicePitchDegrees: Double? = null,
+    /** Phone side tilt (clinometer roll), degrees. */
+    val deviceRollDegrees: Double? = null,
     val compassSensorAccuracy: Int = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM,
     val hudTheme: HudTheme = HudTheme.NIGHT,
     /** Bottom HUD search/range/controls expanded. */
@@ -280,9 +284,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private val locationClient = HighAccuracyLocationClient(application)
     private val headingClient = DeviceHeadingClient(application)
     private val fileStore = TowerFileStore(application)
-    private val losProfileService = LosProfileService(
-        diskCache = LosProfileDiskCache(application)
-    )
+    private val losProfileService = LosProfileService()
     private val prefs = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private val _uiState = MutableStateFlow(
         TowerUiState(
@@ -319,6 +321,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private var losLoadingTowerId: String? = null
 
     init {
+        // Drop any leftover on-device LOS profile files from older builds.
+        runCatching { LosProfileDiskCache(application).clearAll() }
         restorePersistedTowers()
     }
 
@@ -393,6 +397,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 _uiState.update {
                     it.copy(
                         deviceHeadingDegrees = heading.degrees,
+                        devicePitchDegrees = heading.pitchDegrees,
+                        deviceRollDegrees = heading.rollDegrees,
                         compassSensorAccuracy = heading.sensorAccuracy
                     )
                 }
@@ -581,7 +587,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     /**
-     * Sample geodesic points to [towerId], query LiDAR/DEM elevations (cached), apply Earth curvature.
+     * Sample geodesic points to [towerId], query live LiDAR/DEM elevations, apply Earth curvature.
+     * Always fetches fresh data (no profile disk cache).
      */
     fun loadLosProfile(towerId: String) {
         if (!_uiState.value.showElevationProfile) {
@@ -604,9 +611,6 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             }
             return
         }
-        // Skip reload if we already have this tower's profile or its fetch is in flight.
-        val existing = _uiState.value.losProfile
-        if (existing != null && existing.towerId == towerId) return
         if (losLoadingTowerId == towerId && losJob?.isActive == true) return
 
         losJob?.cancel()
@@ -615,7 +619,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             it.copy(
                 losProfileLoading = true,
                 losProfileError = null,
-                losProfile = if (existing?.towerId == towerId) existing else null
+                losProfile = null
             )
         }
         losJob = viewModelScope.launch {

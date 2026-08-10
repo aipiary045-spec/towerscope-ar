@@ -8,7 +8,10 @@
         <item name="android:enforceNavigationBarContrast">false</item>
         <item name="colorPrimary">@color/accent_yellow</item>
         <item name="colorSecondary">@color/accent_teal</item>
-        <item name="colorOnPrimary">@color/bg_deep</item>
+        <item name="colorOnPrimary">@color/text_on_accent</item>
+        <item name="colorSurface">@color/surface_slate</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_muted</item>
         <!-- Do not set theme-wide custom fontFamily — can crash Material inflate on some devices. -->
         <item name="materialButtonStyle">@style/Widget.TowerScope.Button</item>
     </style>
@@ -17,8 +20,8 @@
         <item name="android:fontFamily">@font/source_sans3_semibold</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/text_primary</item>
-        <item name="android:letterSpacing">0.02</item>
-        <item name="android:textSize">28sp</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:textSize">@dimen/screen_title</item>
     </style>
 
     <style name="TextAppearance.TowerScope.Title" parent="TextAppearance.MaterialComponents.Subtitle1">
@@ -32,19 +35,37 @@
         <item name="android:fontFamily">@font/source_sans3_regular</item>
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+
+    <style name="TextAppearance.TowerScope.Subtitle" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="android:fontFamily">@font/source_sans3_regular</item>
+        <item name="android:textColor">@color/text_muted</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
     </style>
 
     <style name="TextAppearance.TowerScope.Meta" parent="TextAppearance.MaterialComponents.Caption">
-        <item name="android:fontFamily">@font/source_sans3_regular</item>
-        <item name="android:textColor">@color/text_muted</item>
-        <item name="android:textSize">12sp</item>
-        <item name="android:letterSpacing">0.08</item>
+        <item name="android:fontFamily">@font/source_sans3_semibold</item>
+        <item name="android:textColor">@color/text_dim</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:letterSpacing">0.12</item>
+        <item name="android:textAllCaps">true</item>
     </style>
 
     <style name="TextAppearance.TowerScope.Data" parent="TextAppearance.MaterialComponents.Body2">
         <item name="android:fontFamily">monospace</item>
         <item name="android:textColor">@color/accent_teal</item>
         <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.TowerScope.Metric" parent="TextAppearance.MaterialComponents.Headline4">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textColor">@color/accent_teal</item>
+        <item name="android:textSize">@dimen/metric_value</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.02</item>
     </style>
 
     <style name="TextAppearance.TowerScope.Heading" parent="TextAppearance.MaterialComponents.Headline6">
@@ -61,6 +82,7 @@
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
         <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">@font/source_sans3_semibold</item>
         <item name="cornerRadius">@dimen/radius_md</item>
         <item name="android:stateListAnimator">@null</item>
         <item name="android:foreground">?attr/selectableItemBackground</item>
@@ -68,14 +90,16 @@
 
     <style name="Widget.TowerScope.Button.Primary" parent="Widget.TowerScope.Button">
         <item name="backgroundTint">@color/accent_yellow</item>
-        <item name="android:textColor">@color/bg_deep</item>
+        <item name="android:textColor">@color/text_on_accent</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:textSize">15sp</item>
     </style>
 
     <style name="Widget.TowerScope.Button.Secondary" parent="Widget.TowerScope.Button">
         <item name="backgroundTint">@color/accent_teal</item>
-        <item name="android:textColor">@color/bg_deep</item>
+        <item name="android:textColor">@color/text_on_accent</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:textSize">15sp</item>
     </style>
 
     <style name="Widget.TowerScope.Button.Ghost" parent="Widget.MaterialComponents.Button.OutlinedButton">
@@ -83,10 +107,12 @@
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
         <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">@font/source_sans3_semibold</item>
         <item name="cornerRadius">@dimen/radius_md</item>
-        <item name="strokeColor">@color/border_luminous</item>
+        <item name="strokeColor">@color/border_strong</item>
         <item name="strokeWidth">1dp</item>
         <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">15sp</item>
         <item name="android:foreground">?attr/selectableItemBackground</item>
     </style>
 
@@ -97,5 +123,11 @@
         <item name="android:foreground">?attr/selectableItemBackground</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
+    </style>
+
+    <style name="Widget.TowerScope.MetricTile">
+        <item name="android:background">@drawable/bg_metric_tile</item>
+        <item name="android:padding">@dimen/card_padding</item>
+        <item name="android:orientation">vertical</item>
     </style>
 </resources>
