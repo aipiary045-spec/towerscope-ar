@@ -2,14 +2,19 @@ package com.towerscope.ar
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.MultiPingSnapshot
+import com.towerscope.ar.network.PingHistory
 import com.towerscope.ar.network.PingHostStats
 import com.towerscope.ar.network.PingMonitor
 import com.towerscope.ar.ui.SystemBars
@@ -22,6 +27,9 @@ class PingMonitorActivity : AppCompatActivity() {
 
     private lateinit var hostInput: EditText
     private lateinit var statusLabel: TextView
+    private lateinit var recentLabel: TextView
+    private lateinit var recentScroll: HorizontalScrollView
+    private lateinit var recentRow: LinearLayout
     private lateinit var hostStatsList: LinearLayout
     private lateinit var logView: TextView
     private lateinit var toggleButton: MaterialButton
@@ -36,9 +44,17 @@ class PingMonitorActivity : AppCompatActivity() {
 
         hostInput = findViewById(R.id.pingHostInput)
         statusLabel = findViewById(R.id.pingStatus)
+        recentLabel = findViewById(R.id.pingRecentLabel)
+        recentScroll = findViewById(R.id.pingRecentScroll)
+        recentRow = findViewById(R.id.pingRecentRow)
         hostStatsList = findViewById(R.id.pingHostStatsList)
         logView = findViewById(R.id.pingLogView)
         toggleButton = findViewById(R.id.pingToggleButton)
+
+        hostInput.setText(
+            PingHistory.lastInput(this) ?: "1.1.1.1, 8.8.8.8"
+        )
+        renderRecentChips()
 
         toggleButton.setOnClickListener {
             if (job?.isActive == true) stopPing() else startPing()
@@ -55,10 +71,15 @@ class PingMonitorActivity : AppCompatActivity() {
     }
 
     private fun startPing() {
-        val hosts = PingMonitor.parseHostList(hostInput.text?.toString().orEmpty())
+        val raw = hostInput.text?.toString().orEmpty()
+        val hosts = PingMonitor.parseHostList(raw)
+        PingHistory.remember(this, raw, hosts)
+        renderRecentChips()
+
         logLines.clear()
         logView.text = "—"
         hostInput.isEnabled = false
+        setRecentEnabled(false)
         toggleButton.text = "Stop ping"
         statusLabel.text = "Pinging ${hosts.size} host${if (hosts.size == 1) "" else "s"}…"
         job = lifecycleScope.launch {
@@ -75,11 +96,60 @@ class PingMonitorActivity : AppCompatActivity() {
         job?.cancel()
         job = null
         hostInput.isEnabled = true
+        setRecentEnabled(true)
         toggleButton.text = "Start ping"
         if (statusLabel.text.toString().startsWith("Live") ||
             statusLabel.text.toString().startsWith("Pinging")
         ) {
             statusLabel.text = "Stopped"
+        }
+    }
+
+    private fun renderRecentChips() {
+        val recent = PingHistory.recentHosts(this)
+        recentRow.removeAllViews()
+        if (recent.isEmpty()) {
+            recentLabel.visibility = View.GONE
+            recentScroll.visibility = View.GONE
+            return
+        }
+        recentLabel.visibility = View.VISIBLE
+        recentScroll.visibility = View.VISIBLE
+        val selectedColor = ContextCompat.getColor(this, R.color.accent_teal)
+        val muted = ContextCompat.getColor(this, R.color.text_muted)
+        recent.forEach { host ->
+            val button = MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = host
+                isAllCaps = false
+                textSize = 12f
+                minimumHeight = 0
+                minHeight = 0
+                setTextColor(muted)
+                strokeWidth = 1
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    marginEnd = (8 * resources.displayMetrics.density).toInt()
+                }
+                setOnClickListener {
+                    if (job?.isActive == true) return@setOnClickListener
+                    hostInput.setText(host)
+                    hostInput.setSelection(host.length)
+                    setTextColor(selectedColor)
+                }
+            }
+            recentRow.addView(button)
+        }
+    }
+
+    private fun setRecentEnabled(enabled: Boolean) {
+        for (i in 0 until recentRow.childCount) {
+            recentRow.getChildAt(i).isEnabled = enabled
         }
     }
 
