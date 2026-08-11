@@ -23,7 +23,11 @@ Copy-Item -Force $src $dest
 $tag = "sideload-latest"
 Write-Host "Updating GitHub release $tag ..."
 gh release delete $tag -R aipiary045-spec/towerscope-ar --yes 2>$null | Out-Null
+# git writes progress to stderr even on success; don't let that stop the script
+$prevEap = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
 git push origin ":refs/tags/$tag" 2>$null | Out-Null
+$ErrorActionPreference = $prevEap
 gh release create $tag $dest `
   -R aipiary045-spec/towerscope-ar `
   --title "TowerScope sideload (latest)" `
