@@ -5,12 +5,11 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
-import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.ui.SettingsBottomSheet
 import com.towerscope.ar.ui.SystemBars
 
 /**
- * Root launcher: Network Hub and Installation Hub.
+ * Root launcher: tile navigation into Network Hub and Installation Hub.
  */
 class HomeActivity : AppCompatActivity() {
 
@@ -26,7 +25,7 @@ class HomeActivity : AppCompatActivity() {
         findViewById<View>(R.id.homeInstallHubButton).setOnClickListener {
             startActivity(Intent(this, InstallationHubActivity::class.java))
         }
-        findViewById<MaterialButton>(R.id.homeSettingsButton).setOnClickListener {
+        findViewById<View>(R.id.homeSettingsButton).setOnClickListener {
             if (supportFragmentManager.findFragmentByTag(SettingsBottomSheet.TAG) == null) {
                 SettingsBottomSheet.newInstance().show(supportFragmentManager, SettingsBottomSheet.TAG)
             }

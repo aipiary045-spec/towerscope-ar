@@ -25,7 +25,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/source_sans3_semibold"
-            android:letterSpacing="0.01"
             android:text="Settings"
             android:textColor="@color/text_primary"
             android:textSize="@dimen/screen_title"
@@ -40,496 +39,732 @@
             android:textSize="12sp"
             android:visibility="gone" />
 
-        <TextView
+        <!-- Appearance -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:letterSpacing="0.08"
-            android:text="NETWORK DATA"
-            android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
+            android:background="@drawable/bg_settings_section"
+            android:orientation="vertical">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="8dp"
-            android:background="@color/border_luminous" />
+            <LinearLayout
+                android:id="@+id/settingsHeaderAppearance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_settings_section_header"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:minHeight="52dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/settingsDataButton"
-            style="@style/Widget.TowerScope.Button.Primary"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginTop="12dp"
-            android:text="Import / manage sites" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="Upload or clear KML / KMZ / CSV site files."
-            android:textColor="@color/text_muted"
-            android:textSize="11sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="Appearance"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:letterSpacing="0.08"
-            android:text="APPEARANCE"
-            android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
+                    <TextView
+                        android:id="@+id/settingsSummaryAppearance"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_regular"
+                        android:text="Theme"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="8dp"
-            android:background="@color/border_luminous" />
+                <TextView
+                    android:id="@+id/settingsChevronAppearance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="22sp" />
+            </LinearLayout>
 
+            <LinearLayout
+                android:id="@+id/settingsBodyAppearance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:minHeight="48dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Theme"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/settingsThemeButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_theme_chip"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:gravity="center"
+                        android:minHeight="40dp"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:text="Dark"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Sites -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center_vertical"
-            android:minHeight="48dp"
-            android:orientation="horizontal">
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_settings_section"
+            android:orientation="vertical">
 
-            <TextView
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/settingsHeaderSites"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="@font/source_sans3_regular"
-                android:text="Theme"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
+                android:background="@drawable/bg_settings_section_header"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:minHeight="52dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp">
 
-            <TextView
-                android:id="@+id/settingsThemeButton"
-                android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="Sites"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/settingsSummarySites"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Import / manage"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/settingsChevronSites"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="22sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/settingsBodySites"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_theme_chip"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:minHeight="40dp"
-                android:gravity="center"
-                android:paddingHorizontal="14dp"
-                android:paddingVertical="8dp"
-                android:text="Night"
-                android:textColor="@color/text_primary"
-                android:textSize="13sp" />
+                android:orientation="vertical"
+                android:padding="14dp"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/settingsDataButton"
+                    style="@style/Widget.TowerScope.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="Import / manage sites" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Upload or clear KML / KMZ / CSV site files."
+                    android:textColor="@color/text_muted"
+                    android:textSize="11sp" />
+            </LinearLayout>
         </LinearLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:letterSpacing="0.08"
-            android:text="UNITS"
-            android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="8dp"
-            android:background="@color/border_luminous" />
-
+        <!-- Units -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center_vertical"
-            android:minHeight="48dp"
-            android:orientation="horizontal">
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_settings_section"
+            android:orientation="vertical">
 
-            <TextView
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/settingsHeaderUnits"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="@font/source_sans3_regular"
-                android:text="Distance"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
+                android:background="@drawable/bg_settings_section_header"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:minHeight="52dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp">
 
-            <TextView
-                android:id="@+id/settingsDistanceUnitsButton"
-                android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="Units"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/settingsSummaryUnits"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Distance · coordinates"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/settingsChevronUnits"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="22sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/settingsBodyUnits"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_theme_chip"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:minHeight="40dp"
-                android:gravity="center"
-                android:paddingHorizontal="14dp"
-                android:paddingVertical="8dp"
-                android:text="mi / ft"
-                android:textColor="@color/text_primary"
-                android:textSize="13sp" />
+                android:orientation="vertical"
+                android:padding="14dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:minHeight="48dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Distance"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/settingsDistanceUnitsButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_theme_chip"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:gravity="center"
+                        android:minHeight="40dp"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:text="mi / ft"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:minHeight="48dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Coordinates"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/settingsCoordFormatButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_theme_chip"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:gravity="center"
+                        android:minHeight="40dp"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:text="Decimal"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
 
+        <!-- Compass -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:minHeight="48dp"
-            android:orientation="horizontal">
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_settings_section"
+            android:orientation="vertical">
 
-            <TextView
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/settingsHeaderCompass"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="@font/source_sans3_regular"
-                android:text="Coordinates"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
+                android:background="@drawable/bg_settings_section_header"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:minHeight="52dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp">
 
-            <TextView
-                android:id="@+id/settingsCoordFormatButton"
-                android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="Compass"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/settingsSummaryCompass"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Improve · offset"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/settingsChevronCompass"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="22sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/settingsBodyCompass"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_theme_chip"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:minHeight="40dp"
-                android:gravity="center"
-                android:paddingHorizontal="14dp"
-                android:paddingVertical="8dp"
-                android:text="Decimal"
-                android:textColor="@color/text_primary"
-                android:textSize="13sp" />
+                android:orientation="vertical"
+                android:padding="14dp"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/settingsCalibrateButton"
+                    style="@style/Widget.TowerScope.Button.Ghost"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="Improve compass" />
+
+                <TextView
+                    android:id="@+id/settingsCalibrateState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_cal_state_needed"
+                    android:fontFamily="monospace"
+                    android:gravity="center"
+                    android:minHeight="36dp"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:text="SENSOR  —"
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Move the phone in a figure-8 away from metal to improve sensor accuracy."
+                    android:textColor="@color/text_muted"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/settingsOffsetLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:fontFamily="monospace"
+                    android:text="OFFSET  none"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/settingsOffsetMinusButton"
+                        style="@style/Widget.TowerScope.Button.Ghost"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:text="−1°" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/settingsOffsetPlusButton"
+                        style="@style/Widget.TowerScope.Button.Ghost"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="+1°" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/settingsClearOffsetButton"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="Clear heading offset"
+                    android:textAllCaps="false"
+                    android:textColor="@color/accent_teal" />
+            </LinearLayout>
         </LinearLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:letterSpacing="0.08"
-            android:text="COMPASS"
-            android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="8dp"
-            android:background="@color/border_luminous" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/settingsCalibrateButton"
-            style="@style/Widget.TowerScope.Button.Ghost"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginTop="12dp"
-            android:text="Improve compass" />
-
-        <TextView
-            android:id="@+id/settingsCalibrateState"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_cal_state_needed"
-            android:fontFamily="monospace"
-            android:gravity="center"
-            android:minHeight="36dp"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="8dp"
-            android:text="SENSOR  —"
-            android:textColor="@color/accent_yellow"
-            android:textSize="12sp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="Move the phone in a figure-8 away from metal to improve sensor accuracy."
-            android:textColor="@color/text_muted"
-            android:textSize="11sp" />
-
-        <TextView
-            android:id="@+id/settingsOffsetLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:fontFamily="monospace"
-            android:text="OFFSET  none"
-            android:textColor="@color/accent_teal"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
+        <!-- RF / Install -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_settings_section"
+            android:orientation="vertical">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/settingsOffsetMinusButton"
-                style="@style/Widget.TowerScope.Button.Ghost"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="−1°" />
+            <LinearLayout
+                android:id="@+id/settingsHeaderRf"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_settings_section_header"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:minHeight="52dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/settingsOffsetPlusButton"
-                style="@style/Widget.TowerScope.Button.Ghost"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="+1°" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="RF / Install"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/settingsSummaryRf"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Freq · gains · CPE height"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/settingsChevronRf"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="22sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/settingsBodyRf"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/settingsFrequencyLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:text="FREQ  5.8 GHz"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <SeekBar
+                    android:id="@+id/settingsFrequencySlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:max="6"
+                    android:progress="3" />
+
+                <TextView
+                    android:id="@+id/settingsCpeHeightLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="monospace"
+                    android:text="CPE height  4 m"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <SeekBar
+                    android:id="@+id/settingsCpeHeightSlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:max="29"
+                    android:progress="3" />
+
+                <TextView
+                    android:id="@+id/settingsTxPowerLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="monospace"
+                    android:text="TX POWER  20 dBm"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <SeekBar
+                    android:id="@+id/settingsTxPowerSlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:max="30"
+                    android:progress="20" />
+
+                <TextView
+                    android:id="@+id/settingsApGainLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="monospace"
+                    android:text="AP GAIN  20 dBi"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <SeekBar
+                    android:id="@+id/settingsApGainSlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:max="40"
+                    android:progress="20" />
+
+                <TextView
+                    android:id="@+id/settingsCpeGainLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="monospace"
+                    android:text="CPE GAIN  20 dBi"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <SeekBar
+                    android:id="@+id/settingsCpeGainSlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:max="40"
+                    android:progress="20" />
+
+                <TextView
+                    android:id="@+id/settingsInstallStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Install site · using live GPS"
+                    android:textColor="@color/text_muted"
+                    android:textSize="12sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/settingsClearInstallButton"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="Clear install site"
+                    android:textAllCaps="false"
+                    android:textColor="@color/accent_teal"
+                    android:visibility="gone" />
+            </LinearLayout>
         </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/settingsClearOffsetButton"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="Clear heading offset"
-            android:textAllCaps="false"
-            android:textColor="@color/accent_teal" />
-
-        <TextView
+        <!-- Filter -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Optional fine-tune if bearings are still off after figure-8 calibration."
-            android:textColor="@color/text_muted"
-            android:textSize="11sp" />
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_settings_section"
+            android:orientation="vertical">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:letterSpacing="0.08"
-            android:text="RF / INSTALL"
-            android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
+            <LinearLayout
+                android:id="@+id/settingsHeaderFilter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_settings_section_header"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:minHeight="52dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="8dp"
-            android:background="@color/border_luminous" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/settingsFrequencyLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:fontFamily="monospace"
-            android:text="FREQ  5.8 GHz"
-            android:textColor="@color/accent_teal"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="Filter"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
 
-        <SeekBar
-            android:id="@+id/settingsFrequencySlider"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:max="6"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:progress="3" />
+                    <TextView
+                        android:id="@+id/settingsSummaryFilter"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Search · range"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="2.4 · 3.65 · 5.2 · 5.8 · 6 · 24 · 60 GHz — used for signal estimate"
-            android:textColor="@color/text_muted"
-            android:textSize="11sp" />
+                <TextView
+                    android:id="@+id/settingsChevronFilter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="22sp" />
+            </LinearLayout>
 
-        <TextView
-            android:id="@+id/settingsCpeHeightLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:fontFamily="monospace"
-            android:text="CPE height  4 m"
-            android:textColor="@color/accent_teal"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            <LinearLayout
+                android:id="@+id/settingsBodyFilter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp"
+                android:visibility="gone">
 
-        <SeekBar
-            android:id="@+id/settingsCpeHeightSlider"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:max="29"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:progress="3" />
+                <EditText
+                    android:id="@+id/settingsSearchField"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_hud_input"
+                    android:hint="Search by name"
+                    android:imeOptions="actionSearch"
+                    android:importantForAutofill="no"
+                    android:inputType="text"
+                    android:paddingHorizontal="12dp"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_muted"
+                    android:textSize="14sp" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Height of the customer radio above ground (1–30 m)."
-            android:textColor="@color/text_muted"
-            android:textSize="11sp" />
+                <TextView
+                    android:id="@+id/settingsDistanceLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:fontFamily="monospace"
+                    android:text="RANGE  —"
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/settingsTxPowerLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:fontFamily="monospace"
-            android:text="TX POWER  20 dBm"
-            android:textColor="@color/accent_teal"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+                <SeekBar
+                    android:id="@+id/settingsDistanceSlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:max="9900"
+                    android:progress="1900" />
 
-        <SeekBar
-            android:id="@+id/settingsTxPowerSlider"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:max="30"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:progress="20" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="AP radio transmit power (0–30 dBm)."
-            android:textColor="@color/text_muted"
-            android:textSize="11sp" />
-
-        <TextView
-            android:id="@+id/settingsApGainLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:fontFamily="monospace"
-            android:text="AP GAIN  20 dBi"
-            android:textColor="@color/accent_teal"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <SeekBar
-            android:id="@+id/settingsApGainSlider"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:max="40"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:progress="20" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Access point antenna gain (0–40 dBi)."
-            android:textColor="@color/text_muted"
-            android:textSize="11sp" />
-
-        <TextView
-            android:id="@+id/settingsCpeGainLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:fontFamily="monospace"
-            android:text="CPE GAIN  20 dBi"
-            android:textColor="@color/accent_teal"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <SeekBar
-            android:id="@+id/settingsCpeGainSlider"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:max="40"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:progress="20" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Customer radio antenna gain (0–40 dBi). Used for estimated signal."
-            android:textColor="@color/text_muted"
-            android:textSize="11sp" />
-
-        <TextView
-            android:id="@+id/settingsInstallStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Install site · using live GPS"
-            android:textColor="@color/text_muted"
-            android:textSize="12sp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/settingsClearInstallButton"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="Clear install site"
-            android:textAllCaps="false"
-            android:textColor="@color/accent_teal"
-            android:visibility="gone" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:letterSpacing="0.08"
-            android:text="FILTER"
-            android:textAppearance="@style/TextAppearance.TowerScope.Meta" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="8dp"
-            android:background="@color/border_luminous" />
-
-        <EditText
-            android:id="@+id/settingsSearchField"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_hud_input"
-            android:hint="Search by name"
-            android:imeOptions="actionSearch"
-            android:importantForAutofill="no"
-            android:inputType="text"
-            android:paddingHorizontal="12dp"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_muted"
-            android:textSize="14sp" />
-
-        <TextView
-            android:id="@+id/settingsDistanceLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:fontFamily="monospace"
-            android:text="RANGE  —"
-            android:textColor="@color/accent_yellow"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <SeekBar
-            android:id="@+id/settingsDistanceSlider"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:max="9900"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:progress="1900" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/settingsShowHiddenButton"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="4dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="Show hidden towers"
-            android:textAllCaps="false"
-            android:textColor="@color/accent_teal"
-            android:visibility="gone" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/settingsShowHiddenButton"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="Show hidden towers"
+                    android:textAllCaps="false"
+                    android:textColor="@color/accent_teal"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/settingsCloseButton"
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:text="Close"

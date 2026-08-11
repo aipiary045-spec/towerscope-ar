@@ -1,9 +1,12 @@
 package com.towerscope.ar
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
@@ -63,7 +66,7 @@ class SubnetScannerActivity : AppCompatActivity() {
                 subnet.prefixLength,
                 subnet.networkBase
             )
-            statusLabel.text = "Up to ${subnet.hostCount} hosts"
+            statusLabel.text = "Up to ${subnet.hostCount} hosts · tap IP to open"
             scanButton.isEnabled = true
         }
     }
@@ -84,20 +87,34 @@ class SubnetScannerActivity : AppCompatActivity() {
                     if (host != null) appendHost(host)
                 }
             }
-            statusLabel.text = "Done · ${found.size} hosts"
+            statusLabel.text = "Done · ${found.size} hosts · tap a URL to open"
             scanButton.isEnabled = true
         }
     }
 
     private fun appendHost(host: SubnetHost) {
-        val row = LayoutInflater.from(this).inflate(R.layout.item_wifi_scan_row, hostList, false)
-        row.findViewById<TextView>(R.id.wifiRowSsid).text = host.ip
+        val row = LayoutInflater.from(this).inflate(R.layout.item_subnet_host_row, hostList, false)
+        row.findViewById<TextView>(R.id.subnetRowIp).text = host.ip
+        row.findViewById<TextView>(R.id.subnetRowUrl).text = host.httpUrl
         val meta = buildString {
+            append("MAC  ")
+            append(host.macAddress ?: "—")
+            append("  ·  ")
             append(host.hostname ?: "host")
-            host.openPort?.let { append(" · port ").append(it) }
+            host.openPort?.let { append("  ·  port ").append(it) }
         }
-        row.findViewById<TextView>(R.id.wifiRowMeta).text = meta
-        row.findViewById<TextView>(R.id.wifiRowRssi).text = "●"
+        row.findViewById<TextView>(R.id.subnetRowMeta).text = meta
+        row.setOnClickListener { openHostUrl(host) }
         hostList.addView(row)
+    }
+
+    private fun openHostUrl(host: SubnetHost) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(host.httpUrl))
+        runCatching {
+            startActivity(intent)
+        }.onFailure {
+            Toast.makeText(this, "No browser available for ${host.httpUrl}", Toast.LENGTH_SHORT)
+                .show()
+        }
     }
 }

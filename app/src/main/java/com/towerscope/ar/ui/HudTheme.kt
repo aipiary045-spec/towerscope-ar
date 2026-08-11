@@ -1,23 +1,37 @@
 package com.towerscope.ar.ui
 
+import androidx.appcompat.app.AppCompatDelegate
+
 /**
- * Outdoor HUD appearance. Cycles Day → High contrast → Night.
+ * App appearance. Persisted and applied via AppCompat night mode
+ * so light/dark color resources swap across every screen.
  */
 enum class HudTheme {
-    DAY,
-    HIGH_CONTRAST,
-    NIGHT;
+    LIGHT,
+    DARK;
 
     fun next(): HudTheme = when (this) {
-        DAY -> HIGH_CONTRAST
-        HIGH_CONTRAST -> NIGHT
-        NIGHT -> DAY
+        LIGHT -> DARK
+        DARK -> LIGHT
     }
 
     val label: String
         get() = when (this) {
-            DAY -> "Day"
-            HIGH_CONTRAST -> "Contrast"
-            NIGHT -> "Night"
+            LIGHT -> "Light"
+            DARK -> "Dark"
         }
+
+    val nightMode: Int
+        get() = when (this) {
+            LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+            DARK -> AppCompatDelegate.MODE_NIGHT_YES
+        }
+
+    companion object {
+        fun fromStored(raw: String?): HudTheme = when (raw) {
+            "DAY", "LIGHT" -> LIGHT
+            "NIGHT", "DARK", "HIGH_CONTRAST" -> DARK
+            else -> runCatching { valueOf(raw.orEmpty()) }.getOrDefault(DARK)
+        }
+    }
 }

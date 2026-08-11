@@ -9,10 +9,15 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import java.io.BufferedReader
+import java.io.FileReader
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.net.NetworkInterface
 import java.net.Socket
+import java.util.Collections
+import java.util.Locale
 import kotlin.math.min
 
 data class SubnetInfo(
@@ -25,11 +30,15 @@ data class SubnetInfo(
 data class SubnetHost(
     val ip: String,
     val hostname: String?,
-    val openPort: Int?
+    val macAddress: String?,
+    val openPort: Int?,
+    val httpUrl: String
 )
 
 /**
  * Local /24 (or smaller) LAN host discovery — on-device only.
+ * MAC addresses come from the kernel ARP/neighbor table when available
+ * (Android often restricts this; shown as — when unavailable).
  */
 object SubnetScanner {
 
@@ -63,7 +72,6 @@ object SubnetScanner {
         val info = wifi.connectionInfo ?: return null
         val ip = info.ipAddress
         if (ip == 0) return null
-        // WifiManager returns little-endian int on many devices.
         val a = ip and 0xff
         val b = ip shr 8 and 0xff
         val c = ip shr 16 and 0xff
@@ -81,7 +89,6 @@ object SubnetScanner {
         val usable = subnet.hostCount.coerceIn(1, 254)
         val results = mutableListOf<SubnetHost>()
         var scanned = 0
-        // Scan in chunks to keep memory/CPU reasonable on phone.
         val chunk = 32
         var offset = 1
         while (offset <= usable) {
@@ -92,25 +99,46 @@ object SubnetScanner {
                         val ipInt = baseInt + hostIndex
                         val ip = intToIpv4(ipInt)
                         if (ip == subnet.localIp) {
-                            SubnetHost(ip, "this device", null)
+                            SubnetHost(
+                                ip = ip,
+                                hostname = "this device",
+                                macAddress = localMacAddress(),
+                                openPort = null,
+                                httpUrl = "http://$ip/"
+                            )
                         } else {
                             probeHost(ip)
                         }
                     }
                 }.awaitAll()
             }
+            // Refresh ARP after the probe wave — neighbors often appear only after traffic.
+            val arp = readArpTable()
             batch.forEach { host ->
                 scanned += 1
                 if (host != null) {
-                    results += host
-                    onProgress(scanned, usable, host)
+                    val enriched = if (host.macAddress.isNullOrBlank()) {
+                        host.copy(macAddress = arp[host.ip])
+                    } else {
+                        host
+                    }
+                    results += enriched
+                    onProgress(scanned, usable, enriched)
                 } else {
                     onProgress(scanned, usable, null)
                 }
             }
             offset = end + 1
         }
-        results.sortedBy { ipv4ToInt(InetAddress.getByName(it.ip) as Inet4Address) }
+        // Final ARP pass for any MACs that populated late
+        val arpFinal = readArpTable()
+        results.map { host ->
+            if (host.macAddress.isNullOrBlank()) {
+                host.copy(macAddress = arpFinal[host.ip])
+            } else {
+                host
+            }
+        }.sortedBy { ipv4ToInt(InetAddress.getByName(it.ip) as Inet4Address) }
     }
 
     private fun probeHost(ip: String): SubnetHost? {
@@ -130,7 +158,20 @@ object SubnetScanner {
             InetAddress.getByName(ip).canonicalHostName
                 ?.takeIf { it != ip && it.isNotBlank() }
         }.getOrNull()
-        return SubnetHost(ip = ip, hostname = name, openPort = open)
+        val preferredPort = open ?: 80
+        val scheme = if (preferredPort == 443) "https" else "http"
+        val url = if (preferredPort == 80 || preferredPort == 443) {
+            "$scheme://$ip/"
+        } else {
+            "$scheme://$ip:$preferredPort/"
+        }
+        return SubnetHost(
+            ip = ip,
+            hostname = name,
+            macAddress = null,
+            openPort = open,
+            httpUrl = url
+        )
     }
 
     private fun tcpOpen(ip: String, port: Int, timeoutMs: Int): Boolean {
@@ -141,6 +182,43 @@ object SubnetScanner {
             true
         } catch (_: Exception) {
             false
+        }
+    }
+
+    fun readArpTable(): Map<String, String> {
+        val map = LinkedHashMap<String, String>()
+        // Classic ARP cache (may be empty / restricted on newer Android builds).
+        runCatching {
+            BufferedReader(FileReader("/proc/net/arp")).use { reader ->
+                reader.lineSequence().drop(1).forEach { line ->
+                    val parts = line.trim().split(Regex("\\s+"))
+                    if (parts.size >= 4) {
+                        val ip = parts[0]
+                        val mac = parts[3].lowercase(Locale.US)
+                        if (mac.matches(Regex("([0-9a-f]{2}:){5}[0-9a-f]{2}")) &&
+                            mac != "00:00:00:00:00:00"
+                        ) {
+                            map[ip] = mac
+                        }
+                    }
+                }
+            }
+        }
+        return map
+    }
+
+    private fun localMacAddress(): String? {
+        return try {
+            Collections.list(NetworkInterface.getNetworkInterfaces())
+                .firstOrNull { iface ->
+                    !iface.isLoopback && iface.hardwareAddress != null &&
+                        Collections.list(iface.inetAddresses).any { it is Inet4Address && !it.isLoopbackAddress }
+                }
+                ?.hardwareAddress
+                ?.joinToString(":") { b -> String.format(Locale.US, "%02x", b) }
+                ?.takeIf { it != "02:00:00:00:00:00" }
+        } catch (_: Exception) {
+            null
         }
     }
 

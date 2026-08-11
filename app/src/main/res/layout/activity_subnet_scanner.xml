@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:fontFamily="@font/source_sans3_regular"
-        android:text="Discover live hosts on your local Wi‑Fi subnet"
+        android:text="Active IPs · MAC · tap URL to open"
         android:textColor="@color/text_muted"
         android:textSize="14sp" />
 

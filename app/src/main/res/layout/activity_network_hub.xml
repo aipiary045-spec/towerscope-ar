@@ -29,37 +29,62 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:fontFamily="@font/source_sans3_regular"
-            android:text="On-device field checks · no cloud account required"
+            android:text="On-device field checks"
             android:textColor="@color/text_muted"
             android:textSize="14sp" />
 
-        <include
-            android:id="@+id/hubWifiRow"
-            layout="@layout/item_hub_tool_row"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp" />
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
+
+            <include
+                android:id="@+id/hubWifiRow"
+                layout="@layout/item_hub_tool_row"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="7dp"
+                android:layout_weight="1" />
+
+            <include
+                android:id="@+id/hubSpeedRow"
+                layout="@layout/item_hub_tool_row"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="horizontal">
+
+            <include
+                android:id="@+id/hubPingRow"
+                layout="@layout/item_hub_tool_row"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="7dp"
+                android:layout_weight="1" />
+
+            <include
+                android:id="@+id/hubSubnetRow"
+                layout="@layout/item_hub_tool_row"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:layout_weight="1" />
+        </LinearLayout>
 
         <include
-            android:id="@+id/hubSpeedRow"
+            android:id="@+id/hubDiagnoseRow"
             layout="@layout/item_hub_tool_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/item_gap" />
-
-        <include
-            android:id="@+id/hubPingRow"
-            layout="@layout/item_hub_tool_row"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/item_gap" />
-
-        <include
-            android:id="@+id/hubSubnetRow"
-            layout="@layout/item_hub_tool_row"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/item_gap" />
+            android:layout_marginTop="14dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/networkHubBackButton"

@@ -39,7 +39,7 @@ class InstallationHubActivity : AppCompatActivity() {
             subtitle = R.string.home_job_los_sub
         ) { startActivity(Intent(this, LosProfilesActivity::class.java)) }
 
-        findViewById<MaterialButton>(R.id.installHubImportButton).setOnClickListener {
+        findViewById<View>(R.id.installHubImportButton).setOnClickListener {
             startActivity(Intent(this, DataMenuActivity::class.java))
         }
         findViewById<MaterialButton>(R.id.installHubBackButton).setOnClickListener { finish() }

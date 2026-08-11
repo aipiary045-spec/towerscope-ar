@@ -1,14 +1,17 @@
 package com.towerscope.ar
 
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
-import android.widget.EditText
 import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.network.MultiPingSnapshot
+import com.towerscope.ar.network.PingHostStats
 import com.towerscope.ar.network.PingMonitor
-import com.towerscope.ar.ui.LatencyGraphView
 import com.towerscope.ar.ui.SystemBars
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
@@ -18,13 +21,12 @@ import java.util.Locale
 class PingMonitorActivity : AppCompatActivity() {
 
     private lateinit var hostInput: EditText
-    private lateinit var lastLabel: TextView
-    private lateinit var statsLabel: TextView
-    private lateinit var rangeLabel: TextView
     private lateinit var statusLabel: TextView
-    private lateinit var graph: LatencyGraphView
+    private lateinit var hostStatsList: LinearLayout
+    private lateinit var logView: TextView
     private lateinit var toggleButton: MaterialButton
     private var job: Job? = null
+    private val logLines = ArrayDeque<String>(120)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,11 +35,9 @@ class PingMonitorActivity : AppCompatActivity() {
         SystemBars.apply(findViewById(R.id.pingRoot))
 
         hostInput = findViewById(R.id.pingHostInput)
-        lastLabel = findViewById(R.id.pingLastLabel)
-        statsLabel = findViewById(R.id.pingStatsLabel)
-        rangeLabel = findViewById(R.id.pingRangeLabel)
         statusLabel = findViewById(R.id.pingStatus)
-        graph = findViewById(R.id.pingGraph)
+        hostStatsList = findViewById(R.id.pingHostStatsList)
+        logView = findViewById(R.id.pingLogView)
         toggleButton = findViewById(R.id.pingToggleButton)
 
         toggleButton.setOnClickListener {
@@ -55,43 +55,19 @@ class PingMonitorActivity : AppCompatActivity() {
     }
 
     private fun startPing() {
-        val host = hostInput.text?.toString().orEmpty()
-        graph.clear()
+        val hosts = PingMonitor.parseHostList(hostInput.text?.toString().orEmpty())
+        logLines.clear()
+        logView.text = "—"
         hostInput.isEnabled = false
         toggleButton.text = "Stop ping"
-        statusLabel.text = "Pinging $host…"
+        statusLabel.text = "Pinging ${hosts.size} host${if (hosts.size == 1) "" else "s"}…"
         job = lifecycleScope.launch {
-            PingMonitor.stream(host)
+            PingMonitor.streamMany(hosts)
                 .catch { e ->
                     statusLabel.text = "Ping error: ${e.message ?: "failed"}"
                     stopPing()
                 }
-                .collect { sample ->
-                    lastLabel.text = sample.latencyMs?.let {
-                        String.format(Locale.US, "%.0f ms", it)
-                    } ?: "timeout"
-                    lastLabel.setTextColor(
-                        getColor(
-                            if (sample.success) R.color.accent_teal else R.color.chip_poor
-                        )
-                    )
-                    statsLabel.text = String.format(
-                        Locale.US,
-                        "Sent %d · Recv %d · Loss %.0f%%",
-                        sample.sent,
-                        sample.received,
-                        sample.lossPercent
-                    )
-                    rangeLabel.text = String.format(
-                        Locale.US,
-                        "min %s · avg %s · max %s",
-                        formatMs(sample.minMs),
-                        formatMs(sample.avgMs),
-                        formatMs(sample.maxMs)
-                    )
-                    graph.addSample(sample.latencyMs)
-                    statusLabel.text = "Live · ${sample.host}:443"
-                }
+                .collect { snapshot -> renderSnapshot(snapshot) }
         }
     }
 
@@ -100,8 +76,44 @@ class PingMonitorActivity : AppCompatActivity() {
         job = null
         hostInput.isEnabled = true
         toggleButton.text = "Start ping"
-        if (statusLabel.text.toString().startsWith("Live")) {
+        if (statusLabel.text.toString().startsWith("Live") ||
+            statusLabel.text.toString().startsWith("Pinging")
+        ) {
             statusLabel.text = "Stopped"
+        }
+    }
+
+    private fun renderSnapshot(snapshot: MultiPingSnapshot) {
+        snapshot.logLine?.let { line ->
+            logLines.addFirst(line.message)
+            while (logLines.size > 80) logLines.removeLast()
+            logView.text = logLines.joinToString("\n")
+        }
+        renderHostRows(snapshot.hosts)
+        val alive = snapshot.hosts.count { it.received > 0 }
+        statusLabel.text = "Live · ${snapshot.hosts.size} targets · $alive responding"
+    }
+
+    private fun renderHostRows(hosts: List<PingHostStats>) {
+        hostStatsList.removeAllViews()
+        val inflater = LayoutInflater.from(this)
+        hosts.forEach { host ->
+            val row = inflater.inflate(R.layout.item_ping_host_row, hostStatsList, false)
+            row.findViewById<TextView>(R.id.pingRowHost).text = host.host
+            val last = row.findViewById<TextView>(R.id.pingRowLast)
+            last.text = host.lastMs?.let { String.format(Locale.US, "%.0f ms", it) } ?: "timeout"
+            last.setTextColor(
+                getColor(if (host.lastSuccess) R.color.accent_teal else R.color.chip_poor)
+            )
+            row.findViewById<TextView>(R.id.pingRowStats).text = String.format(
+                Locale.US,
+                "Sent %d · Recv %d · Loss %.0f%% · avg %s",
+                host.sent,
+                host.received,
+                host.lossPercent,
+                formatMs(host.avgMs)
+            )
+            hostStatsList.addView(row)
         }
     }
 

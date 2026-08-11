@@ -1,52 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- TowerScope night-ops — refined ink / gold / teal -->
-    <color name="bg_deep">#050D16</color>
-    <color name="bg_navy">#0A1624</color>
-    <color name="bg_mid">#0F2032</color>
-    <color name="surface_slate">#152A3D</color>
-    <color name="surface_elevated">#1C3348</color>
-    <color name="surface_glass">#CC132738</color>
-    <color name="border_luminous">#3AA8C5D4</color>
-    <color name="border_strong">#55B8D4E0</color>
-    <color name="grid_faint">#18A8C5D4</color>
+    <!-- Light mode — cool slate (not earthy); used when Theme = Light -->
+    <color name="bg_deep">#E8EEF4</color>
+    <color name="bg_navy">#F2F5F8</color>
+    <color name="bg_mid">#E4EAF1</color>
+    <color name="surface_slate">#FFFFFF</color>
+    <color name="surface_elevated">#FFFFFF</color>
+    <color name="surface_glass">#F7FFFFFF</color>
+    <color name="border_luminous">#331A3044</color>
+    <color name="border_strong">#551A3044</color>
+    <color name="grid_faint">#141A3044</color>
 
-    <!-- Accents -->
-    <color name="accent_yellow">#F2C94C</color>
-    <color name="accent_yellow_dim">#59F2C94C</color>
-    <color name="accent_teal">#3ED9D0</color>
-    <color name="accent_cyan">#3ED9D0</color>
-    <color name="accent_teal_dim">#403ED9D0</color>
-    <color name="accent_teal_soft">#1A3ED9D0</color>
+    <color name="accent_yellow">#C9A227</color>
+    <color name="accent_yellow_dim">#59C9A227</color>
+    <color name="accent_teal">#0E7A86</color>
+    <color name="accent_cyan">#0E7A86</color>
+    <color name="accent_teal_dim">#400E7A86</color>
+    <color name="accent_teal_soft">#1A0E7A86</color>
 
-    <color name="text_primary">#F5F8FB</color>
-    <color name="text_muted">#9AADC0</color>
-    <color name="text_dim">#6A8096</color>
-    <color name="text_on_accent">#071018</color>
+    <color name="forest">#1A3044</color>
+    <color name="sage">#5A7A88</color>
+    <color name="sand">#D5DEE7</color>
+    <color name="clay">#C9A227</color>
+    <color name="mist">#C5D0DA</color>
 
-    <color name="status_clear">#3DDC97</color>
-    <color name="status_blocked">#F07178</color>
-    <color name="status_clear_bg">#263DDC97</color>
-    <color name="status_blocked_bg">#26F07178</color>
-    <color name="status_warn_bg">#33F2C94C</color>
+    <color name="text_primary">#122033</color>
+    <color name="text_muted">#5C7388</color>
+    <color name="text_dim">#8FA3B5</color>
+    <color name="text_on_accent">#122033</color>
+    <color name="text_on_forest">#F2F5F8</color>
+
+    <color name="status_clear">#1B9E6E</color>
+    <color name="status_blocked">#C45B5B</color>
+    <color name="status_clear_bg">#261B9E6E</color>
+    <color name="status_blocked_bg">#26C45B5B</color>
+    <color name="status_warn_bg">#33C9A227</color>
 
     <color name="ic_launcher_background">#0A1624</color>
-    <color name="hud_panel">#E00E1C2C</color>
-    <color name="chip_good">#3DDC97</color>
-    <color name="chip_fair">#F2C94C</color>
-    <color name="chip_poor">#F07178</color>
-    <color name="chip_off">#6B7C8F</color>
-    <color name="chip_text_on_dark">#F5F8FB</color>
+    <color name="hud_panel">#F2FFFFFF</color>
+    <color name="chip_good">#1B9E6E</color>
+    <color name="chip_fair">#C9A227</color>
+    <color name="chip_poor">#C45B5B</color>
+    <color name="chip_off">#8FA3B5</color>
+    <color name="chip_text_on_dark">#F2F5F8</color>
 
     <color name="theme_night_panel">#E00E1C2C</color>
     <color name="theme_night_text">#F5F8FB</color>
     <color name="theme_night_accent">#F2C94C</color>
     <color name="theme_night_secondary">#3ED9D0</color>
 
-    <color name="theme_day_panel">#EBF2F5F8</color>
-    <color name="theme_day_text">#0F1C2C</color>
-    <color name="theme_day_accent">#8A6A12</color>
-    <color name="theme_day_secondary">#0D6B7A</color>
+    <color name="theme_day_panel">#F2FFFFFF</color>
+    <color name="theme_day_text">#122033</color>
+    <color name="theme_day_accent">#C9A227</color>
+    <color name="theme_day_secondary">#0E7A86</color>
 
     <color name="theme_hc_panel">#F2000000</color>
     <color name="theme_hc_text">#FFFFFFFF</color>

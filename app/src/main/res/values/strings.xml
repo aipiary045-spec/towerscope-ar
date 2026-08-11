@@ -4,7 +4,7 @@
     <string name="hud_title">TowerScope</string>
     <string name="home_tagline">Network tools · Install tools</string>
     <string name="home_hub_network">Network Hub</string>
-    <string name="home_hub_network_sub">Wi‑Fi · speed · ping · subnet scan</string>
+    <string name="home_hub_network_sub">Wi‑Fi · speed · ping · path doctor</string>
     <string name="home_hub_install">Installation Hub</string>
     <string name="home_hub_install_sub">Compass · locate · LOS clearance</string>
     <string name="home_no_sites">No network sites loaded</string>
@@ -17,13 +17,15 @@
     <string name="home_job_los">Line of sight</string>
     <string name="home_job_los_sub">Path clearance · estimated signal</string>
     <string name="home_job_wifi">Wi‑Fi signal</string>
-    <string name="home_job_wifi_sub">Live RSSI · scan nearby APs</string>
+    <string name="home_job_wifi_sub">Live channel · overlap · RF hints</string>
     <string name="home_job_speed">Speed test</string>
     <string name="home_job_speed_sub">Download · upload · latency</string>
     <string name="home_job_ping">Ping &amp; loss</string>
-    <string name="home_job_ping_sub">Continuous latency · live graph</string>
+    <string name="home_job_ping_sub">Multi‑IP live ping · continuous log</string>
     <string name="home_job_subnet">Subnet scanner</string>
-    <string name="home_job_subnet_sub">Discover devices on your LAN</string>
+    <string name="home_job_subnet_sub">Active IPs · MAC · tap to open</string>
+    <string name="home_job_diagnose">Path Doctor</string>
+    <string name="home_job_diagnose_sub">Link · DNS · TCP · TLS · HTTP</string>
     <string name="home_settings">Settings</string>
     <string name="home_settings_hint">Sites import, range, theme, compass</string>
     <string name="map_range_nearby">Nearby only</string>

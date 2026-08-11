@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/wifiRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -24,128 +23,196 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:fontFamily="@font/source_sans3_regular"
-        android:text="@string/home_job_wifi_sub"
+        android:text="Live channel · overlap · interference hints"
         android:textColor="@color/text_muted"
         android:textSize="14sp" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/section_gap"
-        android:background="@drawable/bg_metric_card"
-        android:orientation="vertical"
-        android:padding="@dimen/card_padding_lg">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:letterSpacing="0.12"
-            android:text="CONNECTED"
-            android:textColor="@color/text_dim"
-            android:textSize="11sp" />
-
-        <TextView
-            android:id="@+id/wifiSsid"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:ellipsize="end"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:maxLines="1"
-            android:text="—"
-            android:textColor="@color/text_primary"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/wifiRssi"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:fontFamily="monospace"
-            android:letterSpacing="-0.02"
-            android:text="—"
-            android:textColor="@color/accent_teal"
-            android:textSize="40sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/wifiQuality"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_quality_chip"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="5dp"
-            android:text="—"
-            android:textColor="@color/accent_yellow"
-            android:textSize="12sp" />
-
-        <TextView
-            android:id="@+id/wifiMeta"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:fontFamily="@font/source_sans3_regular"
-            android:text="Link  —  ·  Band  —"
-            android:textColor="@color/text_muted"
-            android:textSize="13sp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/section_gap"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:letterSpacing="0.12"
-            android:text="NEARBY APS"
-            android:textColor="@color/text_dim"
-            android:textSize="11sp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/wifiScanButton"
-            style="@style/Widget.TowerScope.Button.Ghost"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:minWidth="0dp"
-            android:paddingHorizontal="16dp"
-            android:text="Scan"
-            android:textSize="13sp" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/wifiScanStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:fontFamily="@font/source_sans3_regular"
-        android:text="Tap Scan to refresh nearby networks"
-        android:textColor="@color/text_muted"
-        android:textSize="12sp" />
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="@dimen/item_gap"
+        android:layout_marginTop="@dimen/section_gap"
         android:layout_weight="1"
         android:clipToPadding="false"
         android:fillViewport="true">
 
         <LinearLayout
-            android:id="@+id/wifiScanList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingBottom="16dp" />
+            android:paddingBottom="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_metric_card"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding_lg">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:letterSpacing="0.12"
+                    android:text="CONNECTED"
+                    android:textColor="@color/text_dim"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/wifiSsid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:maxLines="1"
+                    android:text="—"
+                    android:textColor="@color/text_primary"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/wifiRssi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="-0.02"
+                    android:text="—"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="40sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/wifiQuality"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_quality_chip"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="5dp"
+                    android:text="—"
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/wifiMeta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:fontFamily="@font/source_sans3_regular"
+                    android:text="Link  —  ·  Band  —"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/wifiChannelLive"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="monospace"
+                    android:text="Channel  —"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_metric_card"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding_lg">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:letterSpacing="0.12"
+                    android:text="CHANNEL &amp; INTERFERENCE"
+                    android:textColor="@color/text_dim"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/wifiOverlapSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="—"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/wifiInterferenceLevel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_quality_chip"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="5dp"
+                    android:text="—"
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/wifiInterferenceHints"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="@font/source_sans3_regular"
+                    android:text="Scan nearby APs to evaluate overlap and RF hints."
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_gap"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:letterSpacing="0.12"
+                    android:text="NEARBY APS"
+                    android:textColor="@color/text_dim"
+                    android:textSize="11sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/wifiScanButton"
+                    style="@style/Widget.TowerScope.Button.Ghost"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:minWidth="0dp"
+                    android:paddingHorizontal="16dp"
+                    android:text="Scan"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/wifiScanStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="@font/source_sans3_regular"
+                android:text="Tap Scan to refresh nearby networks"
+                android:textColor="@color/text_muted"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:id="@+id/wifiScanList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/item_gap"
+                android:orientation="vertical" />
+        </LinearLayout>
     </ScrollView>
 
     <com.google.android.material.button.MaterialButton

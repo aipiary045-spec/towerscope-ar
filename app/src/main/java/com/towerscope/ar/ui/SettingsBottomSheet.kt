@@ -91,6 +91,38 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         val showHiddenButton = view.findViewById<MaterialButton>(R.id.settingsShowHiddenButton)
         val closeButton = view.findViewById<MaterialButton>(R.id.settingsCloseButton)
 
+        bindAccordion(
+            header = view.findViewById(R.id.settingsHeaderAppearance),
+            body = view.findViewById(R.id.settingsBodyAppearance),
+            chevron = view.findViewById(R.id.settingsChevronAppearance),
+            expanded = true
+        )
+        bindAccordion(
+            header = view.findViewById(R.id.settingsHeaderSites),
+            body = view.findViewById(R.id.settingsBodySites),
+            chevron = view.findViewById(R.id.settingsChevronSites)
+        )
+        bindAccordion(
+            header = view.findViewById(R.id.settingsHeaderUnits),
+            body = view.findViewById(R.id.settingsBodyUnits),
+            chevron = view.findViewById(R.id.settingsChevronUnits)
+        )
+        bindAccordion(
+            header = view.findViewById(R.id.settingsHeaderCompass),
+            body = view.findViewById(R.id.settingsBodyCompass),
+            chevron = view.findViewById(R.id.settingsChevronCompass)
+        )
+        bindAccordion(
+            header = view.findViewById(R.id.settingsHeaderRf),
+            body = view.findViewById(R.id.settingsBodyRf),
+            chevron = view.findViewById(R.id.settingsChevronRf)
+        )
+        bindAccordion(
+            header = view.findViewById(R.id.settingsHeaderFilter),
+            body = view.findViewById(R.id.settingsBodyFilter),
+            chevron = view.findViewById(R.id.settingsChevronFilter)
+        )
+
         val frequencyPresets = listOf(2.4f, 3.65f, 5.2f, 5.8f, 6.0f, 24.0f, 60.0f)
         frequencySlider.max = frequencyPresets.lastIndex
         cpeHeightSlider.max =
@@ -119,7 +151,11 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
             startActivity(Intent(requireContext(), DataMenuActivity::class.java))
             dismiss()
         }
-        themeButton.setOnClickListener { viewModel.cycleHudTheme() }
+        themeButton.setOnClickListener {
+            viewModel.cycleHudTheme()
+            dismissAllowingStateLoss()
+            activity?.recreate()
+        }
         distanceUnitsButton.setOnClickListener { viewModel.cycleDistanceUnitSystem() }
         coordFormatButton.setOnClickListener { viewModel.cycleCoordinateFormat() }
         calibrateButton.setOnClickListener {
@@ -215,14 +251,23 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     themeButton.text = state.hudTheme.label
+                    view.findViewById<TextView>(R.id.settingsSummaryAppearance).text =
+                        state.hudTheme.label
                     distanceUnitsButton.text = when (state.distanceUnitSystem) {
                         DistanceUnitSystem.IMPERIAL -> "mi / ft"
                         DistanceUnitSystem.METRIC -> "km / m"
                     }
-                    coordFormatButton.text = when (state.coordinateFormat) {
+                    val unitsLabel = when (state.distanceUnitSystem) {
+                        DistanceUnitSystem.IMPERIAL -> "mi / ft"
+                        DistanceUnitSystem.METRIC -> "km / m"
+                    }
+                    val coordLabel = when (state.coordinateFormat) {
                         CoordinateFormat.DECIMAL -> "Decimal"
                         CoordinateFormat.DMS -> "DMS"
                     }
+                    view.findViewById<TextView>(R.id.settingsSummaryUnits).text =
+                        "$unitsLabel · $coordLabel"
+                    coordFormatButton.text = coordLabel
 
                     val sensorLabel = when {
                         state.deviceHeadingDegrees == null -> "SENSOR  —"
@@ -321,6 +366,23 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                     status.text = message.orEmpty()
                 }
             }
+        }
+    }
+
+    private fun bindAccordion(
+        header: View,
+        body: View,
+        chevron: TextView,
+        expanded: Boolean = false
+    ) {
+        fun applyExpanded(isExpanded: Boolean) {
+            body.isVisible = isExpanded
+            chevron.rotation = if (isExpanded) 90f else 0f
+            header.isSelected = isExpanded
+        }
+        applyExpanded(expanded)
+        header.setOnClickListener {
+            applyExpanded(!body.isVisible)
         }
     }
 

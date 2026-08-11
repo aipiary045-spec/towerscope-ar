@@ -3,12 +3,16 @@ package com.towerscope.ar
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
+import com.towerscope.ar.ui.AppTheme
+import com.towerscope.ar.ui.HudTheme
 import org.osmdroid.config.Configuration
 import java.io.File
 
 class TowerScopeApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        applyStoredTheme()
         try {
             val cfg = Configuration.getInstance()
             val base = File(cacheDir, "osmdroid")
@@ -24,5 +28,13 @@ class TowerScopeApp : Application() {
         } catch (t: Throwable) {
             Log.e("TowerScopeApp", "osmdroid config failed", t)
         }
+    }
+
+    private fun applyStoredTheme() {
+        val prefs = getSharedPreferences("towerscope_prefs", Context.MODE_PRIVATE)
+        // Keep key in sync with TowerScopeViewModel.KEY_HUD_THEME
+        val theme = HudTheme.fromStored(prefs.getString("hud_theme", HudTheme.DARK.name))
+        AppCompatDelegate.setDefaultNightMode(theme.nightMode)
+        AppTheme.apply(theme)
     }
 }

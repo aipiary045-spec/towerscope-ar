@@ -1,63 +1,84 @@
 # TowerScope
 
-Android field app that loads tower locations from **KML/KMZ** and shows them on a **hybrid compass radar**, a **satellite map** with you→tower lines, and ranked line-of-sight elevation profiles.
+Android field toolkit for WISP / wireless install techs.
+
+**Network Hub** — on-device checks without an account  
+**Installation Hub** — site aiming, locate map, and line-of-sight clearance
+
+## Features
+
+### Network Hub
+- **Wi‑Fi signal** — live RSSI, active channel, overlapping APs, RF interference hints
+- **Speed test** — Cloudflare download / upload / latency
+- **Ping & loss** — ping multiple IPs at once with a live log
+- **Path Doctor** — layered path check (link → DNS → TCP → TLS → HTTP) that shows where it failed
+- **Subnet scanner** — live LAN hosts, MAC when available, tap IP to open in a browser
+
+### Installation Hub
+- **Compass** — high-precision bearings to nearby sites (KML/KMZ)
+- **Locate** — satellite map, install pin, nearby or all-sites view
+- **Line of sight** — Fresnel clearance ranking + elevation profiles (LiDAR/DEM when configured)
+- **Import sites** — KML / KMZ / CSV
+
+## Sideload install
+
+Latest APK (replaceable tag):
+
+https://github.com/aipiary045-spec/towerscope-ar/releases/download/sideload-latest/TowerScope-AR-sideload.apk
+
+Older builds stay under dated `sideload-*` release tags if you need to roll back.
 
 ## Requirements
 
-- Android Studio Ladybug (or newer) with JDK 17
-- Physical device with magnetometer + GPS
-- Outdoor use with clear sky for best GPS / compass results
-- Internet for satellite tiles (Esri World Imagery — no Google Maps billing)
+- Android Studio (JDK 17+)
+- Physical device with GPS + magnetometer (minSdk **33**)
+- Outdoor use for best compass / GPS results
+- Internet for speed test, Path Doctor targets, and satellite tiles (Esri World Imagery — no Google Maps billing)
 
 ## Open in Android Studio
 
-1. **File → Open** and select this folder (`towerscope-ar`)
+1. **File → Open** → this folder (`towerscope-ar`)
 2. Let Gradle sync finish
-3. Connect a device and run the `app` configuration
+3. Run the `app` configuration on a device
 
-## How to use
+## Quick start
 
-1. Launch **Home** — import KML/KMZ (empty-state CTA or Settings → Import sites)
-2. Grant **precise Location** when entering field tools
-3. **Aim** — compass bearings; hold upright; sun/moon calibrate for best heading
-4. **Locate** — satellite map; pin an **install site**; assumed **N/E/S/W 90° sectors** on the focused AP (highlight = sector facing install)
-5. **Check LOS** — ranked APs by 60% first Fresnel (freq + CPE height in Settings)
-6. Drag **range / frequency / CPE height** in Settings (persists across launches)
+1. Open **Home** → choose **Network Hub** or **Installation Hub**
+2. Import sites from Home / Installation Hub / Settings when using install tools
+3. Grant **precise Location** (and nearby Wi‑Fi when scanning)
+4. Use **Settings** (accordion) for theme, units, compass improve, RF params, and range
 
-## LOS elevation (LiDAR + DEM)
+## LOS elevation (optional)
 
-Tower details can show a line-of-sight elevation profile. The app prefers a small elevation API (USGS LiDAR first-return, 3DEP DEM fallback) and falls back to on-device 3DEP DEM if the API is unreachable. Profiles are always fetched live (no on-device LOS cache; API requests use `bypassCache`).
+Installation LOS profiles prefer a small elevation API (USGS LiDAR first-return, 3DEP DEM fallback) and fall back to on-device 3DEP DEM if the API is unreachable.
 
-1. Deploy [`elevation-api/`](elevation-api/README.md) (Docker / Fly.io)
+1. Deploy [`elevation-api/`](elevation-api/README.md)
 2. Add to `local.properties` (not committed):
 
 ```
 LOS_ELEVATION_API_BASE_URL=https://your-elevation-host
 ```
 
-3. Clutter slider applies only to **DEM** samples (LiDAR already includes canopy)
-
 ## Project layout
 
 | Path | Role |
 |------|------|
-| `data/KmlParser.kt` | Direct KML / KMZ parser (`XmlPullParser` + zip) |
-| `location/HighAccuracyLocationClient.kt` | Fused location at `PRIORITY_HIGH_ACCURACY` |
-| `location/DeviceHeadingClient.kt` | True-north heading + declination |
+| `HomeActivity` | Hub launcher (Network / Installation) |
+| `network/` | Wi‑Fi, speed, ping, Path Doctor, subnet |
+| `MapActivity` | Satellite locate map (osmdroid + Esri) |
 | `ui/CompassRadarView.kt` | Hybrid rotating radar compass |
-| `MapActivity.kt` | Satellite map (osmdroid + Esri imagery) |
-| `elevation-api/` | LiDAR + DEM LOS elevation service |
-| `assets/sample_towers.kml` | Demo placemarks |
+| `data/KmlParser.kt` | KML / KMZ parser |
+| `elevation-api/` | Optional LiDAR + DEM LOS service |
+| `scripts/publish_sideload.ps1` | Build + publish sideload APK |
 
 ## Stack
 
-- Kotlin, minSdk **33**
-- XML outdoor HUD + Play Services Location
-- Rotation vector compass (no ARCore / camera)
-- osmdroid + Esri World Imagery (no Google Maps billing)
+- Kotlin · XML UI · AppCompat light/dark
+- Play Services Location · rotation-vector compass (no ARCore camera)
+- osmdroid + Esri World Imagery
 
 ## Notes
 
-- Sample coordinates are near Austin, TX — replace with your own KML for local testing
-- Hidden towers are session-only (not persisted)
-- Package id remains `com.towerscope.ar` for sideload continuity
+- Package id is `com.towerscope.ar` (sideload continuity)
+- Network tools run on-device; no login required
+- Sample / demo coordinates may be near Austin, TX — import your own sites for local work

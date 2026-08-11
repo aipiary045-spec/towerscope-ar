@@ -46,6 +46,13 @@ class NetworkHubActivity : AppCompatActivity() {
             subtitle = R.string.home_job_subnet_sub
         ) { startActivity(Intent(this, SubnetScannerActivity::class.java)) }
 
+        bindRow(
+            rowId = R.id.hubDiagnoseRow,
+            icon = R.drawable.ic_network_diagnose,
+            title = R.string.home_job_diagnose,
+            subtitle = R.string.home_job_diagnose_sub
+        ) { startActivity(Intent(this, NetworkDiagnoseActivity::class.java)) }
+
         findViewById<MaterialButton>(R.id.networkHubBackButton).setOnClickListener { finish() }
     }
 

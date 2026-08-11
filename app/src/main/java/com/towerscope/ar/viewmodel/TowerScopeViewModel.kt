@@ -15,6 +15,7 @@ import com.towerscope.ar.data.TowerFileStore
 import com.towerscope.ar.location.DeviceHeadingClient
 import com.towerscope.ar.location.HighAccuracyLocationClient
 import com.towerscope.ar.location.UserLocation
+import com.towerscope.ar.ui.AppTheme
 import com.towerscope.ar.ui.HudTheme
 import com.towerscope.ar.util.CoordinateFormat
 import com.towerscope.ar.util.DisplayUnits
@@ -82,7 +83,7 @@ data class TowerUiState(
     val coordinateFormat: CoordinateFormat = CoordinateFormat.DECIMAL,
     val deviceHeadingDegrees: Double? = null,
     val compassSensorAccuracy: Int = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM,
-    val hudTheme: HudTheme = HudTheme.NIGHT,
+    val hudTheme: HudTheme = HudTheme.DARK,
     /** Bottom HUD search/range/controls expanded. */
     val hudExpanded: Boolean = true,
     /**
@@ -356,8 +357,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun loadHudTheme(): HudTheme {
-        val raw = prefs.getString(KEY_HUD_THEME, HudTheme.NIGHT.name) ?: HudTheme.NIGHT.name
-        return runCatching { HudTheme.valueOf(raw) }.getOrDefault(HudTheme.NIGHT)
+        val raw = prefs.getString(KEY_HUD_THEME, HudTheme.DARK.name)
+        return HudTheme.fromStored(raw)
     }
 
     private fun loadMaxDistanceMeters(): Float {
@@ -815,8 +816,13 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { state ->
             val next = state.hudTheme.next()
             prefs.edit().putString(KEY_HUD_THEME, next.name).apply()
+            AppTheme.apply(next)
             state.copy(hudTheme = next)
         }
+    }
+
+    fun applyPersistedTheme() {
+        AppTheme.apply(_uiState.value.hudTheme)
     }
 
     fun toggleHudExpanded() {
