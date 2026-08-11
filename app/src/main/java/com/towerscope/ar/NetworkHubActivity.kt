@@ -18,35 +18,56 @@ class NetworkHubActivity : AppCompatActivity() {
         setContentView(R.layout.activity_network_hub)
         SystemBars.apply(findViewById(R.id.networkHubRoot))
 
-        bindRow(
+        bindTile(
             rowId = R.id.hubWifiRow,
             icon = R.drawable.ic_wifi_signal,
             title = R.string.home_job_wifi,
             subtitle = R.string.home_job_wifi_sub
         ) { startActivity(Intent(this, WifiMonitorActivity::class.java)) }
 
-        bindRow(
+        bindTile(
             rowId = R.id.hubSpeedRow,
             icon = R.drawable.ic_speed_test,
             title = R.string.home_job_speed,
             subtitle = R.string.home_job_speed_sub
         ) { startActivity(Intent(this, SpeedTestActivity::class.java)) }
 
-        bindRow(
+        bindTile(
             rowId = R.id.hubPingRow,
             icon = R.drawable.ic_ping_graph,
             title = R.string.home_job_ping,
             subtitle = R.string.home_job_ping_sub
         ) { startActivity(Intent(this, PingMonitorActivity::class.java)) }
 
-        bindRow(
+        bindTile(
             rowId = R.id.hubSubnetRow,
             icon = R.drawable.ic_subnet_scan,
             title = R.string.home_job_subnet,
             subtitle = R.string.home_job_subnet_sub
         ) { startActivity(Intent(this, SubnetScannerActivity::class.java)) }
 
-        bindRow(
+        bindTile(
+            rowId = R.id.hubDnsRow,
+            icon = R.drawable.ic_dns_lookup,
+            title = R.string.home_job_dns,
+            subtitle = R.string.home_job_dns_sub
+        ) { startActivity(Intent(this, DnsLookupActivity::class.java)) }
+
+        bindTile(
+            rowId = R.id.hubTraceRow,
+            icon = R.drawable.ic_traceroute,
+            title = R.string.home_job_traceroute,
+            subtitle = R.string.home_job_traceroute_sub
+        ) { startActivity(Intent(this, TraceRouteActivity::class.java)) }
+
+        bindTile(
+            rowId = R.id.hubBandwidthRow,
+            icon = R.drawable.ic_bandwidth,
+            title = R.string.home_job_bandwidth,
+            subtitle = R.string.home_job_bandwidth_sub
+        ) { startActivity(Intent(this, BandwidthMonitorActivity::class.java)) }
+
+        bindTile(
             rowId = R.id.hubDiagnoseRow,
             icon = R.drawable.ic_network_diagnose,
             title = R.string.home_job_diagnose,
@@ -56,7 +77,7 @@ class NetworkHubActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.networkHubBackButton).setOnClickListener { finish() }
     }
 
-    private fun bindRow(rowId: Int, icon: Int, title: Int, subtitle: Int, onClick: () -> Unit) {
+    private fun bindTile(rowId: Int, icon: Int, title: Int, subtitle: Int, onClick: () -> Unit) {
         val row = findViewById<View>(rowId)
         row.findViewById<ImageView>(R.id.hubToolIcon).setImageResource(icon)
         row.findViewById<TextView>(R.id.hubToolTitle).setText(title)

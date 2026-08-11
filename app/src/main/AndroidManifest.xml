@@ -92,6 +92,24 @@
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
+            android:name=".DnsLookupActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".TraceRouteActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".BandwidthMonitorActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
             android:name=".DataMenuActivity"
             android:exported="false"
             android:theme="@style/Theme.TowerScopeAR" />

@@ -118,6 +118,8 @@
             android:layout_height="112dp"
             android:layout_marginTop="10dp"
             android:background="#16000000"
+            android:clickable="false"
+            android:focusable="false"
             android:visibility="gone" />
     </LinearLayout>
 </LinearLayout>

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/speedRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -24,14 +23,50 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:fontFamily="@font/source_sans3_regular"
-        android:text="@string/home_job_speed_sub"
+        android:text="Multi-server · 4 streams · sustained Mbps"
         android:textColor="@color/text_muted"
         android:textSize="14sp" />
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/speedServerRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
+
+    <TextView
+        android:id="@+id/speedServerDetail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:fontFamily="@font/source_sans3_regular"
+        android:text="Auto · picks lowest latency"
+        android:textColor="@color/text_dim"
+        android:textSize="12sp" />
+
+    <com.towerscope.ar.ui.SpeedGaugeView
+        android:id="@+id/speedGauge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" />
+
+    <com.towerscope.ar.ui.LatencyGraphView
+        android:id="@+id/speedGraph"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_metric_tile" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/section_gap"
+        android:layout_marginTop="12dp"
         android:orientation="horizontal">
 
         <LinearLayout
@@ -41,7 +76,7 @@
             android:layout_weight="1"
             android:background="@drawable/bg_metric_tile"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="14dp">
 
             <TextView
                 android:layout_width="match_parent"
@@ -56,12 +91,12 @@
                 android:id="@+id/speedDownload"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:fontFamily="monospace"
                 android:letterSpacing="-0.02"
                 android:text="—"
                 android:textColor="@color/accent_teal"
-                android:textSize="22sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -72,7 +107,7 @@
             android:layout_weight="1"
             android:background="@drawable/bg_metric_tile"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="14dp">
 
             <TextView
                 android:layout_width="match_parent"
@@ -87,12 +122,12 @@
                 android:id="@+id/speedUpload"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:fontFamily="monospace"
                 android:letterSpacing="-0.02"
                 android:text="—"
                 android:textColor="@color/accent_yellow"
-                android:textSize="22sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
@@ -101,41 +136,78 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/item_gap"
-        android:background="@drawable/bg_metric_card"
-        android:orientation="vertical"
-        android:padding="@dimen/card_padding_lg">
+        android:orientation="horizontal">
 
-        <TextView
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:letterSpacing="0.12"
-            android:text="LATENCY"
-            android:textColor="@color/text_dim"
-            android:textSize="11sp" />
+            android:layout_marginEnd="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_metric_card"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding_lg">
 
-        <TextView
-            android:id="@+id/speedLatency"
-            android:layout_width="match_parent"
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:letterSpacing="0.12"
+                android:text="LATENCY"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/speedLatency"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="monospace"
+                android:text="—"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:fontFamily="monospace"
-            android:letterSpacing="-0.02"
-            android:text="—"
-            android:textColor="@color/text_primary"
-            android:textSize="36sp"
-            android:textStyle="bold" />
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_metric_card"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding_lg">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:letterSpacing="0.12"
+                android:text="JITTER"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/speedJitter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="monospace"
+                android:text="—"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
 
     <TextView
         android:id="@+id/speedStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="10dp"
         android:fontFamily="@font/source_sans3_regular"
-        android:text="Uses Cloudflare speed endpoints"
+        android:text="Pick a server or Auto, then run"
         android:textColor="@color/text_muted"
-        android:textSize="13sp" />
+        android:textSize="12sp" />
 
     <View
         android:layout_width="match_parent"

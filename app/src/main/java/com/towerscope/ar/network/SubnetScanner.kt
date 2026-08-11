@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.FileReader
 import java.net.Inet4Address
+import java.net.Inet6Address
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
@@ -32,6 +33,9 @@ data class SubnetHost(
     val hostname: String?,
     val macAddress: String?,
     val openPort: Int?,
+    val openPorts: List<Int> = emptyList(),
+    val deviceType: String? = null,
+    val ipv6Addresses: List<String> = emptyList(),
     val httpUrl: String
 )
 
@@ -104,6 +108,9 @@ object SubnetScanner {
                                 hostname = "this device",
                                 macAddress = localMacAddress(),
                                 openPort = null,
+                                openPorts = emptyList(),
+                                deviceType = "This phone",
+                                ipv6Addresses = localIpv6Addresses(),
                                 httpUrl = "http://$ip/"
                             )
                         } else {
@@ -142,36 +149,91 @@ object SubnetScanner {
     }
 
     private fun probeHost(ip: String): SubnetHost? {
-        val ports = intArrayOf(80, 443, 22, 8080, 554)
-        var open: Int? = null
+        val ports = intArrayOf(22, 53, 80, 443, 554, 8080, 8443, 3389, 5000, 8291)
+        val open = mutableListOf<Int>()
         for (port in ports) {
-            if (tcpOpen(ip, port, 220)) {
-                open = port
-                break
-            }
+            if (tcpOpen(ip, port, 180)) open += port
         }
-        val reachable = open != null || runCatching {
-            InetAddress.getByName(ip).isReachable(280)
+        val reachable = open.isNotEmpty() || runCatching {
+            InetAddress.getByName(ip).isReachable(260)
         }.getOrDefault(false)
         if (!reachable) return null
         val name = runCatching {
             InetAddress.getByName(ip).canonicalHostName
                 ?.takeIf { it != ip && it.isNotBlank() }
         }.getOrNull()
-        val preferredPort = open ?: 80
-        val scheme = if (preferredPort == 443) "https" else "http"
-        val url = if (preferredPort == 80 || preferredPort == 443) {
+        val ipv6 = runCatching {
+            InetAddress.getAllByName(name ?: ip)
+                .filterIsInstance<Inet6Address>()
+                .mapNotNull { it.hostAddress?.substringBefore('%') }
+                .distinct()
+                .take(3)
+        }.getOrDefault(emptyList())
+        val primary = open.firstOrNull()
+        val scheme = when {
+            open.contains(443) || open.contains(8443) -> "https"
+            else -> "http"
+        }
+        val urlPort = when {
+            open.contains(443) -> 443
+            open.contains(8443) -> 8443
+            open.contains(80) -> 80
+            open.contains(8080) -> 8080
+            else -> primary ?: 80
+        }
+        val url = if (urlPort == 80 || urlPort == 443) {
             "$scheme://$ip/"
         } else {
-            "$scheme://$ip:$preferredPort/"
+            "$scheme://$ip:$urlPort/"
         }
         return SubnetHost(
             ip = ip,
             hostname = name,
             macAddress = null,
-            openPort = open,
+            openPort = primary,
+            openPorts = open,
+            deviceType = guessDeviceType(open, name),
+            ipv6Addresses = ipv6,
             httpUrl = url
         )
+    }
+
+    private fun guessDeviceType(openPorts: List<Int>, hostname: String?): String {
+        val host = hostname.orEmpty().lowercase(Locale.US)
+        return when {
+            openPorts.contains(8291) || host.contains("mikrotik") || host.contains("routerboard") ->
+                "Router (MikroTik?)"
+            openPorts.contains(554) || host.contains("cam") || host.contains("nvr") ->
+                "Camera / NVR"
+            openPorts.contains(3389) -> "Windows (RDP)"
+            openPorts.contains(22) && (openPorts.contains(80) || openPorts.contains(443)) ->
+                "Linux / AP / gateway"
+            openPorts.contains(22) -> "SSH host"
+            openPorts.contains(80) || openPorts.contains(443) || openPorts.contains(8080) ->
+                "Web device"
+            openPorts.contains(53) -> "DNS / gateway"
+            host.contains("iphone") || host.contains("android") || host.contains("galaxy") ->
+                "Phone / tablet"
+            host.contains("apple") || host.contains("macbook") -> "Apple device"
+            else -> "Host"
+        }
+    }
+
+    fun localIpv6Addresses(): List<String> {
+        return try {
+            Collections.list(NetworkInterface.getNetworkInterfaces())
+                .asSequence()
+                .filter { !it.isLoopback && it.isUp }
+                .flatMap { iface -> Collections.list(iface.inetAddresses).asSequence() }
+                .filterIsInstance<Inet6Address>()
+                .filter { !it.isLoopbackAddress && !it.isLinkLocalAddress }
+                .mapNotNull { it.hostAddress?.substringBefore('%') }
+                .distinct()
+                .take(4)
+                .toList()
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     private fun tcpOpen(ip: String, port: Int, timeoutMs: Int): Boolean {

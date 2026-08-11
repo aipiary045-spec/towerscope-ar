@@ -99,7 +99,7 @@ class PingMonitorActivity : AppCompatActivity() {
         val inflater = LayoutInflater.from(this)
         hosts.forEach { host ->
             val row = inflater.inflate(R.layout.item_ping_host_row, hostStatsList, false)
-            row.findViewById<TextView>(R.id.pingRowHost).text = host.host
+            row.findViewById<TextView>(R.id.pingRowHost).text = host.displayTarget
             val last = row.findViewById<TextView>(R.id.pingRowLast)
             last.text = host.lastMs?.let { String.format(Locale.US, "%.0f ms", it) } ?: "timeout"
             last.setTextColor(
@@ -107,7 +107,8 @@ class PingMonitorActivity : AppCompatActivity() {
             )
             row.findViewById<TextView>(R.id.pingRowStats).text = String.format(
                 Locale.US,
-                "Sent %d · Recv %d · Loss %.0f%% · avg %s",
+                "%s · Sent %d · Recv %d · Loss %.0f%% · avg %s",
+                host.method,
                 host.sent,
                 host.received,
                 host.lossPercent,

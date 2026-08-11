@@ -54,19 +54,28 @@ class SubnetScannerActivity : AppCompatActivity() {
 
     private fun refreshSubnetInfo() {
         val subnet = SubnetScanner.localSubnet(this)
+        val ipv6 = SubnetScanner.localIpv6Addresses()
         if (subnet == null) {
             infoLabel.text = "No active IPv4 interface"
             statusLabel.text = "Connect to Wi‑Fi, then scan"
             scanButton.isEnabled = false
         } else {
-            infoLabel.text = String.format(
-                Locale.US,
-                "%s/%d  ·  %s",
-                subnet.localIp,
-                subnet.prefixLength,
-                subnet.networkBase
-            )
-            statusLabel.text = "Up to ${subnet.hostCount} hosts · tap IP to open"
+            infoLabel.text = buildString {
+                append(
+                    String.format(
+                        Locale.US,
+                        "%s/%d  ·  %s",
+                        subnet.localIp,
+                        subnet.prefixLength,
+                        subnet.networkBase
+                    )
+                )
+                if (ipv6.isNotEmpty()) {
+                    append("\nIPv6  ")
+                    append(ipv6.joinToString(", "))
+                }
+            }
+            statusLabel.text = "IPv4 scan · ports · MAC · tap URL · up to ${subnet.hostCount} hosts"
             scanButton.isEnabled = true
         }
     }
@@ -97,11 +106,21 @@ class SubnetScannerActivity : AppCompatActivity() {
         row.findViewById<TextView>(R.id.subnetRowIp).text = host.ip
         row.findViewById<TextView>(R.id.subnetRowUrl).text = host.httpUrl
         val meta = buildString {
-            append("MAC  ")
+            append(host.deviceType ?: "Host")
+            append("  ·  MAC  ")
             append(host.macAddress ?: "—")
-            append("  ·  ")
-            append(host.hostname ?: "host")
-            host.openPort?.let { append("  ·  port ").append(it) }
+            append("\n")
+            append(host.hostname ?: "no reverse DNS")
+            if (host.openPorts.isNotEmpty()) {
+                append("  ·  ports ")
+                append(host.openPorts.joinToString(","))
+            } else {
+                host.openPort?.let { append("  ·  port ").append(it) }
+            }
+            if (host.ipv6Addresses.isNotEmpty()) {
+                append("\nIPv6  ")
+                append(host.ipv6Addresses.joinToString(", "))
+            }
         }
         row.findViewById<TextView>(R.id.subnetRowMeta).text = meta
         row.setOnClickListener { openHostUrl(host) }

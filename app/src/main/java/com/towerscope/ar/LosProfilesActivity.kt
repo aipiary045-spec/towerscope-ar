@@ -58,6 +58,7 @@ class LosProfilesActivity : AppCompatActivity() {
     private var linkSettingsOpen = false
     private var startedScan = false
     private var lastCpeHeight: Float? = null
+    private var lastRowsKey: String? = null
     private val frequencyPresets = listOf(2.4f, 3.65f, 5.2f, 5.8f, 6.0f, 24.0f, 60.0f)
     private val shimmerAnimators = mutableListOf<ObjectAnimator>()
 
@@ -178,9 +179,9 @@ class LosProfilesActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     subtitle.text = if (state.hasInstallSite) {
-                        "Rank APs by estimated signal · from install site"
+                        "Heat map button / tap row · long-press details · install site"
                     } else {
-                        "Rank APs by estimated signal · from GPS"
+                        "Heat map button / tap row · long-press details · GPS"
                     }
                     status.text = state.losRangeStatus.orEmpty()
                     linkSettingsSummary.text = String.format(
@@ -231,13 +232,53 @@ class LosProfilesActivity : AppCompatActivity() {
                     }
                     lastCpeHeight = state.cpeAntennaAglMeters
 
-                    renderRows(state)
+                    val rowsKey = rowsRenderKey(state)
+                    if (rowsKey != lastRowsKey) {
+                        lastRowsKey = rowsKey
+                        renderRows(state)
+                    }
                     maybeStartScan()
                 }
             }
         }
 
         ensureLocationPermission()
+    }
+
+    /** Avoid rebuilding rows on every GPS tick (which cancels taps). */
+    private fun rowsRenderKey(state: TowerUiState): String {
+        val rows = state.losRangeRows.joinToString(";") { row ->
+            buildString {
+                append(row.tower.id)
+                append(':')
+                append(row.loading)
+                append(':')
+                append(row.error != null)
+                append(':')
+                append(row.profile != null)
+                append(':')
+                append((row.distanceMeters / 10.0).toInt())
+            }
+        }
+        return buildString {
+            append(rows)
+            append('|')
+            append(state.frequencyGhz)
+            append('|')
+            append(state.txPowerDbm)
+            append('|')
+            append(state.apAntennaGainDbi)
+            append('|')
+            append(state.cpeAntennaGainDbi)
+            append('|')
+            append(state.cpeAntennaAglMeters)
+            append('|')
+            append(state.clutterHeightMeters)
+            append('|')
+            append(state.hasInstallSite)
+            append('|')
+            append(state.losRangeStatus)
+        }
     }
 
     private fun applyLinkSettingsExpanded() {
@@ -456,6 +497,8 @@ class LosProfilesActivity : AppCompatActivity() {
                     shimmer2.isVisible = false
                 }
             }
+            view.isClickable = true
+            view.isFocusable = true
             view.setOnClickListener {
                 viewModel.selectTower(row.tower.id)
                 if (supportFragmentManager.findFragmentByTag(TowerDetailsBottomSheet.TAG) == null) {
