@@ -5,11 +5,13 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
+import com.towerscope.ar.ui.BottomNav
+import com.towerscope.ar.ui.BottomNavTab
 import com.towerscope.ar.ui.SettingsBottomSheet
 import com.towerscope.ar.ui.SystemBars
 
 /**
- * Root launcher: tile navigation into Network Hub and Installation Hub.
+ * WispEaze home dashboard: Network + Install hubs with bottom navigation.
  */
 class HomeActivity : AppCompatActivity() {
 
@@ -17,7 +19,10 @@ class HomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_home)
-        SystemBars.apply(findViewById(R.id.homeRoot))
+        SystemBars.apply(
+            root = findViewById(R.id.homeRoot),
+            alsoBottom = findViewById(R.id.homeBottomNav)
+        )
 
         findViewById<View>(R.id.homeNetworkHubButton).setOnClickListener {
             startActivity(Intent(this, NetworkHubActivity::class.java))
@@ -26,9 +31,14 @@ class HomeActivity : AppCompatActivity() {
             startActivity(Intent(this, InstallationHubActivity::class.java))
         }
         findViewById<View>(R.id.homeSettingsButton).setOnClickListener {
-            if (supportFragmentManager.findFragmentByTag(SettingsBottomSheet.TAG) == null) {
-                SettingsBottomSheet.newInstance().show(supportFragmentManager, SettingsBottomSheet.TAG)
-            }
+            openSettings()
+        }
+        BottomNav.bind(this, BottomNavTab.HOME)
+    }
+
+    private fun openSettings() {
+        if (supportFragmentManager.findFragmentByTag(SettingsBottomSheet.TAG) == null) {
+            SettingsBottomSheet.newInstance().show(supportFragmentManager, SettingsBottomSheet.TAG)
         }
     }
 }

@@ -7,7 +7,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
-import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.ui.BottomNav
+import com.towerscope.ar.ui.BottomNavTab
 import com.towerscope.ar.ui.SystemBars
 
 class InstallationHubActivity : AppCompatActivity() {
@@ -16,7 +17,11 @@ class InstallationHubActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_installation_hub)
-        SystemBars.apply(findViewById(R.id.installHubRoot))
+        SystemBars.apply(
+            root = findViewById(R.id.installHubRoot),
+            alsoBottom = findViewById(R.id.installBottomNav)
+        )
+        BottomNav.bind(this, BottomNavTab.INSTALL)
 
         bindRow(
             rowId = R.id.hubCompassRow,
@@ -42,7 +47,6 @@ class InstallationHubActivity : AppCompatActivity() {
         findViewById<View>(R.id.installHubImportButton).setOnClickListener {
             startActivity(Intent(this, DataMenuActivity::class.java))
         }
-        findViewById<MaterialButton>(R.id.installHubBackButton).setOnClickListener { finish() }
     }
 
     private fun bindRow(rowId: Int, icon: Int, title: Int, subtitle: Int, onClick: () -> Unit) {

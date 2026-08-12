@@ -525,7 +525,7 @@ class MainActivity : AppCompatActivity() {
         if (onboardingShownThisSession || viewModel.hasCompletedOnboarding()) return
         onboardingShownThisSession = true
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("TowerScope field tips")
+            .setTitle("WispEaze field tips")
             .setMessage(
                 "1. Import network sites from Home (or Settings → Import / manage sites).\n" +
                     "2. Go outdoors for a clear GPS fix.\n" +

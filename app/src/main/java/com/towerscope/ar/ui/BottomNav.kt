@@ -1,0 +1,69 @@
+package com.towerscope.ar.ui
+
+import android.app.Activity
+import android.content.Intent
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
+import com.towerscope.ar.HomeActivity
+import com.towerscope.ar.InstallationHubActivity
+import com.towerscope.ar.NetworkHubActivity
+import com.towerscope.ar.R
+
+enum class BottomNavTab {
+    HOME,
+    NETWORK,
+    INSTALL,
+    SETTINGS
+}
+
+object BottomNav {
+    fun bind(activity: FragmentActivity, selected: BottomNavTab) {
+        val root = activity.findViewById<android.view.View>(R.id.bottomNavBar) ?: return
+        val active = ContextCompat.getColor(activity, R.color.accent_teal)
+        val idle = ContextCompat.getColor(activity, R.color.text_dim)
+
+        fun style(tab: BottomNavTab, iconId: Int, labelId: Int) {
+            val on = tab == selected
+            root.findViewById<ImageView>(iconId).setColorFilter(if (on) active else idle)
+            root.findViewById<TextView>(labelId).setTextColor(if (on) active else idle)
+        }
+
+        style(BottomNavTab.HOME, R.id.navHomeIcon, R.id.navHomeLabel)
+        style(BottomNavTab.NETWORK, R.id.navNetworkIcon, R.id.navNetworkLabel)
+        style(BottomNavTab.INSTALL, R.id.navInstallIcon, R.id.navInstallLabel)
+        style(BottomNavTab.SETTINGS, R.id.navSettingsIcon, R.id.navSettingsLabel)
+
+        root.findViewById<android.view.View>(R.id.navHome).setOnClickListener {
+            if (activity is HomeActivity) return@setOnClickListener
+            activity.startActivity(
+                Intent(activity, HomeActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+            if (activity !is HomeActivity) activity.finish()
+        }
+        root.findViewById<android.view.View>(R.id.navNetwork).setOnClickListener {
+            if (activity is NetworkHubActivity) return@setOnClickListener
+            go(activity, NetworkHubActivity::class.java, clearHomeStack = activity is HomeActivity)
+        }
+        root.findViewById<android.view.View>(R.id.navInstall).setOnClickListener {
+            if (activity is InstallationHubActivity) return@setOnClickListener
+            go(activity, InstallationHubActivity::class.java, clearHomeStack = activity is HomeActivity)
+        }
+        root.findViewById<android.view.View>(R.id.navSettings).setOnClickListener {
+            if (activity.supportFragmentManager.findFragmentByTag(SettingsBottomSheet.TAG) == null) {
+                SettingsBottomSheet.newInstance()
+                    .show(activity.supportFragmentManager, SettingsBottomSheet.TAG)
+            }
+        }
+    }
+
+    private fun go(activity: Activity, clazz: Class<*>, clearHomeStack: Boolean) {
+        val intent = Intent(activity, clazz)
+        activity.startActivity(intent)
+        if (!clearHomeStack && activity !is HomeActivity) {
+            activity.finish()
+        }
+    }
+}

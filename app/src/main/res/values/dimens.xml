@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="radius_sm">10dp</dimen>
-    <dimen name="radius_md">14dp</dimen>
-    <dimen name="radius_lg">18dp</dimen>
-    <dimen name="radius_xl">22dp</dimen>
+    <dimen name="radius_sm">12dp</dimen>
+    <dimen name="radius_md">16dp</dimen>
+    <dimen name="radius_lg">20dp</dimen>
+    <dimen name="radius_xl">24dp</dimen>
     <dimen name="tap_min">48dp</dimen>
     <dimen name="fab_size">56dp</dimen>
     <dimen name="card_padding">16dp</dimen>

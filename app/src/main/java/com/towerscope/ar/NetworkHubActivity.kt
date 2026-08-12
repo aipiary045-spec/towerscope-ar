@@ -7,7 +7,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
-import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.ui.BottomNav
+import com.towerscope.ar.ui.BottomNavTab
 import com.towerscope.ar.ui.SystemBars
 
 class NetworkHubActivity : AppCompatActivity() {
@@ -16,7 +17,11 @@ class NetworkHubActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_network_hub)
-        SystemBars.apply(findViewById(R.id.networkHubRoot))
+        SystemBars.apply(
+            root = findViewById(R.id.networkHubRoot),
+            alsoBottom = findViewById(R.id.networkBottomNav)
+        )
+        BottomNav.bind(this, BottomNavTab.NETWORK)
 
         bindTile(
             rowId = R.id.hubWifiRow,
@@ -73,8 +78,6 @@ class NetworkHubActivity : AppCompatActivity() {
             title = R.string.home_job_diagnose,
             subtitle = R.string.home_job_diagnose_sub
         ) { startActivity(Intent(this, NetworkDiagnoseActivity::class.java)) }
-
-        findViewById<MaterialButton>(R.id.networkHubBackButton).setOnClickListener { finish() }
     }
 
     private fun bindTile(rowId: Int, icon: Int, title: Int, subtitle: Int, onClick: () -> Unit) {

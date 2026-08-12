@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">TowerScope</string>
-    <string name="hud_title">TowerScope</string>
-    <string name="home_tagline">Network tools · Install tools</string>
-    <string name="home_hub_network">Network Hub</string>
-    <string name="home_hub_network_sub">Wi‑Fi · speed · ping · DNS · bandwidth</string>
-    <string name="home_hub_install">Installation Hub</string>
+    <string name="app_name">WispEaze</string>
+    <string name="hud_title">WispEaze</string>
+    <string name="home_tagline">Field network tools made easy</string>
+    <string name="home_greeting">Ready for the field</string>
+    <string name="home_greeting_sub">Diagnose links · aim installs · clear LOS</string>
+    <string name="home_hero_label">FIELD SUITE</string>
+    <string name="home_hero_value">Network + Install</string>
+    <string name="home_hero_badge">Live tools</string>
+    <string name="home_hub_network">Network</string>
+    <string name="home_hub_network_sub">Wi‑Fi · speed · ping · DNS · path</string>
+    <string name="home_hub_install">Install</string>
     <string name="home_hub_install_sub">Compass · locate · LOS clearance</string>
     <string name="home_no_sites">No network sites loaded</string>
     <string name="home_import_hint">Import a KML or KMZ to get started</string>
@@ -34,6 +39,10 @@
     <string name="home_job_diagnose_sub">Link · DNS · TCP · TLS · HTTP</string>
     <string name="home_settings">Settings</string>
     <string name="home_settings_hint">Sites import, range, theme, compass</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_network">Network</string>
+    <string name="nav_install">Install</string>
+    <string name="nav_settings">Settings</string>
     <string name="map_range_nearby">Nearby only</string>
     <string name="map_range_all">Show all sites</string>
 </resources>

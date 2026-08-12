@@ -143,7 +143,7 @@ class MapActivity : AppCompatActivity() {
         if (!tiles.exists()) tiles.mkdirs()
         cfg.osmdroidBasePath = base
         cfg.osmdroidTileCache = tiles
-        cfg.userAgentValue = "TowerScope/1.0 (Android; field map)"
+        cfg.userAgentValue = "WispEaze/1.0 (Android; field map)"
         cfg.tileDownloadThreads = 4
         cfg.tileFileSystemCacheMaxBytes = 128L * 1024L * 1024L
         cfg.load(applicationContext, getSharedPreferences("osmdroid", Context.MODE_PRIVATE))

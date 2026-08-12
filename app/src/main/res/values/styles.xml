@@ -89,10 +89,12 @@
     </style>
 
     <style name="Widget.TowerScope.Button.Primary" parent="Widget.TowerScope.Button">
-        <item name="backgroundTint">@color/accent_yellow</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:background">@drawable/bg_btn_primary</item>
         <item name="android:textColor">@color/text_on_accent</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textSize">15sp</item>
+        <item name="cornerRadius">16dp</item>
     </style>
 
     <style name="Widget.TowerScope.Button.Secondary" parent="Widget.TowerScope.Button">

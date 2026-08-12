@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Soft signal / mesh rings for WispEaze hero backgrounds -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:left="24dp"
+        android:top="8dp"
+        android:right="-40dp"
+        android:bottom="-20dp">
+        <shape android:shape="oval">
+            <stroke
+                android:width="18dp"
+                android:color="#332F6BFF" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    <item
+        android:left="48dp"
+        android:top="32dp"
+        android:right="-16dp"
+        android:bottom="4dp">
+        <shape android:shape="oval">
+            <stroke
+                android:width="14dp"
+                android:color="#404CC9FF" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    <item
+        android:left="-36dp"
+        android:top="72dp"
+        android:right="48dp"
+        android:bottom="-48dp">
+        <shape android:shape="oval">
+            <stroke
+                android:width="16dp"
+                android:color="#282F6BFF" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+</layer-list>

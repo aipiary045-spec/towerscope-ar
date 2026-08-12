@@ -93,7 +93,7 @@ class DataMenuActivity : AppCompatActivity() {
     private fun shareCsvTemplate() {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, "TowerScope CSV site template")
+            putExtra(Intent.EXTRA_SUBJECT, "WispEaze CSV site template")
             putExtra(Intent.EXTRA_TEXT, CsvTowerParser.templateCsv())
         }
         startActivity(Intent.createChooser(intent, "Share CSV template"))
