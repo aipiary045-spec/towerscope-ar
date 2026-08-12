@@ -21,42 +21,9 @@
             android:paddingTop="20dp"
             android:paddingBottom="20dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/source_sans3_semibold"
-                    android:letterSpacing="0.01"
-                    android:text="@string/hud_title"
-                    android:textColor="@color/text_primary"
-                    android:textSize="28sp"
-                    android:textStyle="bold" />
-
-                <FrameLayout
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/bg_job_icon">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_wifi_signal"
-                        android:tint="@color/accent_teal" />
-                </FrameLayout>
-            </LinearLayout>
-
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
                 android:fontFamily="@font/source_sans3_semibold"
                 android:text="@string/home_greeting"
                 android:textColor="@color/text_primary"
@@ -72,72 +39,49 @@
                 android:textColor="@color/text_muted"
                 android:textSize="14sp" />
 
-            <!-- Hero card with signal rings -->
+            <!-- Hero card: brand logo -->
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="168dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:background="@drawable/bg_nav_tile"
-                android:clipToPadding="false">
+                android:clipToPadding="false"
+                android:minHeight="168dp">
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/bg_signal_rings"
-                    android:alpha="0.9" />
+                    android:alpha="0.55"
+                    android:background="@drawable/bg_signal_rings" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
                     android:orientation="vertical"
-                    android:padding="18dp">
+                    android:paddingHorizontal="18dp"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="18dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        android:adjustViewBounds="true"
+                        android:contentDescription="@string/app_name"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/logo_wispeaze" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:letterSpacing="0.14"
-                        android:text="@string/home_hero_label"
-                        android:textColor="@color/accent_teal"
-                        android:textSize="11sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/source_sans3_semibold"
-                            android:text="@string/home_hero_value"
-                            android:textColor="@color/text_primary"
-                            android:textSize="26sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/bg_btn_primary"
-                            android:fontFamily="@font/source_sans3_semibold"
-                            android:paddingHorizontal="12dp"
-                            android:paddingVertical="6dp"
-                            android:text="@string/home_hero_badge"
-                            android:textColor="@color/text_on_accent"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:fontFamily="@font/source_sans3_regular"
-                        android:text="@string/home_tagline"
-                        android:textColor="@color/text_muted"
-                        android:textSize="13sp" />
+                        android:background="@drawable/bg_btn_primary"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="6dp"
+                        android:text="@string/home_hero_badge"
+                        android:textColor="@color/text_on_accent"
+                        android:textSize="12sp" />
                 </LinearLayout>
             </FrameLayout>
 
@@ -297,7 +241,12 @@
         </LinearLayout>
     </ScrollView>
 
-    <include
+    <!-- Wrapper keeps include root id (bottomNavBar) so click handlers bind correctly -->
+    <FrameLayout
         android:id="@+id/homeBottomNav"
-        layout="@layout/include_bottom_nav" />
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <include layout="@layout/include_bottom_nav" />
+    </FrameLayout>
 </LinearLayout>

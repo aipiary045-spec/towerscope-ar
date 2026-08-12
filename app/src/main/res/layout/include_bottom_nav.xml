@@ -2,11 +2,14 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/bottomNavBar"
     android:layout_width="match_parent"
-    android:layout_height="68dp"
+    android:layout_height="wrap_content"
     android:background="@drawable/bg_bottom_nav"
     android:gravity="center_vertical"
+    android:minHeight="68dp"
     android:orientation="horizontal"
-    android:paddingHorizontal="8dp">
+    android:paddingHorizontal="8dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
 
     <LinearLayout
         android:id="@+id/navHome"

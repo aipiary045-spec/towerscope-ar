@@ -21,15 +21,27 @@ object SystemBars {
 
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            val bottomInset = maxOf(bars.bottom, nav.bottom)
             view.updatePadding(
                 left = rootLeft + bars.left,
                 top = rootTop + bars.top,
                 right = rootRight + bars.right,
-                bottom = if (alsoBottom == null) rootBottom + bars.bottom else rootBottom
+                bottom = if (alsoBottom == null) rootBottom + bottomInset else rootBottom
             )
-            alsoBottom?.updatePadding(bottom = footerBottom + bars.bottom)
+            alsoBottom?.updatePadding(bottom = footerBottom + bottomInset)
             insets
         }
+        // Ensure the footer itself also receives insets if the root listener races.
+        alsoBottom?.let { footer ->
+            ViewCompat.setOnApplyWindowInsetsListener(footer) { view, insets ->
+                val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+                val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                view.updatePadding(bottom = footerBottom + maxOf(nav.bottom, bars.bottom))
+                insets
+            }
+        }
         ViewCompat.requestApplyInsets(root)
+        alsoBottom?.let { ViewCompat.requestApplyInsets(it) }
     }
 }
