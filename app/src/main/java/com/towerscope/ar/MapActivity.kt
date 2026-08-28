@@ -19,8 +19,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
-import com.towerscope.ar.ui.CustomCoordinateEntryControls
-import com.towerscope.ar.ui.LocationModeControls
+import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.CardinalSector
@@ -57,8 +56,7 @@ class MapActivity : AppCompatActivity() {
     private lateinit var metaLabel: TextView
     private lateinit var towerChips: LinearLayout
     private lateinit var rangeToggle: MaterialButton
-    private lateinit var locationModeControls: LocationModeControls
-    private lateinit var coordinateEntryControls: CustomCoordinateEntryControls
+    private lateinit var locationSourceChip: LocationSourceChip
 
     private var losLine: Polyline? = null
     private val towerMarkers = mutableMapOf<String, Marker>()
@@ -101,14 +99,15 @@ class MapActivity : AppCompatActivity() {
         metaLabel = findViewById(R.id.mapMetaLabel)
         towerChips = findViewById(R.id.mapTowerChips)
         rangeToggle = findViewById(R.id.mapRangeToggle)
-        locationModeControls = LocationModeControls(findViewById(R.id.mapLocationMode), viewModel)
-        coordinateEntryControls = CustomCoordinateEntryControls(
-            root = findViewById(R.id.mapCoordinateEntry),
-            viewModel = viewModel
-        ) { latitude, longitude ->
-            centerOnCoordinates(latitude, longitude)
-            metaLabel.text = "Custom location set from coordinates"
-        }
+        locationSourceChip = LocationSourceChip(
+            chip = findViewById(R.id.mapLocationChip),
+            fragmentManager = supportFragmentManager,
+            viewModel = viewModel,
+            onCoordinatesApplied = { latitude, longitude ->
+                centerOnCoordinates(latitude, longitude)
+                metaLabel.text = "Custom location set from coordinates"
+            }
+        )
 
         setupMap()
 
@@ -286,8 +285,7 @@ class MapActivity : AppCompatActivity() {
         }
 
         renderChips(state)
-        locationModeControls.render(state, this)
-        coordinateEntryControls.render(state)
+        locationSourceChip.render(state, this)
         renderMapOverlays(state)
 
         if (!hasFittedOnce && state.userLocation != null && focus != null) {

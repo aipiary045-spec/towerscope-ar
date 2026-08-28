@@ -52,7 +52,12 @@
     <string name="location_mode_gps_waiting">Waiting for GPS fix…</string>
     <string name="location_mode_custom_set">Checking from %1$s</string>
     <string name="location_mode_custom_unset">Long-press the map, enter coordinates below, or tap the pin button</string>
-    <string name="location_mode_open_locate">Set location on map</string>
+    <string name="location_chip_gps">My GPS</string>
+    <string name="location_chip_gps_waiting">My GPS · waiting</string>
+    <string name="location_chip_custom">Custom · %1$s</string>
+    <string name="location_chip_custom_unset">Custom · tap to set</string>
+    <string name="location_sheet_title">Check from</string>
+    <string name="location_sheet_map_hint">Long-press the map to pin · pin FAB snaps to GPS</string>
     <string name="coordinate_entry_label">ENTER COORDINATES</string>
     <string name="coordinate_entry_lat_hint">Latitude</string>
     <string name="coordinate_entry_lon_hint">Longitude</string>

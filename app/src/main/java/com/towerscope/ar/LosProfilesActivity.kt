@@ -23,7 +23,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.data.LosProfileBuilder
-import com.towerscope.ar.ui.LocationModeControls
+import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.LosProfileChartView
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
@@ -58,8 +58,7 @@ class LosProfilesActivity : AppCompatActivity() {
     private lateinit var linkSettingsSummary: TextView
     private lateinit var linkSettingsToggle: TextView
     private lateinit var linkSettingsExpanded: View
-    private lateinit var openLocateButton: MaterialButton
-    private lateinit var locationModeControls: LocationModeControls
+    private lateinit var locationSourceChip: LocationSourceChip
     private var linkSettingsOpen = false
     private var startedScan = false
     private var lastCpeHeight: Float? = null
@@ -106,15 +105,15 @@ class LosProfilesActivity : AppCompatActivity() {
         linkSettingsSummary = findViewById(R.id.losLinkSettingsSummary)
         linkSettingsToggle = findViewById(R.id.losLinkSettingsToggle)
         linkSettingsExpanded = findViewById(R.id.losLinkSettingsExpanded)
-        openLocateButton = findViewById(R.id.losOpenLocateButton)
-        locationModeControls = LocationModeControls(findViewById(R.id.losLocationMode), viewModel) {
-            startedScan = false
-            maybeStartScan(force = true)
-        }
-
-        openLocateButton.setOnClickListener {
-            startActivity(Intent(this, MapActivity::class.java))
-        }
+        locationSourceChip = LocationSourceChip(
+            chip = findViewById(R.id.losLocationChip),
+            fragmentManager = supportFragmentManager,
+            viewModel = viewModel,
+            onModeChanged = {
+                startedScan = false
+                maybeStartScan(force = true)
+            }
+        )
 
         frequencySlider.max = frequencyPresets.lastIndex
         cpeHeightSlider.max =
@@ -192,17 +191,8 @@ class LosProfilesActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    locationModeControls.render(state, this@LosProfilesActivity)
-                    val needsCustomLocation = state.locationMode == LocationMode.CUSTOM && !state.hasInstallSite
-                    openLocateButton.isVisible = needsCustomLocation
-                    subtitle.text = when (state.locationMode) {
-                        LocationMode.CURRENT_GPS -> "Heat map button / tap row · long-press details · your GPS"
-                        LocationMode.CUSTOM -> if (state.hasInstallSite) {
-                            "Heat map button / tap row · long-press details · custom location"
-                        } else {
-                            "Set a custom location on the map to check from there"
-                        }
-                    }
+                    locationSourceChip.render(state, this@LosProfilesActivity)
+                    subtitle.text = "Heat map button / tap row · long-press details"
                     status.text = state.losRangeStatus.orEmpty()
                     linkSettingsSummary.text = String.format(
                         Locale.US,
