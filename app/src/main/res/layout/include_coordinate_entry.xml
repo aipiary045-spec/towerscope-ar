@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/source_sans3_regular"
+        android:letterSpacing="0.06"
+        android:text="@string/coordinate_entry_label"
+        android:textColor="@color/text_muted"
+        android:textSize="10sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/coordinateLatitudeInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_hud_input"
+            android:fontFamily="monospace"
+            android:hint="@string/coordinate_entry_lat_hint"
+            android:importantForAutofill="no"
+            android:inputType="numberDecimal|numberSigned"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="10dp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_dim"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/coordinateLongitudeInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/bg_hud_input"
+            android:fontFamily="monospace"
+            android:hint="@string/coordinate_entry_lon_hint"
+            android:importantForAutofill="no"
+            android:inputType="numberDecimal|numberSigned"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="10dp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_dim"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/coordinateEntryError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:fontFamily="@font/source_sans3_regular"
+        android:textColor="@color/status_blocked"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/coordinatePasteButton"
+            style="@style/Widget.TowerScope.Button.Ghost"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:text="@string/coordinate_entry_paste"
+            android:textSize="13sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/coordinateApplyButton"
+            style="@style/Widget.TowerScope.Button.Primary"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="@string/coordinate_entry_apply"
+            android:textSize="13sp" />
+    </LinearLayout>
+</LinearLayout>

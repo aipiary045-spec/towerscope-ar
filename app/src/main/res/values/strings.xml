@@ -51,6 +51,13 @@
     <string name="location_mode_gps_hint">Using your GPS · %1$s</string>
     <string name="location_mode_gps_waiting">Waiting for GPS fix…</string>
     <string name="location_mode_custom_set">Checking from %1$s</string>
-    <string name="location_mode_custom_unset">Long-press the map to set a location, or tap the pin button</string>
+    <string name="location_mode_custom_unset">Long-press the map, enter coordinates below, or tap the pin button</string>
     <string name="location_mode_open_locate">Set location on map</string>
+    <string name="coordinate_entry_label">ENTER COORDINATES</string>
+    <string name="coordinate_entry_lat_hint">Latitude</string>
+    <string name="coordinate_entry_lon_hint">Longitude</string>
+    <string name="coordinate_entry_paste">Paste</string>
+    <string name="coordinate_entry_apply">Set location</string>
+    <string name="coordinate_entry_invalid">Use decimal degrees, e.g. 30.2672, -97.7431</string>
+    <string name="coordinate_entry_clipboard_empty">Clipboard is empty</string>
 </resources>
