@@ -24,7 +24,9 @@ class LocationSourceChip(
     }
 
     fun render(state: TowerUiState, context: Context) {
-        chip.text = chipLabel(state, context)
+        val label = chipLabel(state, context)
+        if (chip.text.toString() == label) return
+        chip.text = label
     }
 
     private fun openSheet() {

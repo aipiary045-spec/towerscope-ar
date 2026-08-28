@@ -68,6 +68,10 @@ class MapActivity : AppCompatActivity() {
     private var lastSectorTowerId: String? = null
     private var lastActiveSector: CardinalSector? = null
     private var lastSectorRadiusMeters: Double = -1.0
+    private var lastInfoWindowTowerId: String? = null
+    private val markerIcons = mutableMapOf<Boolean, BitmapDrawable>()
+    private val markerSelection = mutableMapOf<String, Boolean>()
+    private var lastRenderSignature: String? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -75,7 +79,7 @@ class MapActivity : AppCompatActivity() {
         val fineOk = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
         val coarseOk = result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (fineOk || coarseOk) {
-            viewModel.startLocationUpdates()
+            viewModel.startLocationUpdates(includeHeading = false)
             render(viewModel.uiState.value)
         } else {
             focusLabel.text = "Location permission required"
@@ -140,7 +144,12 @@ class MapActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state -> render(state) }
+                viewModel.uiState.collect { state ->
+                    val signature = mapRenderSignature(state)
+                    if (signature == lastRenderSignature) return@collect
+                    lastRenderSignature = signature
+                    render(state)
+                }
             }
         }
 
@@ -215,7 +224,7 @@ class MapActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         if (hasLocationPermission()) {
-            viewModel.startLocationUpdates()
+            viewModel.startLocationUpdates(includeHeading = false)
         }
     }
 
@@ -226,7 +235,7 @@ class MapActivity : AppCompatActivity() {
 
     private fun ensureLocationPermission() {
         if (hasLocationPermission()) {
-            viewModel.startLocationUpdates()
+            viewModel.startLocationUpdates(includeHeading = false)
         } else {
             permissionLauncher.launch(
                 arrayOf(
@@ -237,6 +246,30 @@ class MapActivity : AppCompatActivity() {
         }
     }
 
+    private fun mapRenderSignature(state: TowerUiState): String {
+        val user = state.userLocation
+        val userKey = user?.let { "${coarseCoord(it.latitude)}:${coarseCoord(it.longitude)}" } ?: "none"
+        val installKey = if (state.hasInstallSite) {
+            "${coarseCoord(state.installLatitude!!)}:${coarseCoord(state.installLongitude!!)}"
+        } else {
+            "none"
+        }
+        val focusId = state.mapFocusTower()?.id ?: "none"
+        return buildString {
+            append(userKey)
+            append('|').append(installKey)
+            append('|').append(state.locationMode)
+            append('|').append(state.mapShowAllSites)
+            append('|').append(state.selectedTowerId)
+            append('|').append(focusId)
+            append('|').append(state.maxDistanceMeters)
+            append('|').append(state.towers.size)
+            append('|').append(state.hiddenTowerIds.hashCode())
+        }
+    }
+
+    private fun coarseCoord(value: Double): Int = (value * 10_000).toInt()
+
     private fun hasLocationPermission(): Boolean {
         val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -245,6 +278,7 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun render(state: TowerUiState) {
+        lastRenderSignature = mapRenderSignature(state)
         val focus = state.mapFocusTower()
         val distance = focus?.let { state.distanceTo(it) }
         val bearing = focus?.let { state.bearingTo(it) }
@@ -289,7 +323,7 @@ class MapActivity : AppCompatActivity() {
         renderMapOverlays(state)
 
         if (!hasFittedOnce && state.userLocation != null && focus != null) {
-            fitToYouAndFocus()
+            fitToYouAndFocus(animated = false)
         } else if (!hasFittedOnce && state.userLocation != null) {
             centerOnUser()
             hasFittedOnce = true
@@ -299,8 +333,10 @@ class MapActivity : AppCompatActivity() {
     private fun renderChips(state: TowerUiState) {
         val matches = state.mapNearestMatches(8)
         val focusId = state.mapFocusTower()?.id
-        val signature = matches.joinToString("|") { "${it.id}:${state.distanceTo(it)?.toInt()}" } +
-            "|f=$focusId"
+        val signature = matches.joinToString("|") { tower ->
+            val distanceBucket = state.distanceTo(tower)?.let { (it / 50.0).toInt() } ?: -1
+            "${tower.id}:$distanceBucket"
+        } + "|f=$focusId"
         if (signature == lastChipSignature && towerChips.childCount == matches.size) return
         lastChipSignature = signature
 
@@ -360,6 +396,7 @@ class MapActivity : AppCompatActivity() {
         val stale = towerMarkers.keys.filter { it !in visibleIds }
         stale.forEach { id ->
             towerMarkers.remove(id)?.let { mapView.overlays.remove(it) }
+            markerSelection.remove(id)
         }
 
         visible.forEach { tower ->
@@ -386,12 +423,23 @@ class MapActivity : AppCompatActivity() {
                 }
                 mapView.overlays.add(marker)
                 towerMarkers[tower.id] = marker
+                markerSelection[tower.id] = selected
             } else {
                 existing.position = point
                 existing.title = tower.name
                 existing.snippet = state.distanceTo(tower)?.let(GeoUtils::formatDistance)
-                existing.icon = markerIcon(selected)
-                if (selected) existing.showInfoWindow()
+                val wasSelected = markerSelection[tower.id] == true
+                if (wasSelected != selected) {
+                    existing.icon = markerIcon(selected)
+                    markerSelection[tower.id] = selected
+                }
+                if (selected && lastInfoWindowTowerId != tower.id) {
+                    existing.showInfoWindow()
+                    lastInfoWindowTowerId = tower.id
+                } else if (!selected && lastInfoWindowTowerId == tower.id) {
+                    existing.closeInfoWindow()
+                    lastInfoWindowTowerId = null
+                }
             }
         }
 
@@ -474,7 +522,7 @@ class MapActivity : AppCompatActivity() {
         if (
             focus.id == lastSectorTowerId &&
             active == lastActiveSector &&
-            kotlin.math.abs(radius - lastSectorRadiusMeters) < 5.0 &&
+            kotlin.math.abs(radius - lastSectorRadiusMeters) < 50.0 &&
             sectorPolygons.size == CardinalSector.ALL.size
         ) {
             return
@@ -595,7 +643,7 @@ class MapActivity : AppCompatActivity() {
         }
     }
 
-    private fun fitToYouAndFocus() {
+    private fun fitToYouAndFocus(animated: Boolean = true) {
         val state = viewModel.uiState.value
         val points = mutableListOf<GeoPoint>()
         state.positioningLocation()?.let { points.add(GeoPoint(it.latitude, it.longitude)) }
@@ -606,14 +654,21 @@ class MapActivity : AppCompatActivity() {
                 points.add(GeoPoint(it.latitude, it.longitude))
             }
         }
-        if (points.isEmpty()) return
+        if (points.isEmpty()) {
+            hasFittedOnce = true
+            return
+        }
         if (points.size == 1) {
             mapView.controller.animateTo(points.first())
             mapView.controller.setZoom(15.0)
         } else {
             val box = BoundingBox.fromGeoPoints(points)
             mapView.post {
-                mapView.zoomToBoundingBox(box.increaseByScale(1.35f), true, (64 * resources.displayMetrics.density).toInt())
+                mapView.zoomToBoundingBox(
+                    box.increaseByScale(1.35f),
+                    animated,
+                    (64 * resources.displayMetrics.density).toInt()
+                )
             }
         }
         hasFittedOnce = true
@@ -631,17 +686,19 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun markerIcon(selected: Boolean): BitmapDrawable {
-        val color = ContextCompat.getColor(
-            this,
-            if (selected) R.color.accent_yellow else R.color.accent_teal
-        )
-        val drawable = ContextCompat.getDrawable(this, R.drawable.ic_tower_lattice)!!.mutate()
-        drawable.setTint(color)
-        val bmp = drawable.toBitmap(
-            (22 * resources.displayMetrics.density).toInt(),
-            (28 * resources.displayMetrics.density).toInt()
-        )
-        return BitmapDrawable(resources, bmp)
+        return markerIcons.getOrPut(selected) {
+            val color = ContextCompat.getColor(
+                this,
+                if (selected) R.color.accent_yellow else R.color.accent_teal
+            )
+            val drawable = ContextCompat.getDrawable(this, R.drawable.ic_tower_lattice)!!.mutate()
+            drawable.setTint(color)
+            val bmp = drawable.toBitmap(
+                (22 * resources.displayMetrics.density).toInt(),
+                (28 * resources.displayMetrics.density).toInt()
+            )
+            BitmapDrawable(resources, bmp)
+        }
     }
 
     private fun userIcon(): BitmapDrawable {

@@ -416,8 +416,11 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun startLocationUpdates() {
-        if (locationJob?.isActive == true) return
+    fun startLocationUpdates(includeHeading: Boolean = true) {
+        if (locationJob?.isActive == true) {
+            if (includeHeading) startDeviceHeadingUpdates()
+            return
+        }
         if (!locationClient.hasLocationPermission()) {
             _uiState.update {
                 it.copy(errorMessage = "Location permission is required for high-accuracy positioning.")
@@ -434,7 +437,9 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 _uiState.update { it.copy(userLocation = location) }
             }
         }
-        startDeviceHeadingUpdates()
+        if (includeHeading) {
+            startDeviceHeadingUpdates()
+        }
     }
 
     fun startDeviceHeadingUpdates() {
