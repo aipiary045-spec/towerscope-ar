@@ -1,5 +1,6 @@
 package com.towerscope.ar
 
+import android.content.Intent
 import android.Manifest
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
@@ -22,12 +23,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.data.LosProfileBuilder
+import com.towerscope.ar.ui.LocationModeControls
 import com.towerscope.ar.ui.LosProfileChartView
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.CardinalSector
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.LinkEstimate
+import com.towerscope.ar.viewmodel.LocationMode
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -55,6 +58,8 @@ class LosProfilesActivity : AppCompatActivity() {
     private lateinit var linkSettingsSummary: TextView
     private lateinit var linkSettingsToggle: TextView
     private lateinit var linkSettingsExpanded: View
+    private lateinit var openLocateButton: MaterialButton
+    private lateinit var locationModeControls: LocationModeControls
     private var linkSettingsOpen = false
     private var startedScan = false
     private var lastCpeHeight: Float? = null
@@ -101,6 +106,15 @@ class LosProfilesActivity : AppCompatActivity() {
         linkSettingsSummary = findViewById(R.id.losLinkSettingsSummary)
         linkSettingsToggle = findViewById(R.id.losLinkSettingsToggle)
         linkSettingsExpanded = findViewById(R.id.losLinkSettingsExpanded)
+        openLocateButton = findViewById(R.id.losOpenLocateButton)
+        locationModeControls = LocationModeControls(findViewById(R.id.losLocationMode), viewModel) {
+            startedScan = false
+            maybeStartScan(force = true)
+        }
+
+        openLocateButton.setOnClickListener {
+            startActivity(Intent(this, MapActivity::class.java))
+        }
 
         frequencySlider.max = frequencyPresets.lastIndex
         cpeHeightSlider.max =
@@ -178,10 +192,16 @@ class LosProfilesActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    subtitle.text = if (state.hasInstallSite) {
-                        "Heat map button / tap row · long-press details · install site"
-                    } else {
-                        "Heat map button / tap row · long-press details · GPS"
+                    locationModeControls.render(state, this@LosProfilesActivity)
+                    val needsCustomLocation = state.locationMode == LocationMode.CUSTOM && !state.hasInstallSite
+                    openLocateButton.isVisible = needsCustomLocation
+                    subtitle.text = when (state.locationMode) {
+                        LocationMode.CURRENT_GPS -> "Heat map button / tap row · long-press details · your GPS"
+                        LocationMode.CUSTOM -> if (state.hasInstallSite) {
+                            "Heat map button / tap row · long-press details · custom location"
+                        } else {
+                            "Set a custom location on the map to check from there"
+                        }
                     }
                     status.text = state.losRangeStatus.orEmpty()
                     linkSettingsSummary.text = String.format(
@@ -275,6 +295,8 @@ class LosProfilesActivity : AppCompatActivity() {
             append('|')
             append(state.clutterHeightMeters)
             append('|')
+            append(state.locationMode)
+            append('|')
             append(state.hasInstallSite)
             append('|')
             append(state.losRangeStatus)
@@ -328,7 +350,10 @@ class LosProfilesActivity : AppCompatActivity() {
         val state = viewModel.uiState.value
         if (!force && (startedScan || state.losRangeLoading || state.losRangeRows.isNotEmpty())) return
         if (state.positioningLocation() == null) {
-            status.text = "Waiting for GPS…"
+            status.text = when (state.locationMode) {
+                LocationMode.CUSTOM -> "Set a custom location on the Locate map"
+                LocationMode.CURRENT_GPS -> "Waiting for GPS fix"
+            }
             return
         }
         startedScan = true

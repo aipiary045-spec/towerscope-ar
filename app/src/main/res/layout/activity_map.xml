@@ -64,12 +64,19 @@
             android:textColor="@color/accent_teal"
             android:textSize="13sp" />
 
+        <include
+            android:id="@+id/mapLocationMode"
+            layout="@layout/include_location_mode_toggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:fontFamily="@font/source_sans3_regular"
-            android:text="Long-press map to pin install · pin FAB = GPS"
+            android:text="Long-press map to pin · pin FAB snaps to GPS"
             android:textColor="@color/text_dim"
             android:textSize="12sp" />
 

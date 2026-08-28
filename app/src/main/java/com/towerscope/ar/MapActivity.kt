@@ -19,10 +19,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.ui.LocationModeControls
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.CardinalSector
 import com.towerscope.ar.util.GeoUtils
+import com.towerscope.ar.viewmodel.LocationMode
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -54,6 +56,7 @@ class MapActivity : AppCompatActivity() {
     private lateinit var metaLabel: TextView
     private lateinit var towerChips: LinearLayout
     private lateinit var rangeToggle: MaterialButton
+    private lateinit var locationModeControls: LocationModeControls
 
     private var losLine: Polyline? = null
     private val towerMarkers = mutableMapOf<String, Marker>()
@@ -96,6 +99,7 @@ class MapActivity : AppCompatActivity() {
         metaLabel = findViewById(R.id.mapMetaLabel)
         towerChips = findViewById(R.id.mapTowerChips)
         rangeToggle = findViewById(R.id.mapRangeToggle)
+        locationModeControls = LocationModeControls(findViewById(R.id.mapLocationMode), viewModel)
 
         setupMap()
 
@@ -115,11 +119,11 @@ class MapActivity : AppCompatActivity() {
         }
         findViewById<android.widget.ImageButton>(R.id.mapInstallButton).setOnClickListener {
             viewModel.setInstallSiteFromGps()
-            metaLabel.text = "Install site set to GPS · long-press map to move"
+            metaLabel.text = "Custom location set to your GPS · long-press map to move"
         }
         findViewById<android.widget.ImageButton>(R.id.mapInstallButton).setOnLongClickListener {
             viewModel.clearInstallSite()
-            metaLabel.text = "Install site cleared · using live GPS"
+            metaLabel.text = "Custom location cleared"
             true
         }
         findViewById<android.widget.ImageButton>(R.id.mapBasemapButton).setOnClickListener {
@@ -173,7 +177,7 @@ class MapActivity : AppCompatActivity() {
             override fun longPressHelper(p: GeoPoint?): Boolean {
                 if (p == null) return false
                 viewModel.setInstallSite(p.latitude, p.longitude)
-                metaLabel.text = "Install site pinned · Check LOS ranks from here"
+                metaLabel.text = "Custom location pinned"
                 return true
             }
         }
@@ -249,7 +253,10 @@ class MapActivity : AppCompatActivity() {
             else -> focus.name
         }
         metaLabel.text = buildString {
-            if (state.hasInstallSite) append("From install  ·  ")
+            when (state.locationMode) {
+                LocationMode.CURRENT_GPS -> append("From your GPS  ·  ")
+                LocationMode.CUSTOM -> append("From custom pin  ·  ")
+            }
             if (distance != null) append(GeoUtils.formatDistance(distance))
             if (bearing != null) {
                 if (isNotEmpty() && !endsWith("  ·  ")) append("  ·  ")
@@ -270,6 +277,7 @@ class MapActivity : AppCompatActivity() {
         }
 
         renderChips(state)
+        locationModeControls.render(state, this)
         renderMapOverlays(state)
 
         if (!hasFittedOnce && state.userLocation != null && focus != null) {
@@ -402,7 +410,7 @@ class MapActivity : AppCompatActivity() {
             if (installMarker == null) {
                 installMarker = Marker(mapView).apply {
                     position = installPoint
-                    title = "Install site"
+                    title = "Custom location"
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     icon = installIcon()
                 }

@@ -18,7 +18,7 @@
     <string name="home_job_aim">Compass</string>
     <string name="home_job_aim_sub">High-precision bearings to nearby sites</string>
     <string name="home_job_locate">Locate</string>
-    <string name="home_job_locate_sub">Pin install · nearby or all sites</string>
+    <string name="home_job_locate_sub">Choose location · pin or GPS</string>
     <string name="home_job_los">Line of sight</string>
     <string name="home_job_los_sub">Clearance · terrain profile</string>
     <string name="home_job_wifi">Wi‑Fi signal</string>
@@ -45,4 +45,12 @@
     <string name="nav_settings">Settings</string>
     <string name="map_range_nearby">Nearby only</string>
     <string name="map_range_all">Show all sites</string>
+    <string name="location_mode_label">CHECK FROM</string>
+    <string name="location_mode_gps">My location</string>
+    <string name="location_mode_custom">Other location</string>
+    <string name="location_mode_gps_hint">Using your GPS · %1$s</string>
+    <string name="location_mode_gps_waiting">Waiting for GPS fix…</string>
+    <string name="location_mode_custom_set">Checking from %1$s</string>
+    <string name="location_mode_custom_unset">Long-press the map to set a location, or tap the pin button</string>
+    <string name="location_mode_open_locate">Set location on map</string>
 </resources>
