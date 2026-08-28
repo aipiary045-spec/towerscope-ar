@@ -13,45 +13,21 @@
         android:textColor="@color/text_muted"
         android:textSize="10sp" />
 
-    <LinearLayout
+    <EditText
+        android:id="@+id/coordinateInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:orientation="horizontal">
-
-        <EditText
-            android:id="@+id/coordinateLatitudeInput"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_hud_input"
-            android:fontFamily="monospace"
-            android:hint="@string/coordinate_entry_lat_hint"
-            android:importantForAutofill="no"
-            android:inputType="numberDecimal|numberSigned"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="10dp"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_dim"
-            android:textSize="14sp" />
-
-        <EditText
-            android:id="@+id/coordinateLongitudeInput"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/bg_hud_input"
-            android:fontFamily="monospace"
-            android:hint="@string/coordinate_entry_lon_hint"
-            android:importantForAutofill="no"
-            android:inputType="numberDecimal|numberSigned"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="10dp"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_dim"
-            android:textSize="14sp" />
-    </LinearLayout>
+        android:background="@drawable/bg_hud_input"
+        android:fontFamily="monospace"
+        android:hint="@string/coordinate_entry_hint"
+        android:importantForAutofill="no"
+        android:inputType="text"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="10dp"
+        android:textColor="@color/text_primary"
+        android:textColorHint="@color/text_dim"
+        android:textSize="14sp" />
 
     <TextView
         android:id="@+id/coordinateEntryError"
