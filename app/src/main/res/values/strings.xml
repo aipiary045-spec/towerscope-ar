@@ -59,9 +59,7 @@
     <string name="location_sheet_title">Check from</string>
     <string name="location_sheet_map_hint">Long-press the map to pin · pin FAB snaps to GPS</string>
     <string name="coordinate_entry_label">GPS COORDINATES</string>
-    <string name="coordinate_entry_hint">30.2672, -97.7431</string>
-    <string name="coordinate_entry_paste">Paste</string>
+    <string name="coordinate_entry_hint">30.2672, -97.7431 · long-press to paste</string>
     <string name="coordinate_entry_apply">Set location</string>
     <string name="coordinate_entry_invalid">Use decimal degrees, e.g. 30.2672, -97.7431</string>
-    <string name="coordinate_entry_clipboard_empty">Clipboard is empty</string>
 </resources>

@@ -1,7 +1,5 @@
 package com.towerscope.ar.ui
 
-import android.content.ClipboardManager
-import android.content.Context
 import android.view.View
 import android.widget.EditText
 import android.widget.TextView
@@ -23,11 +21,9 @@ class CustomCoordinateEntryControls(
 ) {
     private val coordinateInput: EditText = root.findViewById(R.id.coordinateInput)
     private val errorLabel: TextView = root.findViewById(R.id.coordinateEntryError)
-    private val pasteButton: MaterialButton = root.findViewById(R.id.coordinatePasteButton)
     private val applyButton: MaterialButton = root.findViewById(R.id.coordinateApplyButton)
 
     init {
-        pasteButton.setOnClickListener { pasteFromClipboard(it.context) }
         applyButton.setOnClickListener { applyCoordinates() }
     }
 
@@ -46,28 +42,6 @@ class CustomCoordinateEntryControls(
                 }
             }
         }
-    }
-
-    private fun pasteFromClipboard(context: Context) {
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = clipboard.primaryClip ?: return
-        if (clip.itemCount == 0) {
-            showError(context.getString(R.string.coordinate_entry_clipboard_empty))
-            return
-        }
-        val text = clip.getItemAt(0).coerceToText(context)?.toString().orEmpty()
-        val result = CoordinateParser.parsePair(text)
-        result.fold(
-            onSuccess = { parsed ->
-                clearError()
-                coordinateInput.setText(formatPair(parsed.latitude, parsed.longitude))
-            },
-            onFailure = {
-                // Keep raw clipboard text so the user can edit before applying.
-                clearError()
-                coordinateInput.setText(text.trim())
-            }
-        )
     }
 
     private fun applyCoordinates() {
