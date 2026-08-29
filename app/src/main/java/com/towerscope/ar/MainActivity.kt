@@ -5,6 +5,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.hardware.SensorManager
 import android.os.Bundle
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageButton
@@ -31,6 +32,8 @@ import com.towerscope.ar.ui.SettingsBottomSheet
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.LinkEstimate
+import com.towerscope.ar.viewmodel.CompassQualityIssue
+import com.towerscope.ar.viewmodel.CompassSightingTarget
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -54,6 +57,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var focusTowerLabel: TextView
     private lateinit var aimFocusHud: View
     private lateinit var aimTurnLabel: TextView
+    private lateinit var aimErrorLabel: TextView
     private lateinit var aimDistanceLabel: TextView
     private lateinit var aimSignalLabel: TextView
     private lateinit var visibleCount: TextView
@@ -121,6 +125,7 @@ class MainActivity : AppCompatActivity() {
         focusTowerLabel = findViewById(R.id.focusTowerLabel)
         aimFocusHud = findViewById(R.id.aimFocusHud)
         aimTurnLabel = findViewById(R.id.aimTurnLabel)
+        aimErrorLabel = findViewById(R.id.aimErrorLabel)
         aimDistanceLabel = findViewById(R.id.aimDistanceLabel)
         aimSignalLabel = findViewById(R.id.aimSignalLabel)
         visibleCount = findViewById(R.id.visibleCount)
@@ -168,8 +173,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
         compassImproveDoneButton.setOnClickListener { viewModel.dismissCompassImprove() }
-        compassImproveSunButton.setOnClickListener { viewModel.calibrateHeadingToSun() }
-        compassImproveTowerButton.setOnClickListener { viewModel.calibrateHeadingToFocusTower() }
+        bindSightingButton(compassImproveSunButton, CompassSightingTarget.SUN)
+        bindSightingButton(compassImproveTowerButton, CompassSightingTarget.TOWER)
         focusTowerLabel.setOnClickListener {
             viewModel.uiState.value.focusTower()?.let { openTowerDetails(it.id) }
         }
@@ -336,13 +341,17 @@ class MainActivity : AppCompatActivity() {
         compassChip.background = HudThemeApplier.statusChipBackground(compassChip, compassColor)
 
         val showWarning = state.towers.isNotEmpty() && (
-            state.needsCompassCalibration ||
+            state.compassQualityIssue != CompassQualityIssue.NONE ||
                 state.userLocation == null ||
                 (accuracy != null && accuracy > 25f)
             )
         trackingWarning.isVisible = showWarning
         if (trackingWarning.isVisible) {
             trackingWarning.text = when {
+                state.compassQualityIssue == CompassQualityIssue.METAL ->
+                    getString(R.string.compass_warning_metal)
+                state.compassQualityIssue == CompassQualityIssue.TILT ->
+                    getString(R.string.compass_warning_tilt)
                 state.needsCompassCalibration ->
                     "Compass needs calibration — tap Improve compass"
                 state.userLocation == null ->
@@ -401,6 +410,25 @@ class MainActivity : AppCompatActivity() {
                 }
             )
         )
+
+        val error = state.focusTowerHeadingErrorDegrees()
+        if (error != null && heading != null) {
+            aimErrorLabel.isVisible = true
+            val signed = String.format(java.util.Locale.US, "%+.0f°", error)
+            aimErrorLabel.text = getString(R.string.compass_align_error, signed)
+            aimErrorLabel.setTextColor(
+                ContextCompat.getColor(
+                    this,
+                    when {
+                        kotlin.math.abs(error) <= 3.0 -> R.color.status_clear
+                        kotlin.math.abs(error) <= 12.0 -> R.color.accent_yellow
+                        else -> R.color.chip_poor
+                    }
+                )
+            )
+        } else {
+            aimErrorLabel.isVisible = false
+        }
 
         aimDistanceLabel.text = distance?.let { GeoUtils.formatDistance(it) } ?: "—"
 
@@ -467,12 +495,21 @@ class MainActivity : AppCompatActivity() {
                 it.longitude
             ) != null
         } == true
-        compassImproveSunButton.isEnabled = sunAvailable
-        compassImproveSunButton.alpha = if (sunAvailable) 1f else 0.45f
-        compassImproveTowerButton.isEnabled = state.focusTower() != null
-        compassImproveTowerButton.alpha = if (state.focusTower() != null) 1f else 0.45f
 
         val (label, colorRes, bgRes) = when {
+            state.compassSightingActive ->
+                Triple(
+                    getString(
+                        R.string.compass_sighting_progress,
+                        (state.compassSightingProgress * 100).toInt()
+                    ),
+                    R.color.accent_teal,
+                    R.drawable.bg_cal_state_ok
+                )
+            state.compassMagneticInterference ->
+                Triple("STATUS  Metal nearby — step away", R.color.chip_poor, R.drawable.bg_cal_state_needed)
+            state.compassTilted ->
+                Triple("STATUS  Hold phone upright", R.color.accent_yellow, R.drawable.bg_cal_state_needed)
             state.deviceHeadingDegrees == null ->
                 Triple("STATUS  Waiting for sensor…", R.color.accent_yellow, R.drawable.bg_cal_state_needed)
             state.compassSensorAccuracy >= SensorManager.SENSOR_STATUS_ACCURACY_HIGH ->
@@ -487,6 +524,30 @@ class MainActivity : AppCompatActivity() {
         compassImproveStatus.text = label
         compassImproveStatus.setTextColor(ContextCompat.getColor(this, colorRes))
         compassImproveStatus.setBackgroundResource(bgRes)
+
+        val sighting = state.compassSightingActive
+        compassImproveSunButton.isEnabled = !sighting && sunAvailable
+        compassImproveTowerButton.isEnabled = !sighting && state.focusTower() != null
+        compassImproveSunButton.alpha = if (compassImproveSunButton.isEnabled) 1f else 0.45f
+        compassImproveTowerButton.alpha = if (compassImproveTowerButton.isEnabled) 1f else 0.45f
+    }
+
+    private fun bindSightingButton(button: MaterialButton, target: CompassSightingTarget) {
+        button.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    viewModel.startCompassSighting(target)
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (viewModel.uiState.value.compassSightingActive) {
+                        viewModel.cancelCompassSighting()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
     }
 
     private fun openSettings() {

@@ -13,6 +13,7 @@ import com.towerscope.ar.data.LosProfileService
 import com.towerscope.ar.data.Tower
 import com.towerscope.ar.data.TowerFileStore
 import com.towerscope.ar.location.DeviceHeadingClient
+import com.towerscope.ar.location.HeadingFilter
 import com.towerscope.ar.location.HighAccuracyLocationClient
 import com.towerscope.ar.location.UserLocation
 import com.towerscope.ar.ui.AppTheme
@@ -23,6 +24,7 @@ import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.DistanceUnitSystem
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.LinkEstimate
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -86,6 +88,13 @@ data class TowerUiState(
     val coordinateFormat: CoordinateFormat = CoordinateFormat.DECIMAL,
     val deviceHeadingDegrees: Double? = null,
     val compassSensorAccuracy: Int = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM,
+    val compassPitchDegrees: Double? = null,
+    val compassRollDegrees: Double? = null,
+    val compassTilted: Boolean = false,
+    val compassMagneticInterference: Boolean = false,
+    val compassRotationRateDps: Double = 0.0,
+    val compassSightingActive: Boolean = false,
+    val compassSightingProgress: Float = 0f,
     val hudTheme: HudTheme = HudTheme.DARK,
     /** Bottom HUD search/range/controls expanded. */
     val hudExpanded: Boolean = true,
@@ -158,6 +167,21 @@ data class TowerUiState(
         val offset = headingCalibrationOffsetDegrees ?: 0.0
         return GeoUtils.normalizeBearing(device + offset)
     }
+
+    /** Signed error to focus tower: positive = turn right. */
+    fun focusTowerHeadingErrorDegrees(): Double? {
+        val heading = effectiveHeadingDegrees() ?: return null
+        val bearing = focusTower()?.let { bearingTo(it) } ?: return null
+        return GeoUtils.relativeBearingDegrees(heading, bearing)
+    }
+
+    val compassQualityIssue: CompassQualityIssue
+        get() = when {
+            compassMagneticInterference -> CompassQualityIssue.METAL
+            compassTilted -> CompassQualityIssue.TILT
+            needsCompassCalibration -> CompassQualityIssue.LOW_ACCURACY
+            else -> CompassQualityIssue.NONE
+        }
 
     /** Towers with known distance/bearing for the radar disc (relative to heading). */
     fun directionIndicators(): List<Triple<Tower, Double, Double>> {
@@ -356,6 +380,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
 
     private var locationJob: Job? = null
     private var headingJob: Job? = null
+    private var sightingJob: Job? = null
     private var losJob: Job? = null
     private var losRangeJob: Job? = null
     private var losLoadingTowerId: String? = null
@@ -451,7 +476,12 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 _uiState.update {
                     it.copy(
                         deviceHeadingDegrees = heading.degrees,
-                        compassSensorAccuracy = heading.sensorAccuracy
+                        compassSensorAccuracy = heading.sensorAccuracy,
+                        compassPitchDegrees = heading.pitchDegrees,
+                        compassRollDegrees = heading.rollDegrees,
+                        compassTilted = heading.tilted,
+                        compassMagneticInterference = heading.magneticInterference,
+                        compassRotationRateDps = heading.rotationRateDps
                     )
                 }
             }
@@ -907,16 +937,86 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(compassImproveActive = false) }
     }
 
-    fun calibrateHeadingToKnownAzimuth(trueAzimuthDegrees: Double) {
+    fun calibrateHeadingToKnownAzimuth(
+        trueAzimuthDegrees: Double,
+        deviceSamples: List<Double>? = null
+    ) {
         val state = _uiState.value
-        val device = state.deviceHeadingDegrees ?: run {
-            _uiState.update { it.copy(statusMessage = "Waiting for compass…") }
-            return
-        }
+        val device = deviceSamples?.let { HeadingFilter.circularMean(it) }
+            ?: state.deviceHeadingDegrees
+            ?: run {
+                _uiState.update { it.copy(statusMessage = "Waiting for compass…") }
+                return
+            }
         val currentOffset = state.headingCalibrationOffsetDegrees ?: 0.0
         val effective = GeoUtils.normalizeBearing(device + currentOffset)
         val correction = CelestialBodies.signedDeltaDegrees(effective, trueAzimuthDegrees)
         setHeadingOffsetDegrees(currentOffset + correction)
+    }
+
+    fun startCompassSighting(target: CompassSightingTarget) {
+        if (sightingJob?.isActive == true) return
+        val trueAzimuth = resolveSightingAzimuth(target) ?: return
+        sightingJob = viewModelScope.launch {
+            val samples = mutableListOf<Double>()
+            val startedAt = System.currentTimeMillis()
+            _uiState.update { it.copy(compassSightingActive = true, compassSightingProgress = 0f) }
+            while (true) {
+                val elapsed = System.currentTimeMillis() - startedAt
+                val progress = (elapsed.toFloat() / SIGHTING_DURATION_MS).coerceIn(0f, 1f)
+                _uiState.value.deviceHeadingDegrees?.let { samples += it }
+                _uiState.update { it.copy(compassSightingProgress = progress) }
+                if (elapsed >= SIGHTING_DURATION_MS) break
+                delay(SIGHTING_SAMPLE_MS)
+            }
+            _uiState.update { it.copy(compassSightingActive = false, compassSightingProgress = 0f) }
+            if (samples.size < SIGHTING_MIN_SAMPLES) {
+                _uiState.update { it.copy(statusMessage = "Hold steady a bit longer…") }
+                return@launch
+            }
+            calibrateHeadingToKnownAzimuth(trueAzimuth, samples)
+            val label = when (target) {
+                CompassSightingTarget.SUN -> "sun"
+                CompassSightingTarget.TOWER -> _uiState.value.focusTower()?.name ?: "tower"
+            }
+            _uiState.update {
+                it.copy(statusMessage = "Calibrated to $label (${samples.size} samples)")
+            }
+        }
+    }
+
+    fun cancelCompassSighting() {
+        sightingJob?.cancel()
+        sightingJob = null
+        _uiState.update { it.copy(compassSightingActive = false, compassSightingProgress = 0f) }
+    }
+
+    private fun resolveSightingAzimuth(target: CompassSightingTarget): Double? {
+        return when (target) {
+            CompassSightingTarget.SUN -> {
+                val location = _uiState.value.positioningLocation() ?: run {
+                    _uiState.update { it.copy(statusMessage = "Need GPS fix for sun calibration") }
+                    return null
+                }
+                CelestialBodies.preferredCalibrationTarget(
+                    location.latitude,
+                    location.longitude
+                )?.azimuthDegrees ?: run {
+                    _uiState.update { it.copy(statusMessage = "Sun/moon too low for calibration right now") }
+                    null
+                }
+            }
+            CompassSightingTarget.TOWER -> {
+                val tower = _uiState.value.focusTower() ?: run {
+                    _uiState.update { it.copy(statusMessage = "No tower in range to calibrate against") }
+                    return null
+                }
+                _uiState.value.bearingTo(tower) ?: run {
+                    _uiState.update { it.copy(statusMessage = "Need location to calibrate to tower") }
+                    null
+                }
+            }
+        }
     }
 
     fun calibrateHeadingToSun(): Boolean {
@@ -1149,6 +1249,9 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_HUD_EXPANDED = "hud_expanded"
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
         private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
+        private const val SIGHTING_DURATION_MS = 2_500L
+        private const val SIGHTING_SAMPLE_MS = 50L
+        private const val SIGHTING_MIN_SAMPLES = 20
         private const val KEY_CLUTTER_HEIGHT = "clutter_height_meters"
         private const val KEY_SHOW_ELEVATION_PROFILE = "show_elevation_profile"
         private const val KEY_MAX_DISTANCE = "max_distance_meters"
