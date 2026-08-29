@@ -200,7 +200,7 @@
                     android:layout_weight="1" />
 
                 <include
-                    android:id="@+id/hubStabilityRow"
+                    android:id="@+id/hubBufferbloatRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -213,43 +213,20 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
                 android:orientation="horizontal">
-
-                <include
-                    android:id="@+id/hubBufferbloatRow"
-                    layout="@layout/item_hub_tool_row"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="7dp"
-                    android:layout_weight="1" />
 
                 <include
                     android:id="@+id/hubThroughputRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="7dp"
+                    android:layout_marginEnd="7dp"
                     android:layout_weight="1" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:orientation="horizontal">
 
                 <include
                     android:id="@+id/hubPingRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="7dp"
-                    android:layout_weight="1" />
-
-                <include
-                    android:id="@+id/hubDnsRow"
-                    layout="@layout/item_hub_tool_row"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
                     android:layout_marginStart="7dp"
                     android:layout_weight="1" />
             </LinearLayout>
@@ -261,7 +238,7 @@
                 android:orientation="horizontal">
 
                 <include
-                    android:id="@+id/hubTraceRow"
+                    android:id="@+id/hubDnsRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -269,7 +246,7 @@
                     android:layout_weight="1" />
 
                 <include
-                    android:id="@+id/hubBandwidthRow"
+                    android:id="@+id/hubTraceRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"

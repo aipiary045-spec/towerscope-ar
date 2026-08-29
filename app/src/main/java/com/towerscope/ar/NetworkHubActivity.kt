@@ -62,10 +62,6 @@ class NetworkHubActivity : AppCompatActivity() {
             R.string.home_job_speed, R.string.home_job_speed_sub) {
             startActivity(Intent(this, SpeedTestActivity::class.java))
         }
-        bindTile(R.id.hubStabilityRow, R.drawable.ic_ping_graph, R.color.accent_teal,
-            R.string.home_job_stability, R.string.home_job_stability_sub) {
-            startActivity(Intent(this, StabilityTestActivity::class.java))
-        }
         bindTile(R.id.hubBufferbloatRow, R.drawable.ic_bandwidth, R.color.accent_yellow,
             R.string.home_job_bufferbloat, R.string.home_job_bufferbloat_sub) {
             startActivity(Intent(this, BufferbloatActivity::class.java))
@@ -85,10 +81,6 @@ class NetworkHubActivity : AppCompatActivity() {
         bindTile(R.id.hubTraceRow, R.drawable.ic_traceroute, R.color.accent_yellow,
             R.string.home_job_traceroute, R.string.home_job_traceroute_sub) {
             startActivity(Intent(this, TraceRouteActivity::class.java))
-        }
-        bindTile(R.id.hubBandwidthRow, R.drawable.ic_bandwidth, R.color.accent_teal,
-            R.string.home_job_bandwidth, R.string.home_job_bandwidth_sub) {
-            startActivity(Intent(this, BandwidthMonitorActivity::class.java))
         }
         bindTile(R.id.hubDiagnoseRow, R.drawable.ic_network_diagnose, R.color.accent_yellow,
             R.string.home_job_diagnose, R.string.home_job_diagnose_sub) {

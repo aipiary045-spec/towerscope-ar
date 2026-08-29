@@ -22,9 +22,55 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:fontFamily="@font/source_sans3_regular"
-        android:text="ICMP echo · add :port for TCP (e.g. 192.168.1.1:80)"
+        android:text="@string/home_job_ping_sub"
         android:textColor="@color/text_muted"
         android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:letterSpacing="0.1"
+        android:text="DURATION"
+        android:textColor="@color/text_dim"
+        android:textSize="11sp" />
+
+    <RadioGroup
+        android:id="@+id/pingDurationGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/pingDurationLive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Live" />
+
+        <RadioButton
+            android:id="@+id/pingDuration1m"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="1 min" />
+
+        <RadioButton
+            android:id="@+id/pingDuration2m"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="2 min" />
+
+        <RadioButton
+            android:id="@+id/pingDuration5m"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="5 min" />
+    </RadioGroup>
 
     <TextView
         android:layout_width="match_parent"
@@ -152,14 +198,31 @@
         style="@style/Widget.TowerScope.Button.Primary"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="Start ping" />
+        android:text="@string/ping_start" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/pingBackButton"
-        style="@style/Widget.TowerScope.Button.Ghost"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="52dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/item_gap"
         android:layout_marginBottom="14dp"
-        android:text="Back" />
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/pingShareButton"
+            style="@style/Widget.TowerScope.Button.Ghost"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:text="@string/tool_share_results" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/pingBackButton"
+            style="@style/Widget.TowerScope.Button.Ghost"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="@string/tool_back" />
+    </LinearLayout>
 </LinearLayout>

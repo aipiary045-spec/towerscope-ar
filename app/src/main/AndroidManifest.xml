@@ -104,12 +104,6 @@
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
-            android:name=".BandwidthMonitorActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.TowerScopeAR" />
-
-        <activity
             android:name=".ConnectionSnapshotActivity"
             android:exported="false"
             android:screenOrientation="portrait"
@@ -135,12 +129,6 @@
 
         <activity
             android:name=".SignalWalkActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.TowerScopeAR" />
-
-        <activity
-            android:name=".StabilityTestActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TowerScopeAR" />
