@@ -20,10 +20,10 @@ class CompassSightOverlayViewTest {
     }
 
     @Test
-    fun markerSmoothingAlpha_isLowerWhenStill() {
+    fun headingSmoothingAlpha_isLowerWhenStill() {
         assertTrue(
-            CompassSightOverlayView.markerSmoothingAlpha(2.0) <
-                CompassSightOverlayView.markerSmoothingAlpha(50.0)
+            CompassSightOverlayView.headingSmoothingAlpha(2.0) <
+                CompassSightOverlayView.headingSmoothingAlpha(50.0)
         )
     }
 }

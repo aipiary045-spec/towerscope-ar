@@ -28,6 +28,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
+import com.towerscope.ar.data.Tower
 import com.towerscope.ar.ui.CompassCameraController
 import com.towerscope.ar.ui.CompassRadarView
 import com.towerscope.ar.ui.CompassSightOverlayView
@@ -270,9 +271,20 @@ class MainActivity : AppCompatActivity() {
         if (compassDisplayMode != CompassDisplayMode.SIGHT) return
         val colors = HudThemeApplier.colorsFor(state.hudTheme, compassSightOverlay)
         val focusId = state.focusTower()?.id
-        val markers = state.visibleTowers().mapNotNull { tower ->
+        val ranked = state.visibleTowers().mapNotNull { tower ->
             val bearing = state.bearingTo(tower) ?: return@mapNotNull null
             val distance = state.distanceTo(tower) ?: return@mapNotNull null
+            Triple(tower, distance, bearing)
+        }.sortedBy { it.second }
+        val limited = linkedMapOf<String, Triple<Tower, Double, Double>>()
+        focusId?.let { id ->
+            ranked.firstOrNull { it.first.id == id }?.let { limited[id] = it }
+        }
+        ranked.forEach { (tower, distance, bearing) ->
+            if (limited.size >= 5) return@forEach
+            limited.putIfAbsent(tower.id, Triple(tower, distance, bearing))
+        }
+        val markers = limited.values.map { (tower, distance, bearing) ->
             CompassSightOverlayView.SightMarker(
                 towerId = tower.id,
                 name = tower.name,

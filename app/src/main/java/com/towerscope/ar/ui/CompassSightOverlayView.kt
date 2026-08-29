@@ -1,6 +1,5 @@
 package com.towerscope.ar.ui
 
-import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -9,7 +8,6 @@ import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.Choreographer
 import android.view.View
-import android.view.animation.DecelerateInterpolator
 import androidx.core.content.ContextCompat
 import com.towerscope.ar.R
 import com.towerscope.ar.util.GeoUtils
@@ -17,8 +15,8 @@ import kotlin.math.abs
 
 /**
  * 2D sight picture over a camera preview: compass bearings mapped to horizontal
- * screen position using camera field-of-view. Heading and marker positions are
- * heavily smoothed so chevrons do not swim with sensor noise.
+ * screen position using camera field-of-view. Heading is smoothed every frame so
+ * chevrons stay planted instead of restarting animations on each sensor tick.
  */
 class CompassSightOverlayView @JvmOverloads constructor(
     context: Context,
@@ -44,17 +42,15 @@ class CompassSightOverlayView @JvmOverloads constructor(
     private var secondaryColor: Int = ContextCompat.getColor(context, R.color.accent_teal)
     private var textColor: Int = ContextCompat.getColor(context, R.color.text_primary)
 
-    private val displayedMarkerX = mutableMapOf<String, Float>()
-    private var headingAnimator: ValueAnimator? = null
     private var frameLoopActive = false
 
     private val choreographer = Choreographer.getInstance()
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
-            if (frameLoopActive && isAttachedToWindow) {
-                invalidate()
-                choreographer.postFrameCallback(this)
-            }
+            if (!frameLoopActive || !isAttachedToWindow) return
+            stepHeadingTowardTarget()
+            invalidate()
+            choreographer.postFrameCallback(this)
         }
     }
 
@@ -88,16 +84,16 @@ class CompassSightOverlayView @JvmOverloads constructor(
         this.accentColor = accentColor
         this.secondaryColor = secondaryColor
         this.textColor = textColor
-        pruneStaleMarkerPositions(markers.map { it.towerId }.toSet())
-        animateHeadingTo(headingDegrees)
+        targetHeadingDegrees = headingDegrees
+        if (headingDegrees != null && displayedHeadingDegrees == null) {
+            displayedHeadingDegrees = headingDegrees
+        }
         startFrameLoop()
-        invalidate()
     }
 
     fun stopFrameLoop() {
         frameLoopActive = false
         choreographer.removeFrameCallback(frameCallback)
-        headingAnimator?.cancel()
     }
 
     override fun onDetachedFromWindow() {
@@ -111,46 +107,21 @@ class CompassSightOverlayView @JvmOverloads constructor(
         choreographer.postFrameCallback(frameCallback)
     }
 
-    private fun pruneStaleMarkerPositions(activeIds: Set<String>) {
-        displayedMarkerX.keys.retainAll(activeIds)
-    }
-
-    private fun animateHeadingTo(heading: Double?) {
-        targetHeadingDegrees = heading
-        if (heading == null) {
+    private fun stepHeadingTowardTarget() {
+        val target = targetHeadingDegrees ?: run {
             displayedHeadingDegrees = null
-            headingAnimator?.cancel()
             return
         }
-        val from = displayedHeadingDegrees
-        if (from == null) {
-            displayedHeadingDegrees = heading
+        val current = displayedHeadingDegrees ?: run {
+            displayedHeadingDegrees = target
             return
         }
-        var delta = heading - from
-        while (delta > 180.0) delta -= 360.0
-        while (delta < -180.0) delta += 360.0
-        if (abs(delta) < 0.2) {
-            displayedHeadingDegrees = heading
+        val delta = GeoUtils.relativeBearingDegrees(current, target)
+        if (abs(delta) < HEADING_DEADBAND_DPS && rotationRateDps < STILL_ROTATION_DPS) {
             return
         }
-        headingAnimator?.cancel()
-        val start = from
-        val duration = when {
-            rotationRateDps > 40.0 -> 120L
-            rotationRateDps > 12.0 -> 200L
-            else -> 320L
-        }
-        headingAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-            this.duration = duration
-            interpolator = DecelerateInterpolator()
-            addUpdateListener { anim ->
-                val t = anim.animatedValue as Float
-                displayedHeadingDegrees = GeoUtils.normalizeBearing(start + delta * t)
-                invalidate()
-            }
-            start()
-        }
+        val alpha = headingSmoothingAlpha(rotationRateDps)
+        displayedHeadingDegrees = GeoUtils.normalizeBearing(current + alpha * delta)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -172,28 +143,21 @@ class CompassSightOverlayView @JvmOverloads constructor(
         reticlePaint.strokeWidth = 2f
         canvas.drawLine(centerX - 28f, aimY, centerX + 28f, aimY, reticlePaint)
 
-        if (heading != null) {
-            val tickPaint = Paint(reticlePaint).apply {
-                color = secondaryColor
-                strokeWidth = 1.5f
-                alpha = 180
-            }
-            listOf(-30.0, -15.0, 15.0, 30.0).forEach { tick ->
-                val relative = GeoUtils.relativeBearingDegrees(heading, heading + tick)
-                val x = bearingToScreenX(relative, centerX, w) ?: return@forEach
-                canvas.drawLine(x, h * 0.14f, x, h * 0.20f, tickPaint)
-            }
-        }
-
         if (heading == null) return
+
+        val tickPaint = Paint(reticlePaint).apply {
+            color = secondaryColor
+            strokeWidth = 1.5f
+            alpha = 180
+        }
+        listOf(-30.0, -15.0, 15.0, 30.0).forEach { tick ->
+            val x = bearingToScreenX(tick, centerX, w) ?: return@forEach
+            canvas.drawLine(x, h * 0.14f, x, h * 0.20f, tickPaint)
+        }
 
         markers.forEach { marker ->
             val relative = GeoUtils.relativeBearingDegrees(heading, marker.bearingDegrees)
-            val targetX = bearingToScreenX(relative, centerX, w) ?: run {
-                displayedMarkerX.remove(marker.towerId)
-                return@forEach
-            }
-            val x = smoothMarkerX(marker.towerId, targetX)
+            val x = bearingToScreenX(relative, centerX, w) ?: return@forEach
             val color = if (marker.isFocus) accentColor else secondaryColor
             markerPaint.color = color
             val halfWidth = if (marker.isFocus) 10f else 7f
@@ -221,22 +185,6 @@ class CompassSightOverlayView @JvmOverloads constructor(
         canvas.drawText(hint, centerX - hintWidth / 2f, h * 0.94f, hintPaint)
     }
 
-    private fun smoothMarkerX(towerId: String, targetX: Float): Float {
-        val previous = displayedMarkerX[towerId]
-        if (previous == null) {
-            displayedMarkerX[towerId] = targetX
-            return targetX
-        }
-        val alpha = markerSmoothingAlpha(rotationRateDps)
-        val delta = targetX - previous
-        if (abs(delta) < 1.5f && rotationRateDps < 8.0) {
-            return previous
-        }
-        val next = previous + alpha * delta
-        displayedMarkerX[towerId] = next
-        return next
-    }
-
     private fun bearingToScreenX(relativeBearingDegrees: Double, centerX: Float, width: Float): Float? {
         val fraction = bearingToScreenFraction(relativeBearingDegrees, horizontalFovDegrees) ?: return null
         return centerX + fraction * (width * 0.46f)
@@ -244,12 +192,14 @@ class CompassSightOverlayView @JvmOverloads constructor(
 
     companion object {
         const val DEFAULT_HORIZONTAL_FOV_DEGREES = 64f
+        private const val HEADING_DEADBAND_DPS = 0.35
+        private const val STILL_ROTATION_DPS = 7.0
 
-        fun markerSmoothingAlpha(rotationRateDps: Double): Float = when {
-            rotationRateDps > 40.0 -> 0.42f
-            rotationRateDps > 15.0 -> 0.26f
-            rotationRateDps > 5.0 -> 0.16f
-            else -> 0.09f
+        fun headingSmoothingAlpha(rotationRateDps: Double): Double = when {
+            rotationRateDps > 45.0 -> 0.38
+            rotationRateDps > 20.0 -> 0.24
+            rotationRateDps > 8.0 -> 0.14
+            else -> 0.07
         }
 
         /**
