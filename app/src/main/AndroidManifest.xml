@@ -110,6 +110,60 @@
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
+            android:name=".ConnectionSnapshotActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".LanSpeedTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".ThroughputTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".ChannelPlannerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".SignalWalkActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".StabilityTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".BufferbloatActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".PortCheckActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".WakeOnLanActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
             android:name=".DataMenuActivity"
             android:exported="false"
             android:theme="@style/Theme.TowerScopeAR" />

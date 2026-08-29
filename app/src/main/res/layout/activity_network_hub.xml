@@ -49,14 +49,25 @@
                 android:textColor="@color/text_muted"
                 android:textSize="14sp" />
 
-            <LinearLayout
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:letterSpacing="0.1"
+                android:text="@string/hub_section_connection"
+                android:textAllCaps="true"
+                android:textColor="@color/text_muted"
+                android:textSize="11sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
                 android:orientation="horizontal">
 
                 <include
-                    android:id="@+id/hubWifiRow"
+                    android:id="@+id/hubConnectionRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -64,7 +75,155 @@
                     android:layout_weight="1" />
 
                 <include
+                    android:id="@+id/hubWifiRow"
+                    layout="@layout/item_hub_tool_row"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:letterSpacing="0.1"
+                android:text="@string/hub_section_wifi_survey"
+                android:textAllCaps="true"
+                android:textColor="@color/text_muted"
+                android:textSize="11sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/hubChannelRow"
+                    layout="@layout/item_hub_tool_row"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="7dp"
+                    android:layout_weight="1" />
+
+                <include
+                    android:id="@+id/hubWalkRow"
+                    layout="@layout/item_hub_tool_row"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:letterSpacing="0.1"
+                android:text="@string/hub_section_local"
+                android:textAllCaps="true"
+                android:textColor="@color/text_muted"
+                android:textSize="11sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/hubSubnetRow"
+                    layout="@layout/item_hub_tool_row"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="7dp"
+                    android:layout_weight="1" />
+
+                <include
+                    android:id="@+id/hubLanSpeedRow"
+                    layout="@layout/item_hub_tool_row"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/hubPortRow"
+                    layout="@layout/item_hub_tool_row"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="7dp"
+                    android:layout_weight="1" />
+
+                <include
+                    android:id="@+id/hubWolRow"
+                    layout="@layout/item_hub_tool_row"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:letterSpacing="0.1"
+                android:text="@string/hub_section_internet"
+                android:textAllCaps="true"
+                android:textColor="@color/text_muted"
+                android:textSize="11sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <include
                     android:id="@+id/hubSpeedRow"
+                    layout="@layout/item_hub_tool_row"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="7dp"
+                    android:layout_weight="1" />
+
+                <include
+                    android:id="@+id/hubStabilityRow"
+                    layout="@layout/item_hub_tool_row"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/hubBufferbloatRow"
+                    layout="@layout/item_hub_tool_row"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="7dp"
+                    android:layout_weight="1" />
+
+                <include
+                    android:id="@+id/hubThroughputRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -87,7 +246,7 @@
                     android:layout_weight="1" />
 
                 <include
-                    android:id="@+id/hubSubnetRow"
+                    android:id="@+id/hubDnsRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -100,46 +259,30 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
                 android:orientation="horizontal">
-
-                <include
-                    android:id="@+id/hubDnsRow"
-                    layout="@layout/item_hub_tool_row"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="7dp"
-                    android:layout_weight="1" />
 
                 <include
                     android:id="@+id/hubTraceRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="7dp"
+                    android:layout_marginEnd="7dp"
                     android:layout_weight="1" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:orientation="horizontal">
 
                 <include
                     android:id="@+id/hubBandwidthRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="7dp"
-                    android:layout_weight="1" />
-
-                <include
-                    android:id="@+id/hubDiagnoseRow"
-                    layout="@layout/item_hub_tool_row"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
                     android:layout_marginStart="7dp"
                     android:layout_weight="1" />
             </LinearLayout>
+
+            <include
+                android:id="@+id/hubDiagnoseRow"
+                layout="@layout/item_hub_tool_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp" />
         </LinearLayout>
     </ScrollView>
 
