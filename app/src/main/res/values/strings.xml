@@ -110,6 +110,13 @@
     <string name="home_job_port_scan_sub">Auto-scan gateway and LAN devices</string>
     <string name="port_scan_host_label">ONE DEVICE (optional)</string>
     <string name="port_scan_host_hint">Leave blank to scan your whole network</string>
+    <string name="port_scan_preset_label">PORT SET</string>
+    <string-array name="port_scan_presets">
+        <item>Common — SSH, HTTP, MikroTik…</item>
+        <item>Web — 80, 443, 8080…</item>
+        <item>Router — SSH, Winbox, TR-069…</item>
+        <item>Extended — 30+ services</item>
+    </string-array>
     <string name="port_scan_discovering">Finding devices on your LAN…</string>
     <string name="port_scan_discovering_progress">Finding devices… %1$d / %2$d</string>
     <string name="port_scan_scanning_progress">%1$s (%2$d/%3$d) · %4$d/%5$d ports · %6$d open</string>

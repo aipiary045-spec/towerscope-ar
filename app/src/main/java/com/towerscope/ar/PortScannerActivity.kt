@@ -2,9 +2,10 @@ package com.towerscope.ar
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.RadioGroup
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
@@ -25,7 +26,7 @@ class PortScannerActivity : AppCompatActivity() {
 
     private lateinit var hostInput: EditText
     private lateinit var extraPortsInput: EditText
-    private lateinit var presetGroup: RadioGroup
+    private lateinit var presetSpinner: Spinner
     private lateinit var statusView: TextView
     private lateinit var openList: LinearLayout
     private lateinit var runButton: MaterialButton
@@ -40,10 +41,18 @@ class PortScannerActivity : AppCompatActivity() {
 
         hostInput = findViewById(R.id.portScannerHostInput)
         extraPortsInput = findViewById(R.id.portScannerExtraInput)
-        presetGroup = findViewById(R.id.portScannerPresetGroup)
+        presetSpinner = findViewById(R.id.portScannerPresetSpinner)
         statusView = findViewById(R.id.portScannerStatus)
         openList = findViewById(R.id.portScannerOpenList)
         runButton = findViewById(R.id.portScannerRunButton)
+
+        presetSpinner.adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_dropdown_item,
+            resources.getStringArray(R.array.port_scan_presets)
+        ).also { adapter ->
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
 
         runButton.setOnClickListener { toggleScan() }
         findViewById<MaterialButton>(R.id.toolShareButton).setOnClickListener { share() }
@@ -58,10 +67,10 @@ class PortScannerActivity : AppCompatActivity() {
         super.onStop()
     }
 
-    private fun selectedPreset(): PortScanPreset = when (presetGroup.checkedRadioButtonId) {
-        R.id.portScannerPresetWeb -> PortScanPreset.WEB
-        R.id.portScannerPresetRouter -> PortScanPreset.ROUTER
-        R.id.portScannerPresetExtended -> PortScanPreset.EXTENDED
+    private fun selectedPreset(): PortScanPreset = when (presetSpinner.selectedItemPosition) {
+        1 -> PortScanPreset.WEB
+        2 -> PortScanPreset.ROUTER
+        3 -> PortScanPreset.EXTENDED
         else -> PortScanPreset.COMMON
     }
 
@@ -78,7 +87,7 @@ class PortScannerActivity : AppCompatActivity() {
         lastReport = ""
         hostInput.isEnabled = false
         extraPortsInput.isEnabled = false
-        presetGroup.isEnabled = false
+        presetSpinner.isEnabled = false
         runButton.text = getString(R.string.tool_stop)
         findViewById<TextView>(R.id.portScannerOpenHeader).isVisible = false
 
@@ -162,7 +171,7 @@ class PortScannerActivity : AppCompatActivity() {
     private fun finishScan() {
         hostInput.isEnabled = true
         extraPortsInput.isEnabled = true
-        presetGroup.isEnabled = true
+        presetSpinner.isEnabled = true
         runButton.text = getString(R.string.tool_run)
     }
 

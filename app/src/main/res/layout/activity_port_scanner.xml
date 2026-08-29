@@ -56,42 +56,18 @@
         android:layout_marginTop="12dp"
         android:fontFamily="@font/source_sans3_semibold"
         android:letterSpacing="0.1"
-        android:text="PORT SET"
+        android:text="@string/port_scan_preset_label"
         android:textColor="@color/text_dim"
         android:textSize="11sp" />
 
-    <RadioGroup
-        android:id="@+id/portScannerPresetGroup"
+    <Spinner
+        android:id="@+id/portScannerPresetSpinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:orientation="vertical">
-
-        <RadioButton
-            android:id="@+id/portScannerPresetCommon"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="Common — SSH, DNS, HTTP, RDP, MikroTik…" />
-
-        <RadioButton
-            android:id="@+id/portScannerPresetWeb"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Web — 80, 443, 8080, 8443…" />
-
-        <RadioButton
-            android:id="@+id/portScannerPresetRouter"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Router — SSH, Telnet, Winbox, TR-069…" />
-
-        <RadioButton
-            android:id="@+id/portScannerPresetExtended"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Extended — 30+ common services" />
-    </RadioGroup>
+        android:background="@drawable/bg_hud_input"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp" />
 
     <TextView
         android:layout_width="match_parent"
