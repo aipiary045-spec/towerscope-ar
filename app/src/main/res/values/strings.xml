@@ -34,7 +34,12 @@
     <string name="compass_sighting_progress">Sighting… %1$d%%</string>
     <string name="compass_align_error">ALIGN %1$s</string>
     <string name="home_job_aim">Compass</string>
-    <string name="home_job_aim_sub">High-precision bearings to nearby sites</string>
+    <string name="compass_sight_toggle">Switch radar / camera sight</string>
+    <string name="compass_sight_hint">Camera view · compass guides aim</string>
+    <string name="compass_sight_mode">Sight</string>
+    <string name="compass_radar_mode">Radar</string>
+    <string name="compass_sight_permission">Camera access is needed for sight mode</string>
+    <string name="home_job_aim_sub">Radar or camera sight · bearings to nearby sites</string>
     <string name="home_job_locate">Locate</string>
     <string name="home_job_locate_sub">Choose location · pin or GPS</string>
     <string name="home_job_los">Line of sight</string>
