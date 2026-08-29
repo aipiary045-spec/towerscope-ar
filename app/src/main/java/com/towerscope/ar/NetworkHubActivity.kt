@@ -50,8 +50,8 @@ class NetworkHubActivity : AppCompatActivity() {
             startActivity(Intent(this, LanSpeedTestActivity::class.java))
         }
         bindTile(R.id.hubPortRow, R.drawable.ic_dns_lookup, R.color.accent_yellow,
-            R.string.home_job_port_check, R.string.home_job_port_check_sub) {
-            startActivity(Intent(this, PortCheckActivity::class.java))
+            R.string.home_job_port_scan, R.string.home_job_port_scan_sub) {
+            startActivity(Intent(this, PortScannerActivity::class.java))
         }
         bindTile(R.id.hubWolRow, R.drawable.ic_install_pin, R.color.accent_teal,
             R.string.home_job_wol, R.string.home_job_wol_sub) {

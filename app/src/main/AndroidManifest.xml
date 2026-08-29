@@ -140,7 +140,7 @@
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
-            android:name=".PortCheckActivity"
+            android:name=".PortScannerActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TowerScopeAR" />

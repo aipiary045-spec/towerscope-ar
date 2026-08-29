@@ -96,8 +96,8 @@
     <string name="home_job_signal_walk_sub">Log RSSI while you walk</string>
     <string name="home_job_bufferbloat">Bufferbloat</string>
     <string name="home_job_bufferbloat_sub">Latency spike under download load</string>
-    <string name="home_job_port_check">Port check</string>
-    <string name="home_job_port_check_sub">Is a TCP port open?</string>
+    <string name="home_job_port_scan">Port scanner</string>
+    <string name="home_job_port_scan_sub">TCP scan · presets or custom ports</string>
     <string name="home_job_wol">Wake on LAN</string>
     <string name="home_job_wol_sub">Wake a PC by MAC address</string>
 </resources>
