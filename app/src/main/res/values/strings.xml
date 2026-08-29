@@ -93,8 +93,6 @@
     <string name="wan_link_querying">Querying router SNMP…</string>
     <string name="wan_link_no_match">SNMP OK — pick WAN from list</string>
     <string name="wan_link_help">Reads the router WAN port negotiated link speed using SNMP (IF-MIB). SNMP must be enabled on the router (UDP 161). Default community is public — change it if your router uses another.</string>
-    <string name="home_job_throughput">TCP throughput</string>
-    <string name="home_job_throughput_sub">Raw speed to a host:port on your LAN</string>
     <string name="home_job_channel_plan">Channel planner</string>
     <string name="home_job_channel_plan_sub">Pick the cleanest Wi‑Fi channel</string>
     <string name="home_job_signal_walk">Signal walk</string>

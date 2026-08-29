@@ -62,10 +62,6 @@ class NetworkHubActivity : AppCompatActivity() {
             R.string.home_job_bufferbloat, R.string.home_job_bufferbloat_sub) {
             startActivity(Intent(this, BufferbloatActivity::class.java))
         }
-        bindTile(R.id.hubThroughputRow, R.drawable.ic_bandwidth, R.color.accent_teal,
-            R.string.home_job_throughput, R.string.home_job_throughput_sub) {
-            startActivity(Intent(this, ThroughputTestActivity::class.java))
-        }
         bindTile(R.id.hubPingRow, R.drawable.ic_ping_graph, R.color.accent_yellow,
             R.string.home_job_ping, R.string.home_job_ping_sub) {
             startActivity(Intent(this, PingMonitorActivity::class.java))
