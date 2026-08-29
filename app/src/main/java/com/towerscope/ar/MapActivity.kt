@@ -45,7 +45,7 @@ import java.io.File
 import kotlin.math.max
 import kotlin.math.min
 /**
- * Free satellite map (Esri / USGS imagery via osmdroid):
+ * Free satellite map (Esri World Imagery via osmdroid):
  * live GPS, optional install/customer pin, in-range APs, and path to focus site.
  */
 class MapActivity : AppCompatActivity() {
@@ -140,9 +140,6 @@ class MapActivity : AppCompatActivity() {
             metaLabel.text = "Custom location cleared"
             true
         }
-        findViewById<android.widget.ImageButton>(R.id.mapBasemapButton).setOnClickListener {
-            cycleTileSource()
-        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -173,11 +170,12 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun setupMap() {
-        applyBasemap(BASEMAPS.first())
+        mapView.setTileSource(ESRI_WORLD_IMAGERY)
         mapView.setMultiTouchControls(true)
         mapView.minZoomLevel = 3.0
+        mapView.maxZoomLevel = ESRI_MAX_ZOOM.toDouble()
         mapView.controller.setZoom(13.0)
-        // Native 256px tiles; DPI upscaling past source max zoom looks blocky on USGS NAIP.
+        // Native 256px tiles; past Esri's native zoom the service returns "no data" placeholders.
         mapView.isTilesScaledToDpi = false
         mapView.setHorizontalMapRepetitionEnabled(false)
         mapView.setVerticalMapRepetitionEnabled(false)
@@ -202,24 +200,6 @@ class MapActivity : AppCompatActivity() {
             }
         }
         mapView.overlays.add(0, MapEventsOverlay(events))
-    }
-
-    private var basemapIndex = 0
-
-    private fun cycleTileSource() {
-        basemapIndex = (basemapIndex + 1) % BASEMAPS.size
-        applyBasemap(BASEMAPS[basemapIndex])
-    }
-
-    private fun applyBasemap(option: BasemapOption) {
-        mapView.setTileSource(option.source)
-        mapView.maxZoomLevel = option.maxZoom
-        val zoom = mapView.zoomLevelDouble
-        if (zoom > option.maxZoom) {
-            mapView.controller.setZoom(option.maxZoom)
-        }
-        mapView.invalidate()
-        metaLabel.text = "Basemap · ${option.label} · ${option.note}"
     }
 
     override fun onResume() {
@@ -774,17 +754,9 @@ class MapActivity : AppCompatActivity() {
         }
     }
 
-    private data class BasemapOption(
-        val source: OnlineTileSourceBase,
-        val label: String,
-        val maxZoom: Double,
-        val note: String
-    )
-
     companion object {
-        // USGS NAIP is ~1 m; native detail ends around z16 — higher zooms are upscaled tiles.
-        private const val USGS_MAX_ZOOM = 16
-        private const val ESRI_MAX_ZOOM = 20
+        // Esri returns "Map data not yet available" placeholder tiles above ~z18 in most areas.
+        private const val ESRI_MAX_ZOOM = 18
 
         private fun arcGisImagery(
             name: String,
@@ -813,28 +785,6 @@ class MapActivity : AppCompatActivity() {
             base = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/",
             copyright = "© Esri, Maxar, Earthstar Geographics",
             maxZoom = ESRI_MAX_ZOOM
-        )
-
-        private val USGS_IMAGERY = arcGisImagery(
-            name = "UsgsImagery",
-            base = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/",
-            copyright = "© USGS National Map",
-            maxZoom = USGS_MAX_ZOOM
-        )
-
-        private val BASEMAPS = listOf(
-            BasemapOption(
-                source = ESRI_WORLD_IMAGERY,
-                label = "Esri",
-                maxZoom = ESRI_MAX_ZOOM.toDouble(),
-                note = "up to ~0.5 m in US"
-            ),
-            BasemapOption(
-                source = USGS_IMAGERY,
-                label = "USGS",
-                maxZoom = USGS_MAX_ZOOM.toDouble(),
-                note = "1 m NAIP · max zoom capped"
-            )
         )
     }
 }

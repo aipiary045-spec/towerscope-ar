@@ -135,18 +135,6 @@
             android:scaleType="centerInside"
             android:src="@drawable/ic_install_pin"
             android:tint="@color/accent_yellow" />
-
-        <ImageButton
-            android:id="@+id/mapBasemapButton"
-            android:layout_width="@dimen/fab_size"
-            android:layout_height="@dimen/fab_size"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/bg_settings_fab"
-            android:contentDescription="Switch satellite basemap"
-            android:padding="14dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/ic_layers"
-            android:tint="@color/text_primary" />
     </LinearLayout>
 
     <LinearLayout
