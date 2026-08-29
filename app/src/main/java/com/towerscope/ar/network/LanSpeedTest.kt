@@ -88,7 +88,7 @@ object LanSpeedTest {
             }
             if (result != null && result.bytesTransferred > 0 && result.error == null) {
                 throughputResults += result
-            } else if (result == null && connectMs != null) {
+            } else if (result == null) {
                 throughputResults += LanSpeedResult(
                     targetHost = trimmed,
                     targetPort = openPort,
