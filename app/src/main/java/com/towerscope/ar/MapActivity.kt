@@ -173,12 +173,12 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun setupMap() {
-        mapView.setTileSource(ESRI_WORLD_IMAGERY)
+        applyBasemap(BASEMAPS.first())
         mapView.setMultiTouchControls(true)
         mapView.minZoomLevel = 3.0
-        mapView.maxZoomLevel = 18.0
         mapView.controller.setZoom(13.0)
-        mapView.isTilesScaledToDpi = true
+        // Native 256px tiles; DPI upscaling past source max zoom looks blocky on USGS NAIP.
+        mapView.isTilesScaledToDpi = false
         mapView.setHorizontalMapRepetitionEnabled(false)
         mapView.setVerticalMapRepetitionEnabled(false)
         mapView.zoomController.setVisibility(CustomZoomButtonsController.Visibility.SHOW_AND_FADEOUT)
@@ -204,13 +204,22 @@ class MapActivity : AppCompatActivity() {
         mapView.overlays.add(0, MapEventsOverlay(events))
     }
 
-    private var tileIndex = 0
+    private var basemapIndex = 0
+
     private fun cycleTileSource() {
-        tileIndex = (tileIndex + 1) % TILE_SOURCES.size
-        val source = TILE_SOURCES[tileIndex]
-        mapView.setTileSource(source)
+        basemapIndex = (basemapIndex + 1) % BASEMAPS.size
+        applyBasemap(BASEMAPS[basemapIndex])
+    }
+
+    private fun applyBasemap(option: BasemapOption) {
+        mapView.setTileSource(option.source)
+        mapView.maxZoomLevel = option.maxZoom
+        val zoom = mapView.zoomLevelDouble
+        if (zoom > option.maxZoom) {
+            mapView.controller.setZoom(option.maxZoom)
+        }
         mapView.invalidate()
-        metaLabel.text = "Basemap · ${source.name()}"
+        metaLabel.text = "Basemap · ${option.label} · ${option.note}"
     }
 
     override fun onResume() {
@@ -765,15 +774,27 @@ class MapActivity : AppCompatActivity() {
         }
     }
 
+    private data class BasemapOption(
+        val source: OnlineTileSourceBase,
+        val label: String,
+        val maxZoom: Double,
+        val note: String
+    )
+
     companion object {
+        // USGS NAIP is ~1 m; native detail ends around z16 — higher zooms are upscaled tiles.
+        private const val USGS_MAX_ZOOM = 16
+        private const val ESRI_MAX_ZOOM = 20
+
         private fun arcGisImagery(
             name: String,
             base: String,
-            copyright: String
+            copyright: String,
+            maxZoom: Int
         ): OnlineTileSourceBase = object : OnlineTileSourceBase(
             name,
             1,
-            18,
+            maxZoom,
             256,
             "",
             arrayOf(base),
@@ -790,15 +811,30 @@ class MapActivity : AppCompatActivity() {
         private val ESRI_WORLD_IMAGERY = arcGisImagery(
             name = "EsriWorldImagery",
             base = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/",
-            copyright = "© Esri, Maxar, Earthstar Geographics"
+            copyright = "© Esri, Maxar, Earthstar Geographics",
+            maxZoom = ESRI_MAX_ZOOM
         )
 
         private val USGS_IMAGERY = arcGisImagery(
             name = "UsgsImagery",
             base = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/",
-            copyright = "© USGS National Map"
+            copyright = "© USGS National Map",
+            maxZoom = USGS_MAX_ZOOM
         )
 
-        private val TILE_SOURCES = listOf(ESRI_WORLD_IMAGERY, USGS_IMAGERY)
+        private val BASEMAPS = listOf(
+            BasemapOption(
+                source = ESRI_WORLD_IMAGERY,
+                label = "Esri",
+                maxZoom = ESRI_MAX_ZOOM.toDouble(),
+                note = "up to ~0.5 m in US"
+            ),
+            BasemapOption(
+                source = USGS_IMAGERY,
+                label = "USGS",
+                maxZoom = USGS_MAX_ZOOM.toDouble(),
+                note = "1 m NAIP · max zoom capped"
+            )
+        )
     }
 }
