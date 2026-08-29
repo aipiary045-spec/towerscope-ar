@@ -2,6 +2,7 @@ package com.towerscope.ar.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CompassSightOverlayViewTest {
@@ -16,5 +17,13 @@ class CompassSightOverlayViewTest {
     @Test
     fun bearingToScreenFraction_returnsNullOutsideFov() {
         assertNull(CompassSightOverlayView.bearingToScreenFraction(40.0, 60f))
+    }
+
+    @Test
+    fun markerSmoothingAlpha_isLowerWhenStill() {
+        assertTrue(
+            CompassSightOverlayView.markerSmoothingAlpha(2.0) <
+                CompassSightOverlayView.markerSmoothingAlpha(50.0)
+        )
     }
 }

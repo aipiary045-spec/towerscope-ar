@@ -270,17 +270,21 @@ class MainActivity : AppCompatActivity() {
         if (compassDisplayMode != CompassDisplayMode.SIGHT) return
         val colors = HudThemeApplier.colorsFor(state.hudTheme, compassSightOverlay)
         val focusId = state.focusTower()?.id
-        val markers = state.directionIndicators().map { (tower, relative, distance) ->
+        val markers = state.visibleTowers().mapNotNull { tower ->
+            val bearing = state.bearingTo(tower) ?: return@mapNotNull null
+            val distance = state.distanceTo(tower) ?: return@mapNotNull null
             CompassSightOverlayView.SightMarker(
                 towerId = tower.id,
                 name = tower.name,
-                relativeBearingDegrees = relative,
+                bearingDegrees = bearing,
                 distanceMeters = distance,
                 isFocus = tower.id == focusId
             )
         }
         compassSightOverlay.update(
+            headingDegrees = state.effectiveHeadingDegrees(),
             markers = markers,
+            rotationRateDps = state.compassRotationRateDps,
             horizontalFovDegrees = sightHorizontalFovDegrees,
             accentColor = colors.accent,
             secondaryColor = colors.secondary,
@@ -336,6 +340,7 @@ class MainActivity : AppCompatActivity() {
             cameraController?.start()
         } else {
             cameraController?.stop()
+            compassSightOverlay.stopFrameLoop()
         }
         render(viewModel.uiState.value)
     }
