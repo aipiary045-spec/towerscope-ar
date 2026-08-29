@@ -89,15 +89,6 @@
 
     <string name="home_job_connection">My connection</string>
     <string name="home_job_connection_sub">Link · gateway · DNS · public IP</string>
-    <string name="home_job_wan_link">Link speed</string>
-    <string name="home_job_wan_link_sub">10 / 100 / 1000 Mbps · no router setup</string>
-    <string name="wan_link_router_label">ROUTER IP (SNMP only)</string>
-    <string name="wan_link_community_label">SNMP COMMUNITY</string>
-    <string name="wan_link_querying">Reading link speed…</string>
-    <string name="wan_link_no_match">SNMP OK — pick WAN port from list</string>
-    <string name="wan_link_advanced_toggle">Advanced: SNMP (optional)</string>
-    <string name="wan_link_advanced_hide">Hide SNMP options</string>
-    <string name="wan_link_help">Shows negotiated link speed as 10 / 100 / 1000 Mbps.\n\n• Wi‑Fi link — phone to router. Works on every install, no router access needed.\n• Router WAN — only if the router exposes it via UPnP (some do by default) or SNMP (advanced).\n\nMost customer routers do not expose WAN Ethernet speed to phones. For true WAN port speed, use the Speed test tool or check the ISP modem/CPE status page.</string>
     <string name="home_job_channel_plan">Channel planner</string>
     <string name="home_job_channel_plan_sub">Pick the cleanest Wi‑Fi channel</string>
     <string name="home_job_signal_walk">Signal walk</string>

@@ -143,20 +143,13 @@
                     android:layout_weight="1" />
 
                 <include
-                    android:id="@+id/hubWanLinkRow"
+                    android:id="@+id/hubPortRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="7dp"
                     android:layout_weight="1" />
             </LinearLayout>
-
-            <include
-                android:id="@+id/hubPortRow"
-                layout="@layout/item_hub_tool_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp" />
 
             <TextView
                 android:layout_width="match_parent"
