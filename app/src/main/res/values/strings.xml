@@ -86,8 +86,13 @@
 
     <string name="home_job_connection">My connection</string>
     <string name="home_job_connection_sub">Link · gateway · DNS · public IP</string>
-    <string name="home_job_lan_speed">LAN speed</string>
-    <string name="home_job_lan_speed_sub">Phone to router on your network</string>
+    <string name="home_job_wan_link">WAN link</string>
+    <string name="home_job_wan_link_sub">Router WAN Ethernet speed via SNMP</string>
+    <string name="wan_link_router_label">ROUTER (defaults to gateway)</string>
+    <string name="wan_link_community_label">SNMP COMMUNITY</string>
+    <string name="wan_link_querying">Querying router SNMP…</string>
+    <string name="wan_link_no_match">SNMP OK — pick WAN from list</string>
+    <string name="wan_link_help">Reads the router WAN port negotiated link speed using SNMP (IF-MIB). SNMP must be enabled on the router (UDP 161). Default community is public — change it if your router uses another.</string>
     <string name="home_job_throughput">TCP throughput</string>
     <string name="home_job_throughput_sub">Raw speed to a host:port on your LAN</string>
     <string name="home_job_channel_plan">Channel planner</string>
@@ -105,6 +110,4 @@
     <string name="home_job_bufferbloat_sub">Latency spike under download load</string>
     <string name="home_job_port_scan">Port scanner</string>
     <string name="home_job_port_scan_sub">TCP scan · presets or custom ports</string>
-    <string name="home_job_wol">Wake on LAN</string>
-    <string name="home_job_wol_sub">Wake a PC by MAC address</string>
 </resources>

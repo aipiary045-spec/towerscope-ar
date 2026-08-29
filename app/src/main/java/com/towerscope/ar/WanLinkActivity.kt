@@ -8,16 +8,16 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.ConnectionSnapshotCollector
-import com.towerscope.ar.network.LanSpeedTest
+import com.towerscope.ar.network.RouterWanLink
 import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.ui.SystemBars
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import java.util.Locale
 
-class LanSpeedTestActivity : AppCompatActivity() {
+class WanLinkActivity : AppCompatActivity() {
 
     private lateinit var hostInput: EditText
+    private lateinit var communityInput: EditText
     private lateinit var resultView: TextView
     private lateinit var statusView: TextView
     private lateinit var runButton: MaterialButton
@@ -27,20 +27,21 @@ class LanSpeedTestActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        setContentView(R.layout.activity_lan_speed_test)
-        SystemBars.apply(findViewById(R.id.lanSpeedRoot))
+        setContentView(R.layout.activity_wan_link)
+        SystemBars.apply(findViewById(R.id.wanLinkRoot))
 
-        hostInput = findViewById(R.id.lanSpeedHostInput)
-        resultView = findViewById(R.id.lanSpeedResult)
-        statusView = findViewById(R.id.lanSpeedStatus)
-        runButton = findViewById(R.id.lanSpeedRunButton)
+        hostInput = findViewById(R.id.wanLinkHostInput)
+        communityInput = findViewById(R.id.wanLinkCommunityInput)
+        resultView = findViewById(R.id.wanLinkResult)
+        statusView = findViewById(R.id.wanLinkStatus)
+        runButton = findViewById(R.id.wanLinkRunButton)
 
         lifecycleScope.launch {
-            val snap = ConnectionSnapshotCollector.collect(this@LanSpeedTestActivity, fetchPublicIp = false)
+            val snap = ConnectionSnapshotCollector.collect(this@WanLinkActivity, fetchPublicIp = false)
             snap.gatewayIpv4?.let { hostInput.setText(it) }
         }
 
-        runButton.setOnClickListener { toggleRun() }
+        runButton.setOnClickListener { runQuery() }
         findViewById<MaterialButton>(R.id.toolShareButton).setOnClickListener { share() }
         findViewById<MaterialButton>(R.id.toolBackButton).setOnClickListener {
             job?.cancel()
@@ -53,39 +54,40 @@ class LanSpeedTestActivity : AppCompatActivity() {
         super.onStop()
     }
 
-    private fun toggleRun() {
+    private fun runQuery() {
         if (job?.isActive == true) {
             job?.cancel()
             return
         }
         val host = hostInput.text?.toString().orEmpty()
+        val community = communityInput.text?.toString().orEmpty()
         runButton.isEnabled = false
         hostInput.isEnabled = false
-        statusView.text = "Testing LAN throughput…"
+        communityInput.isEnabled = false
+        statusView.text = getString(R.string.wan_link_querying)
         job = lifecycleScope.launch {
-            val result = LanSpeedTest.run(host)
-            lastReport = buildString {
-                appendLine("LAN speed test")
-                appendLine("Target: ${result.targetHost}:${result.targetPort} (${result.method})")
-                if (result.error != null) {
-                    appendLine("Error: ${result.error}")
-                } else {
-                    appendLine("Throughput: ${LanSpeedTest.formatMbps(result.throughputMbps)}")
-                    appendLine("Transferred: ${result.bytesTransferred} bytes in ${result.durationMs} ms")
-                    result.connectMs?.let {
-                        appendLine(String.format(Locale.US, "Connect: %.0f ms", it))
-                    }
-                }
-            }
+            val result = RouterWanLink.query(host, community)
+            lastReport = RouterWanLink.format(result)
             resultView.text = lastReport
-            statusView.text = result.error ?: LanSpeedTest.formatMbps(result.throughputMbps)
+            val selected = result.selectedInterface
+            statusView.text = when {
+                result.error != null && selected == null -> result.error
+                selected != null -> buildString {
+                    append(selected.name)
+                    RouterWanLink.formatLinkSpeed(selected)?.let { append(" · $it") }
+                }
+                else -> getString(R.string.wan_link_no_match)
+            }
             runButton.isEnabled = true
             hostInput.isEnabled = true
+            communityInput.isEnabled = true
             runButton.text = getString(R.string.tool_run)
         }
     }
 
     private fun share() {
-        if (lastReport.isNotBlank()) TestResultExport.shareText(this, "LAN speed test", lastReport)
+        if (lastReport.isNotBlank()) {
+            TestResultExport.shareText(this, "Router WAN link", lastReport)
+        }
     }
 }

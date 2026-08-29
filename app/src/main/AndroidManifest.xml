@@ -110,7 +110,7 @@
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
-            android:name=".LanSpeedTestActivity"
+            android:name=".WanLinkActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TowerScopeAR" />
@@ -141,12 +141,6 @@
 
         <activity
             android:name=".PortScannerActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.TowerScopeAR" />
-
-        <activity
-            android:name=".WakeOnLanActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TowerScopeAR" />

@@ -45,17 +45,9 @@ class NetworkHubActivity : AppCompatActivity() {
             R.string.home_job_subnet, R.string.home_job_subnet_sub) {
             startActivity(Intent(this, SubnetScannerActivity::class.java))
         }
-        bindTile(R.id.hubLanSpeedRow, R.drawable.ic_speed_test, R.color.accent_yellow,
-            R.string.home_job_lan_speed, R.string.home_job_lan_speed_sub) {
-            startActivity(Intent(this, LanSpeedTestActivity::class.java))
-        }
-        bindTile(R.id.hubPortRow, R.drawable.ic_dns_lookup, R.color.accent_yellow,
-            R.string.home_job_port_scan, R.string.home_job_port_scan_sub) {
-            startActivity(Intent(this, PortScannerActivity::class.java))
-        }
-        bindTile(R.id.hubWolRow, R.drawable.ic_install_pin, R.color.accent_teal,
-            R.string.home_job_wol, R.string.home_job_wol_sub) {
-            startActivity(Intent(this, WakeOnLanActivity::class.java))
+        bindTile(R.id.hubWanLinkRow, R.drawable.ic_speed_test, R.color.accent_yellow,
+            R.string.home_job_wan_link, R.string.home_job_wan_link_sub) {
+            startActivity(Intent(this, WanLinkActivity::class.java))
         }
 
         bindTile(R.id.hubSpeedRow, R.drawable.ic_speed_test, R.color.accent_yellow,
