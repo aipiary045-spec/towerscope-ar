@@ -49,6 +49,10 @@ class NetworkHubActivity : AppCompatActivity() {
             R.string.home_job_wan_link, R.string.home_job_wan_link_sub) {
             startActivity(Intent(this, WanLinkActivity::class.java))
         }
+        bindTile(R.id.hubPortRow, R.drawable.ic_dns_lookup, R.color.accent_yellow,
+            R.string.home_job_port_scan, R.string.home_job_port_scan_sub) {
+            startActivity(Intent(this, PortScannerActivity::class.java))
+        }
 
         bindTile(R.id.hubSpeedRow, R.drawable.ic_speed_test, R.color.accent_yellow,
             R.string.home_job_speed, R.string.home_job_speed_sub) {
