@@ -64,13 +64,7 @@ object RouterWanLink {
 
     fun negotiatedEthernetLabel(iface: RouterInterface): String? {
         val mbps = resolveMbps(iface) ?: return null
-        return when {
-            mbps <= 15 -> "10 Mbps"
-            mbps <= 150 -> "100 Mbps"
-            mbps <= 1_500 -> "1000 Mbps"
-            mbps < 10_000 -> String.format(Locale.US, "%d Mbps", mbps)
-            else -> String.format(Locale.US, "%.1f Gbps", mbps / 1000.0)
-        }
+        return LinkSpeedClassifier.labelFromMbps(mbps)
     }
 
     fun formatLinkSpeed(iface: RouterInterface): String? =
@@ -85,7 +79,7 @@ object RouterWanLink {
             info.linkMbps <= 15 -> "10 Mbps"
             info.linkMbps <= 150 -> "100 Mbps"
             info.linkMbps <= 1_500 -> "1000 Mbps"
-            else -> "${info.linkMbps} Mbps"
+            else -> LinkSpeedClassifier.labelFromMbps(info.linkMbps.toLong()) ?: "${info.linkMbps} Mbps"
         }
         return "Wi‑Fi link$ssid: $label (phone ↔ router)"
     }
