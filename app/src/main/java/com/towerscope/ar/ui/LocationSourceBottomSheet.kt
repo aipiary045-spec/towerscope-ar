@@ -55,8 +55,10 @@ class LocationSourceBottomSheet : BottomSheetDialogFragment() {
             root = view.findViewById(R.id.sheetCoordinateEntry),
             viewModel = viewModel
         ) { latitude, longitude ->
-            onCoordinatesApplied?.invoke(latitude, longitude)
             dismiss()
+            view?.post {
+                onCoordinatesApplied?.invoke(latitude, longitude)
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {

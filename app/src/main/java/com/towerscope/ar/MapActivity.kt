@@ -72,6 +72,8 @@ class MapActivity : AppCompatActivity() {
     private val markerIcons = mutableMapOf<Boolean, BitmapDrawable>()
     private val markerSelection = mutableMapOf<String, Boolean>()
     private var lastRenderSignature: String? = null
+    private var lastSnappedCustomLat: Double? = null
+    private var lastSnappedCustomLon: Double? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -108,7 +110,7 @@ class MapActivity : AppCompatActivity() {
             fragmentManager = supportFragmentManager,
             viewModel = viewModel,
             onCoordinatesApplied = { latitude, longitude ->
-                centerOnCoordinates(latitude, longitude)
+                snapToCustomLocation(latitude, longitude)
                 metaLabel.text = "Custom location set from coordinates"
             }
         )
@@ -194,6 +196,7 @@ class MapActivity : AppCompatActivity() {
             override fun longPressHelper(p: GeoPoint?): Boolean {
                 if (p == null) return false
                 viewModel.setInstallSite(p.latitude, p.longitude)
+                snapToCustomLocation(p.latitude, p.longitude)
                 metaLabel.text = "Custom location pinned"
                 return true
             }
@@ -321,6 +324,7 @@ class MapActivity : AppCompatActivity() {
         renderChips(state)
         locationSourceChip.render(state, this)
         renderMapOverlays(state)
+        snapToCustomLocationIfNeeded(state)
 
         if (!hasFittedOnce && state.userLocation != null && focus != null) {
             fitToYouAndFocus(animated = false)
@@ -674,15 +678,39 @@ class MapActivity : AppCompatActivity() {
         hasFittedOnce = true
     }
 
+    private fun snapToCustomLocationIfNeeded(state: TowerUiState) {
+        if (state.locationMode != LocationMode.CUSTOM) {
+            lastSnappedCustomLat = null
+            lastSnappedCustomLon = null
+            return
+        }
+        val lat = state.installLatitude ?: return
+        val lon = state.installLongitude ?: return
+        if (lat == lastSnappedCustomLat && lon == lastSnappedCustomLon) return
+        snapToCustomLocation(lat, lon)
+    }
+
+    private fun snapToCustomLocation(latitude: Double, longitude: Double) {
+        lastSnappedCustomLat = latitude
+        lastSnappedCustomLon = longitude
+        mapView.post {
+            val point = GeoPoint(latitude, longitude)
+            mapView.controller.setCenter(point)
+            if (mapView.zoomLevelDouble < 14.0) {
+                mapView.controller.setZoom(15.5)
+            }
+            hasFittedOnce = true
+            mapView.invalidate()
+        }
+    }
+
     private fun centerOnUser() {
         val user = viewModel.uiState.value.userLocation ?: return
         centerOnCoordinates(user.latitude, user.longitude)
     }
 
     private fun centerOnCoordinates(latitude: Double, longitude: Double) {
-        mapView.controller.animateTo(GeoPoint(latitude, longitude))
-        mapView.controller.setZoom(15.5)
-        hasFittedOnce = true
+        snapToCustomLocation(latitude, longitude)
     }
 
     private fun markerIcon(selected: Boolean): BitmapDrawable {
