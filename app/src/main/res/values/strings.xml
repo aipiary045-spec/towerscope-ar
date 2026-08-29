@@ -35,7 +35,8 @@
     <string name="compass_align_error">ALIGN %1$s</string>
     <string name="home_job_aim">Compass</string>
     <string name="compass_sight_toggle">Switch radar / camera sight</string>
-    <string name="compass_sight_hint">Camera view · compass guides aim</string>
+    <string name="compass_sight_hint">Camera viewfinder — use the radar below for aim</string>
+    <string name="compass_radar_hint">Compass radar — top of disc is the direction you face</string>
     <string name="compass_sight_mode">Sight</string>
     <string name="compass_radar_mode">Radar</string>
     <string name="compass_sight_permission">Camera access is needed for sight mode</string>

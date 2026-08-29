@@ -28,10 +28,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
-import com.towerscope.ar.data.Tower
 import com.towerscope.ar.ui.CompassCameraController
 import com.towerscope.ar.ui.CompassRadarView
-import com.towerscope.ar.ui.CompassSightOverlayView
 import com.towerscope.ar.ui.HudThemeApplier
 import com.towerscope.ar.ui.SettingsBottomSheet
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
@@ -71,7 +69,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var compassRadar: CompassRadarView
     private lateinit var compassViewport: View
     private lateinit var compassCameraPreview: PreviewView
-    private lateinit var compassSightOverlay: CompassSightOverlayView
     private lateinit var sightModeButton: ImageButton
     private lateinit var compassImproveOverlay: View
     private lateinit var compassImproveStatus: TextView
@@ -86,7 +83,6 @@ class MainActivity : AppCompatActivity() {
     private var lastChipSignature: String? = null
     private var compassDisplayMode = CompassDisplayMode.RADAR
     private var cameraController: CompassCameraController? = null
-    private var sightHorizontalFovDegrees = CompassSightOverlayView.DEFAULT_HORIZONTAL_FOV_DEGREES
 
     private enum class CompassDisplayMode {
         RADAR,
@@ -162,7 +158,6 @@ class MainActivity : AppCompatActivity() {
         towerChips = findViewById(R.id.towerChips)
         compassViewport = findViewById(R.id.compassViewport)
         compassCameraPreview = findViewById(R.id.compassCameraPreview)
-        compassSightOverlay = findViewById(R.id.compassSightOverlay)
         compassRadar = findViewById(R.id.compassRadar)
         sightModeButton = findViewById(R.id.sightModeButton)
         compassImproveOverlay = findViewById(R.id.compassImproveOverlay)
@@ -230,7 +225,6 @@ class MainActivity : AppCompatActivity() {
         renderCompassImprove(state)
         maybeToastStatus(state)
         renderRadar(state)
-        renderSight(state)
 
         visibleCount.text = buildString {
             append("Visible ${visible.size} / ${state.towers.size}")
@@ -243,7 +237,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun renderRadar(state: TowerUiState) {
-        if (compassDisplayMode != CompassDisplayMode.RADAR) return
         val colors = HudThemeApplier.colorsFor(state.hudTheme, compassRadar)
         val focusLine = focusTowerLabel.text?.toString().orEmpty()
         val markers = state.directionIndicators().map { (tower, relative, distance) ->
@@ -264,43 +257,6 @@ class MainActivity : AppCompatActivity() {
             secondaryColor = colors.secondary,
             textColor = colors.text,
             mutedColor = colors.mutedText
-        )
-    }
-
-    private fun renderSight(state: TowerUiState) {
-        if (compassDisplayMode != CompassDisplayMode.SIGHT) return
-        val colors = HudThemeApplier.colorsFor(state.hudTheme, compassSightOverlay)
-        val focusId = state.focusTower()?.id
-        val ranked = state.visibleTowers().mapNotNull { tower ->
-            val bearing = state.bearingTo(tower) ?: return@mapNotNull null
-            val distance = state.distanceTo(tower) ?: return@mapNotNull null
-            Triple(tower, distance, bearing)
-        }.sortedBy { it.second }
-        val limited = linkedMapOf<String, Triple<Tower, Double, Double>>()
-        focusId?.let { id ->
-            ranked.firstOrNull { it.first.id == id }?.let { limited[id] = it }
-        }
-        ranked.forEach { (tower, distance, bearing) ->
-            if (limited.size >= 5) return@forEach
-            limited.putIfAbsent(tower.id, Triple(tower, distance, bearing))
-        }
-        val markers = limited.values.map { (tower, distance, bearing) ->
-            CompassSightOverlayView.SightMarker(
-                towerId = tower.id,
-                name = tower.name,
-                bearingDegrees = bearing,
-                distanceMeters = distance,
-                isFocus = tower.id == focusId
-            )
-        }
-        compassSightOverlay.update(
-            headingDegrees = state.effectiveHeadingDegrees(),
-            markers = markers,
-            rotationRateDps = state.compassRotationRateDps,
-            horizontalFovDegrees = sightHorizontalFovDegrees,
-            accentColor = colors.accent,
-            secondaryColor = colors.secondary,
-            textColor = colors.text
         )
     }
 
@@ -326,9 +282,30 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyDisplayMode() {
         val sight = compassDisplayMode == CompassDisplayMode.SIGHT
-        compassRadar.isVisible = !sight
-        compassCameraPreview.isVisible = sight
-        compassSightOverlay.isVisible = sight
+        val cameraParams = compassCameraPreview.layoutParams as LinearLayout.LayoutParams
+        val radarParams = compassRadar.layoutParams as LinearLayout.LayoutParams
+
+        if (sight) {
+            compassCameraPreview.isVisible = true
+            compassRadar.isVisible = true
+            cameraParams.height = 0
+            cameraParams.weight = 1.05f
+            radarParams.height = 0
+            radarParams.weight = 1f
+            compassCameraPreview.contentDescription = getString(R.string.compass_sight_hint)
+            compassRadar.contentDescription = getString(R.string.compass_radar_hint)
+        } else {
+            compassCameraPreview.isVisible = false
+            compassRadar.isVisible = true
+            cameraParams.height = 0
+            cameraParams.weight = 0f
+            radarParams.height = 0
+            radarParams.weight = 1f
+            compassRadar.contentDescription = getString(R.string.compass_radar_hint)
+        }
+        compassCameraPreview.layoutParams = cameraParams
+        compassRadar.layoutParams = radarParams
+
         sightModeButton.imageTintList = android.content.res.ColorStateList.valueOf(
             ContextCompat.getColor(
                 this,
@@ -342,17 +319,12 @@ class MainActivity : AppCompatActivity() {
             if (cameraController == null) {
                 cameraController = CompassCameraController(
                     activity = this,
-                    previewView = compassCameraPreview,
-                    onHorizontalFovDegrees = { fov ->
-                        sightHorizontalFovDegrees = fov
-                        renderSight(viewModel.uiState.value)
-                    }
+                    previewView = compassCameraPreview
                 )
             }
             cameraController?.start()
         } else {
             cameraController?.stop()
-            compassSightOverlay.stopFrameLoop()
         }
         render(viewModel.uiState.value)
     }
