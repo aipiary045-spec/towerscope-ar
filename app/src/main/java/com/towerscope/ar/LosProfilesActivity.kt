@@ -1,6 +1,5 @@
 package com.towerscope.ar
 
-import android.content.Intent
 import android.Manifest
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
