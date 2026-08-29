@@ -17,6 +17,7 @@ import com.towerscope.ar.location.HighAccuracyLocationClient
 import com.towerscope.ar.location.UserLocation
 import com.towerscope.ar.ui.AppTheme
 import com.towerscope.ar.ui.HudTheme
+import com.towerscope.ar.util.CelestialBodies
 import com.towerscope.ar.util.CoordinateFormat
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.DistanceUnitSystem
@@ -137,7 +138,8 @@ data class TowerUiState(
                     longitude = lon,
                     altitudeMeters = userLocation?.altitudeMeters,
                     accuracyMeters = userLocation?.accuracyMeters ?: 0f,
-                    bearingDegrees = userLocation?.bearingDegrees
+                    bearingDegrees = userLocation?.bearingDegrees,
+                    speedMps = userLocation?.speedMps
                 )
             }
             LocationMode.CURRENT_GPS -> userLocation
@@ -445,7 +447,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     fun startDeviceHeadingUpdates() {
         if (headingJob?.isActive == true) return
         headingJob = viewModelScope.launch {
-            headingClient.headingUpdates { _uiState.value.userLocation }.collect { heading ->
+            headingClient.headingUpdates { _uiState.value.positioningLocation() }.collect { heading ->
                 _uiState.update {
                     it.copy(
                         deviceHeadingDegrees = heading.degrees,
@@ -903,6 +905,54 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
 
     fun dismissCompassImprove() {
         _uiState.update { it.copy(compassImproveActive = false) }
+    }
+
+    fun calibrateHeadingToKnownAzimuth(trueAzimuthDegrees: Double) {
+        val state = _uiState.value
+        val device = state.deviceHeadingDegrees ?: run {
+            _uiState.update { it.copy(statusMessage = "Waiting for compass…") }
+            return
+        }
+        val currentOffset = state.headingCalibrationOffsetDegrees ?: 0.0
+        val effective = GeoUtils.normalizeBearing(device + currentOffset)
+        val correction = CelestialBodies.signedDeltaDegrees(effective, trueAzimuthDegrees)
+        setHeadingOffsetDegrees(currentOffset + correction)
+    }
+
+    fun calibrateHeadingToSun(): Boolean {
+        val location = _uiState.value.positioningLocation() ?: run {
+            _uiState.update { it.copy(statusMessage = "Need GPS fix for sun calibration") }
+            return false
+        }
+        val target = CelestialBodies.preferredCalibrationTarget(
+            location.latitude,
+            location.longitude
+        ) ?: run {
+            _uiState.update { it.copy(statusMessage = "Sun/moon too low for calibration right now") }
+            return false
+        }
+        calibrateHeadingToKnownAzimuth(target.azimuthDegrees)
+        val label = if (target.body == CelestialBodies.Body.SUN) "sun" else "moon"
+        _uiState.update {
+            it.copy(statusMessage = "Calibrated to $label · hold phone top toward it")
+        }
+        return true
+    }
+
+    fun calibrateHeadingToFocusTower(): Boolean {
+        val tower = _uiState.value.focusTower() ?: run {
+            _uiState.update { it.copy(statusMessage = "No tower in range to calibrate against") }
+            return false
+        }
+        val bearing = _uiState.value.bearingTo(tower) ?: run {
+            _uiState.update { it.copy(statusMessage = "Need location to calibrate to tower") }
+            return false
+        }
+        calibrateHeadingToKnownAzimuth(bearing)
+        _uiState.update {
+            it.copy(statusMessage = "Calibrated to ${tower.name} — face the site, then tap Done")
+        }
+        return true
     }
 
     fun setHeadingOffsetDegrees(offsetDegrees: Double) {

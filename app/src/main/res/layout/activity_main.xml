@@ -318,9 +318,25 @@
                 android:layout_marginTop="12dp"
                 android:fontFamily="@font/source_sans3_regular"
                 android:gravity="center"
-                android:text="Optional: set a manual heading offset in Settings if the compass is still off."
+                android:text="@string/compass_improve_offset_hint"
                 android:textColor="@color/text_muted"
                 android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/compassImproveSunButton"
+                style="@style/Widget.TowerScope.Button.Ghost"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="14dp"
+                android:text="@string/compass_calibrate_sun" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/compassImproveTowerButton"
+                style="@style/Widget.TowerScope.Button.Ghost"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/compass_calibrate_tower" />
         </LinearLayout>
 
         <LinearLayout

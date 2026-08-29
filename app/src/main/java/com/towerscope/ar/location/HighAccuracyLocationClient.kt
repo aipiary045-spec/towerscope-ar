@@ -21,7 +21,8 @@ data class UserLocation(
     val longitude: Double,
     val altitudeMeters: Double?,
     val accuracyMeters: Float,
-    val bearingDegrees: Float?
+    val bearingDegrees: Float?,
+    val speedMps: Float? = null
 )
 
 /**
@@ -86,7 +87,8 @@ class HighAccuracyLocationClient(context: Context) {
         longitude = longitude,
         altitudeMeters = if (hasAltitude()) altitude else null,
         accuracyMeters = if (hasAccuracy()) accuracy else Float.MAX_VALUE,
-        bearingDegrees = if (hasBearing()) bearing else null
+        bearingDegrees = if (hasBearing()) bearing else null,
+        speedMps = if (hasSpeed()) speed else null
     )
 
     companion object {

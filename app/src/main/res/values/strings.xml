@@ -26,6 +26,9 @@
     <string name="home_no_sites">No network sites loaded</string>
     <string name="home_import_hint">Import a KML or KMZ to get started</string>
     <string name="home_import_sites">Import network sites</string>
+    <string name="compass_calibrate_sun">Calibrate with sun</string>
+    <string name="compass_calibrate_tower">Calibrate to focus tower</string>
+    <string name="compass_improve_offset_hint">Hold the phone upright. Point the top edge at the sun or a known site, then tap a calibrate button. Fine-tune ±1° in Settings.</string>
     <string name="home_job_aim">Compass</string>
     <string name="home_job_aim_sub">High-precision bearings to nearby sites</string>
     <string name="home_job_locate">Locate</string>

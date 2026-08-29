@@ -63,6 +63,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var compassImproveOverlay: View
     private lateinit var compassImproveStatus: TextView
     private lateinit var compassImproveDoneButton: MaterialButton
+    private lateinit var compassImproveSunButton: MaterialButton
+    private lateinit var compassImproveTowerButton: MaterialButton
 
     private var bottomPanelBasePadding = 0
     private var topChromeBasePadding = 0
@@ -128,6 +130,8 @@ class MainActivity : AppCompatActivity() {
         compassImproveOverlay = findViewById(R.id.compassImproveOverlay)
         compassImproveStatus = findViewById(R.id.compassImproveStatus)
         compassImproveDoneButton = findViewById(R.id.compassImproveDoneButton)
+        compassImproveSunButton = findViewById(R.id.compassImproveSunButton)
+        compassImproveTowerButton = findViewById(R.id.compassImproveTowerButton)
         compassRadar.setOnTowerSelectedListener { towerId -> openTowerDetails(towerId) }
 
         bottomPanelBasePadding = bottomPanel.paddingBottom
@@ -164,6 +168,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
         compassImproveDoneButton.setOnClickListener { viewModel.dismissCompassImprove() }
+        compassImproveSunButton.setOnClickListener { viewModel.calibrateHeadingToSun() }
+        compassImproveTowerButton.setOnClickListener { viewModel.calibrateHeadingToFocusTower() }
         focusTowerLabel.setOnClickListener {
             viewModel.uiState.value.focusTower()?.let { openTowerDetails(it.id) }
         }
@@ -453,6 +459,18 @@ class MainActivity : AppCompatActivity() {
         calibrateButton.isVisible = !active
 
         if (!active) return
+
+        val location = state.positioningLocation()
+        val sunAvailable = location?.let {
+            com.towerscope.ar.util.CelestialBodies.preferredCalibrationTarget(
+                it.latitude,
+                it.longitude
+            ) != null
+        } == true
+        compassImproveSunButton.isEnabled = sunAvailable
+        compassImproveSunButton.alpha = if (sunAvailable) 1f else 0.45f
+        compassImproveTowerButton.isEnabled = state.focusTower() != null
+        compassImproveTowerButton.alpha = if (state.focusTower() != null) 1f else 0.45f
 
         val (label, colorRes, bgRes) = when {
             state.deviceHeadingDegrees == null ->
