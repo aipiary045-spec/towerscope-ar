@@ -35,6 +35,7 @@ class InstallDashboardActivity : AppCompatActivity() {
     private lateinit var focusMeta: TextView
     private lateinit var nearestList: TextView
     private lateinit var losSummary: TextView
+    private lateinit var locationSourceChip: LocationSourceChip
     private var startedLosScan = false
 
     private val permissionLauncher = registerForActivityResult(
@@ -52,7 +53,10 @@ class InstallDashboardActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_install_dashboard)
-        SystemBars.apply(findViewById(R.id.installDashboardRoot))
+        SystemBars.apply(
+            root = findViewById(R.id.installDashboardRoot),
+            alsoBottom = findViewById(R.id.installDashboardFooter)
+        )
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
 
         sitesSummary = findViewById(R.id.installDashboardSitesSummary)
@@ -61,8 +65,8 @@ class InstallDashboardActivity : AppCompatActivity() {
         nearestList = findViewById(R.id.installDashboardNearestList)
         losSummary = findViewById(R.id.installDashboardLosSummary)
 
-        LocationSourceChip(
-            chip = findViewById(R.id.locationSourceChip),
+        locationSourceChip = LocationSourceChip(
+            chip = findViewById(R.id.installDashboardLocationChip),
             fragmentManager = supportFragmentManager,
             viewModel = viewModel,
             onModeChanged = { maybeStartLosScan(force = true) }
@@ -95,10 +99,12 @@ class InstallDashboardActivity : AppCompatActivity() {
         }
 
         ensureLocationPermission()
+        render(viewModel.uiState.value)
     }
 
     override fun onResume() {
         super.onResume()
+        viewModel.syncFromFileStore()
         if (hasLocationPermission()) {
             viewModel.startLocationUpdates(includeHeading = false)
         }
@@ -140,6 +146,7 @@ class InstallDashboardActivity : AppCompatActivity() {
     }
 
     private fun render(state: TowerUiState) {
+        locationSourceChip.render(state, this)
         val towerCount = state.towers.size
         val inRange = state.visibleTowers().size
         sitesSummary.text = when {
