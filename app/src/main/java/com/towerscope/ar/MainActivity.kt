@@ -239,11 +239,11 @@ class MainActivity : AppCompatActivity() {
     private fun renderRadar(state: TowerUiState) {
         val colors = HudThemeApplier.colorsFor(state.hudTheme, compassRadar)
         val focusLine = focusTowerLabel.text?.toString().orEmpty()
-        val markers = state.directionIndicators().map { (tower, relative, distance) ->
+        val markers = state.directionIndicators().map { (tower, _, distance) ->
             CompassRadarView.TowerMarker(
                 towerId = tower.id,
                 name = tower.name,
-                relativeBearingDegrees = relative,
+                bearingDegrees = state.bearingTo(tower) ?: 0.0,
                 distanceMeters = distance
             )
         }
@@ -253,6 +253,7 @@ class MainActivity : AppCompatActivity() {
             markers = markers,
             focusTowerId = state.focusTower()?.id,
             focusLine = focusLine,
+            rotationRateDps = state.compassRotationRateDps,
             accentColor = colors.accent,
             secondaryColor = colors.secondary,
             textColor = colors.text,
@@ -289,9 +290,9 @@ class MainActivity : AppCompatActivity() {
             compassCameraPreview.isVisible = true
             compassRadar.isVisible = true
             cameraParams.height = 0
-            cameraParams.weight = 1.05f
+            cameraParams.weight = 0.9f
             radarParams.height = 0
-            radarParams.weight = 1f
+            radarParams.weight = 1.1f
             compassCameraPreview.contentDescription = getString(R.string.compass_sight_hint)
             compassRadar.contentDescription = getString(R.string.compass_radar_hint)
         } else {
