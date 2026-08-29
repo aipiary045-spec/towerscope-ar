@@ -25,6 +25,22 @@ class InstallationHubActivity : AppCompatActivity() {
         BottomNav.bind(this, BottomNavTab.INSTALL)
 
         bindRow(
+            rowId = R.id.hubDashboardRow,
+            icon = R.drawable.ic_install_pin,
+            iconTint = R.color.accent_yellow,
+            title = R.string.install_dashboard_title,
+            subtitle = R.string.install_dashboard_hub_sub
+        ) { startActivity(Intent(this, InstallDashboardActivity::class.java)) }
+
+        bindRow(
+            rowId = R.id.hubSiteBrowserRow,
+            icon = R.drawable.ic_tower_lattice,
+            iconTint = R.color.accent_teal,
+            title = R.string.site_browser_title,
+            subtitle = R.string.site_browser_hub_sub
+        ) { startActivity(Intent(this, SiteBrowserActivity::class.java)) }
+
+        bindRow(
             rowId = R.id.hubCompassRow,
             icon = R.drawable.ic_compass_rose,
             iconTint = R.color.accent_yellow,

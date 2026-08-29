@@ -325,6 +325,35 @@ data class TowerUiState(
             .take(limit)
     }
 
+    /** Every loaded site sorted nearest-first; distance is null without a positioning fix. */
+    fun allTowersSortedByDistance(): List<Pair<Tower, Double?>> {
+        val location = positioningLocation()
+        return towers
+            .asSequence()
+            .filter { it.id !in hiddenTowerIds }
+            .map { tower ->
+                val distance = location?.let {
+                    GeoUtils.haversineMeters(
+                        it.latitude,
+                        it.longitude,
+                        tower.latitude,
+                        tower.longitude
+                    )
+                }
+                tower to distance
+            }
+            .sortedWith(compareBy(nullsLast()) { it.second })
+            .toList()
+    }
+
+    fun isTowerInRange(tower: Tower): Boolean {
+        val distance = distanceTo(tower) ?: return false
+        return distance <= maxDistanceMeters
+    }
+
+    fun bestLosCandidate(): LosRangeRow? =
+        losRangeRows.firstOrNull { !it.loading && it.error == null && it.profile != null }
+
     companion object {
         const val MIN_DISTANCE_METERS = 100f
         /** 10 miles in meters. */

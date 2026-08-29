@@ -137,5 +137,17 @@
             android:name=".DataMenuActivity"
             android:exported="false"
             android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".InstallDashboardActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".SiteBrowserActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
     </application>
 </manifest>
