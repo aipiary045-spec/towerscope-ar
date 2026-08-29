@@ -26,14 +26,24 @@
         android:textColor="@color/text_muted"
         android:textSize="14sp" />
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:letterSpacing="0.1"
+        android:text="@string/port_scan_host_label"
+        android:textColor="@color/text_dim"
+        android:textSize="11sp" />
+
     <EditText
         android:id="@+id/portScannerHostInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="6dp"
         android:background="@drawable/bg_hud_input"
         android:fontFamily="monospace"
-        android:hint="192.168.1.10"
+        android:hint="@string/port_scan_host_hint"
         android:inputType="textUri"
         android:paddingHorizontal="14dp"
         android:paddingVertical="12dp"

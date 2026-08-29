@@ -1,5 +1,6 @@
 package com.towerscope.ar.network
 
+import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -21,6 +22,13 @@ data class PortScanResult(
     val host: String,
     val openPorts: List<PortScanHit>,
     val portsScanned: Int,
+    val error: String? = null
+)
+
+data class NetworkPortScanResult(
+    val targets: List<String>,
+    val results: List<PortScanResult>,
+    val portsPerHost: Int,
     val error: String? = null
 )
 
@@ -82,6 +90,89 @@ object PortScanner {
                 }
             }
             .distinct()
+
+    fun resolveTargets(
+        overrideHost: String?,
+        gatewayIpv4: String?,
+        subnet: SubnetInfo?,
+        discoveredHosts: List<String>
+    ): List<String> {
+        val trimmed = overrideHost?.trim().orEmpty()
+        if (trimmed.isNotBlank()) return listOf(trimmed)
+
+        val targets = linkedSetOf<String>()
+        gatewayIpv4?.let { targets += it }
+        if (subnet != null) {
+            val parts = subnet.networkBase.split('.')
+            if (parts.size == 4) {
+                targets += "${parts[0]}.${parts[1]}.${parts[2]}.1"
+            }
+        }
+        discoveredHosts.forEach { targets += it }
+        return targets.toList()
+    }
+
+    suspend fun resolveTargets(
+        context: Context,
+        overrideHost: String?,
+        onDiscoverProgress: suspend (scanned: Int, total: Int) -> Unit = { _, _ -> }
+    ): List<String> = withContext(Dispatchers.IO) {
+        val snapshot = ConnectionSnapshotCollector.collect(context, fetchPublicIp = false)
+        val subnet = SubnetScanner.localSubnet(context)
+        val discovered = if (subnet != null) {
+            SubnetScanner.scan(subnet) { scanned, total, _ ->
+                onDiscoverProgress(scanned, total)
+            }.map { it.ip }
+        } else {
+            emptyList()
+        }
+        resolveTargets(overrideHost, snapshot.gatewayIpv4, subnet, discovered)
+    }
+
+    suspend fun scanMany(
+        hosts: List<String>,
+        ports: List<Int>,
+        timeoutMs: Int = 900,
+        batchSize: Int = 16,
+        onProgress: suspend (
+            hostIndex: Int,
+            hostTotal: Int,
+            host: String,
+            scanned: Int,
+            portTotal: Int,
+            hit: PortScanHit?
+        ) -> Unit = { _, _, _, _, _, _ -> }
+    ): NetworkPortScanResult = withContext(Dispatchers.IO) {
+        if (hosts.isEmpty()) {
+            return@withContext NetworkPortScanResult(
+                targets = emptyList(),
+                results = emptyList(),
+                portsPerHost = ports.size,
+                error = "No devices found on your network"
+            )
+        }
+        if (ports.isEmpty()) {
+            return@withContext NetworkPortScanResult(
+                targets = hosts,
+                results = emptyList(),
+                portsPerHost = 0,
+                error = "No ports to scan"
+            )
+        }
+
+        val results = hosts.mapIndexed { index, host ->
+            coroutineContext.ensureActive()
+            scan(host, ports, timeoutMs, batchSize) { scanned, total, hit ->
+                onProgress(index + 1, hosts.size, host, scanned, total, hit)
+            }
+        }
+
+        NetworkPortScanResult(
+            targets = hosts,
+            results = results,
+            portsPerHost = ports.size
+        )
+    }
 
     suspend fun scan(
         host: String,
@@ -153,19 +244,39 @@ object PortScanner {
             } else {
                 appendLine("${result.openPorts.size} open:")
                 result.openPorts.forEach { hit ->
-                    val svc = hit.service?.let { " ($it)" }.orEmpty()
-                    appendLine(
-                        String.format(
-                            Locale.US,
-                            "  %d%s · %.0f ms",
-                            hit.port,
-                            svc,
-                            hit.connectMs
-                        )
-                    )
+                    appendLine("  ${formatHit(hit)}")
                 }
             }
         }.trim()
+    }
+
+    fun formatNetwork(result: NetworkPortScanResult): String {
+        if (result.error != null) {
+            return "Port scan · network\n${result.error}"
+        }
+        return buildString {
+            appendLine("Port scan · network")
+            appendLine("Devices scanned: ${result.targets.size}")
+            appendLine("Ports per device: ${result.portsPerHost}")
+            val withOpen = result.results.filter { it.openPorts.isNotEmpty() }
+            if (withOpen.isEmpty()) {
+                appendLine("No open ports found")
+            } else {
+                appendLine("${withOpen.size} device(s) with open ports:")
+                withOpen.forEach { hostResult ->
+                    appendLine()
+                    appendLine(hostResult.host)
+                    hostResult.openPorts.forEach { hit ->
+                        appendLine("  ${formatHit(hit)}")
+                    }
+                }
+            }
+        }.trim()
+    }
+
+    private fun formatHit(hit: PortScanHit): String {
+        val svc = hit.service?.let { " ($it)" }.orEmpty()
+        return String.format(Locale.US, "%d%s · %.0f ms", hit.port, svc, hit.connectMs)
     }
 
     fun presetLabel(preset: PortScanPreset): String = when (preset) {

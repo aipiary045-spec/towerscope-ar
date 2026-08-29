@@ -15,8 +15,10 @@ import com.towerscope.ar.network.PortScanPreset
 import com.towerscope.ar.network.PortScanner
 import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.ui.SystemBars
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 class PortScannerActivity : AppCompatActivity() {
@@ -68,12 +70,9 @@ class PortScannerActivity : AppCompatActivity() {
             scanJob?.cancel()
             return
         }
-        val host = hostInput.text?.toString().orEmpty()
+        val hostOverride = hostInput.text?.toString().orEmpty()
         val ports = PortScanner.portsFor(selectedPreset(), extraPortsInput.text?.toString().orEmpty())
-        if (host.isBlank()) {
-            statusView.text = "Enter a host"
-            return
-        }
+        val singleHost = hostOverride.isNotBlank()
 
         openList.removeAllViews()
         lastReport = ""
@@ -81,36 +80,107 @@ class PortScannerActivity : AppCompatActivity() {
         extraPortsInput.isEnabled = false
         presetGroup.isEnabled = false
         runButton.text = getString(R.string.tool_stop)
-        statusView.text = "Scanning 0 / ${ports.size}…"
+        findViewById<TextView>(R.id.portScannerOpenHeader).isVisible = false
 
         scanJob = lifecycleScope.launch {
+            val targets = if (singleHost) {
+                listOf(hostOverride.trim())
+            } else {
+                statusView.text = getString(R.string.port_scan_discovering)
+                PortScanner.resolveTargets(this@PortScannerActivity, hostOverride) { scanned, total ->
+                    withContext(Dispatchers.Main) {
+                        statusView.text = getString(
+                            R.string.port_scan_discovering_progress,
+                            scanned,
+                            total
+                        )
+                    }
+                }
+            }
+
+            if (targets.isEmpty()) {
+                statusView.text = getString(R.string.port_scan_no_devices)
+                finishScan()
+                return@launch
+            }
+
             var openCount = 0
-            val result = PortScanner.scan(host, ports) { scanned, total, hit ->
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+            var lastHeaderHost: String? = null
+            val networkResult = PortScanner.scanMany(targets, ports) {
+                    hostIndex, hostTotal, host, scanned, portTotal, hit ->
+                withContext(Dispatchers.Main) {
+                    if (lastHeaderHost != host) {
+                        lastHeaderHost = host
+                        addHostHeader(host)
+                    }
                     if (hit != null) {
                         openCount++
                         addOpenRow(hit.port, hit.service, hit.connectMs)
                     }
-                    statusView.text = String.format(
-                        Locale.US,
-                        "Scanning %d / %d · %d open",
+                    statusView.text = getString(
+                        R.string.port_scan_scanning_progress,
+                        host,
+                        hostIndex,
+                        hostTotal,
                         scanned,
-                        total,
+                        portTotal,
                         openCount
                     )
                 }
             }
-            lastReport = PortScanner.format(result)
-            statusView.text = if (result.openPorts.isEmpty()) {
-                "Done · no open ports (${result.portsScanned} scanned)"
+
+            lastReport = if (singleHost && networkResult.results.size == 1) {
+                PortScanner.format(networkResult.results.first())
             } else {
-                "Done · ${result.openPorts.size} open on ${result.host}"
+                PortScanner.formatNetwork(networkResult)
             }
-            hostInput.isEnabled = true
-            extraPortsInput.isEnabled = true
-            presetGroup.isEnabled = true
-            runButton.text = getString(R.string.tool_run)
+
+            val withOpen = networkResult.results.count { it.openPorts.isNotEmpty() }
+            statusView.text = when {
+                networkResult.error != null -> networkResult.error
+                openCount == 0 -> getString(
+                    R.string.port_scan_done_none,
+                    networkResult.targets.size,
+                    ports.size
+                )
+                singleHost -> getString(
+                    R.string.port_scan_done_single,
+                    openCount,
+                    networkResult.targets.first()
+                )
+                else -> getString(
+                    R.string.port_scan_done_network,
+                    openCount,
+                    withOpen,
+                    networkResult.targets.size
+                )
+            }
+            finishScan()
         }
+    }
+
+    private fun finishScan() {
+        hostInput.isEnabled = true
+        extraPortsInput.isEnabled = true
+        presetGroup.isEnabled = true
+        runButton.text = getString(R.string.tool_run)
+    }
+
+    private fun addHostHeader(host: String) {
+        val header = TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = if (openList.childCount == 0) 0 else resources.getDimensionPixelSize(R.dimen.item_gap)
+            }
+            text = host
+            setTextColor(getColor(R.color.text_primary))
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            textSize = 13f
+        }
+        openList.addView(header)
+        findViewById<TextView>(R.id.portScannerOpenHeader).isVisible = true
     }
 
     private fun addOpenRow(port: Int, service: String?, connectMs: Double) {
@@ -119,8 +189,7 @@ class PortScannerActivity : AppCompatActivity() {
         row.findViewById<TextView>(R.id.portScanRowPort).text = label
         row.findViewById<TextView>(R.id.portScanRowMs).text =
             String.format(Locale.US, "%.0f ms", connectMs)
-        openList.addView(row, 0)
-        findViewById<TextView>(R.id.portScannerOpenHeader).isVisible = true
+        openList.addView(row)
     }
 
     private fun share() {

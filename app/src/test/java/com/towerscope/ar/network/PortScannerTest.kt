@@ -22,16 +22,42 @@ class PortScannerTest {
     }
 
     @Test
-    fun format_listsOpenPorts() {
-        val text = PortScanner.format(
-            PortScanResult(
-                host = "10.0.0.1",
-                openPorts = listOf(PortScanHit(443, 12.0, "HTTPS")),
-                portsScanned = 10
+    fun resolveTargets_usesGatewayAndDiscoveredHostsWhenBlank() {
+        val targets = PortScanner.resolveTargets(
+            overrideHost = "",
+            gatewayIpv4 = "192.168.88.1",
+            subnet = SubnetInfo("192.168.88.50", 24, "192.168.88.0", 254),
+            discoveredHosts = listOf("192.168.88.10", "192.168.88.20")
+        )
+        assertTrue("192.168.88.1" in targets)
+        assertTrue("192.168.88.10" in targets)
+        assertTrue("192.168.88.20" in targets)
+    }
+
+    @Test
+    fun resolveTargets_honorsSingleHostOverride() {
+        val targets = PortScanner.resolveTargets(
+            overrideHost = "10.0.0.5",
+            gatewayIpv4 = "192.168.1.1",
+            subnet = null,
+            discoveredHosts = listOf("192.168.1.2")
+        )
+        assertEquals(listOf("10.0.0.5"), targets)
+    }
+
+    @Test
+    fun formatNetwork_listsHostsWithOpenPorts() {
+        val text = PortScanner.formatNetwork(
+            NetworkPortScanResult(
+                targets = listOf("192.168.1.1", "192.168.1.10"),
+                results = listOf(
+                    PortScanResult("192.168.1.1", listOf(PortScanHit(443, 8.0, "HTTPS")), 11),
+                    PortScanResult("192.168.1.10", emptyList(), 11)
+                ),
+                portsPerHost = 11
             )
         )
-        assertTrue(text.contains("10.0.0.1"))
+        assertTrue(text.contains("192.168.1.1"))
         assertTrue(text.contains("443"))
-        assertTrue(text.contains("HTTPS"))
     }
 }
