@@ -14,14 +14,16 @@ internal object SnmpClient {
     private const val TIMEOUT_MS = 2_500
     private const val MAX_RESPONSE = 65_536
 
-    fun get(host: String, community: String, oid: String): SnmpVarbind? =
-        send(host, community, pduGet(oid), expectGetResponse = true).firstOrNull()
+    fun get(host: String, community: String, oid: String, snmpVersion: Int = 1): SnmpVarbind? =
+        runCatching {
+            send(host, community, pduGet(oid), snmpVersion, expectGetResponse = true).firstOrNull()
+        }.getOrNull()
 
-    fun walk(host: String, community: String, baseOid: String): List<SnmpVarbind> {
+    fun walk(host: String, community: String, baseOid: String, snmpVersion: Int = 1): List<SnmpVarbind> {
         val results = mutableListOf<SnmpVarbind>()
         var currentOid = baseOid
         repeat(256) {
-            val next = getNext(host, community, currentOid) ?: return results
+            val next = getNext(host, community, currentOid, snmpVersion) ?: return results
             if (!next.oid.startsWith("$baseOid.") && next.oid != baseOid) return results
             if (results.any { it.oid == next.oid }) return results
             results += next
@@ -30,16 +32,35 @@ internal object SnmpClient {
         return results
     }
 
-    private fun getNext(host: String, community: String, oid: String): SnmpVarbind? =
-        send(host, community, pduGetNext(oid), expectGetResponse = true).firstOrNull()
+    fun probe(host: String, community: String): Boolean = resolveVersion(host, community) != null
+
+    /** Returns 1 for SNMP v2c or 0 for SNMP v1 when the router responds. */
+    fun resolveVersion(host: String, community: String): Int? =
+        runCatching {
+            if (get(host, community, "1.3.6.1.2.1.1.1.0", snmpVersion = 1) != null) 1
+            else if (get(host, community, "1.3.6.1.2.1.1.1.0", snmpVersion = 0) != null) 0
+            else null
+        }.getOrNull()
+
+    internal fun decodeResponse(bytes: ByteArray): List<SnmpVarbind> =
+        decodeMessage(bytes, expectGetResponse = true)
+
+    internal fun decodeSnmpValue(bytes: ByteArray): SnmpValue =
+        BerDecoder(bytes).readValue()
+
+    private fun getNext(host: String, community: String, oid: String, snmpVersion: Int = 1): SnmpVarbind? =
+        runCatching {
+            send(host, community, pduGetNext(oid), snmpVersion, expectGetResponse = true).firstOrNull()
+        }.getOrNull()
 
     private fun send(
         host: String,
         community: String,
         pdu: ByteArray,
+        snmpVersion: Int = 1,
         expectGetResponse: Boolean
     ): List<SnmpVarbind> {
-        val message = encodeMessage(community, pdu)
+        val message = encodeMessage(community, pdu, snmpVersion)
         val socket = DatagramSocket()
         socket.soTimeout = TIMEOUT_MS
         return try {
@@ -54,8 +75,8 @@ internal object SnmpClient {
         }
     }
 
-    private fun encodeMessage(community: String, pdu: ByteArray): ByteArray {
-        val version = encodeInteger(1) // SNMP v2c
+    private fun encodeMessage(community: String, pdu: ByteArray, snmpVersion: Int): ByteArray {
+        val version = encodeInteger(snmpVersion) // 0 = v1, 1 = v2c
         val communityBytes = encodeOctetString(community.toByteArray(Charsets.UTF_8))
         val content = version + communityBytes + pdu
         return encodeSequence(content)
@@ -77,22 +98,24 @@ internal object SnmpClient {
         encodeSequence(encodeOid(oid) + value)
 
     private fun decodeMessage(bytes: ByteArray, expectGetResponse: Boolean): List<SnmpVarbind> {
-        val decoder = BerDecoder(bytes)
-        decoder.readSequence()
+        val message = BerDecoder(bytes).readSequence()
+        val decoder = BerDecoder(message)
         decoder.readInteger() // version
         decoder.readOctetString() // community
         val pduTag = decoder.readTag()
-        if (expectGetResponse && pduTag != 0xA2) {
+        // v2c GetResponse = 0xA2; v1 GetResponse = 0xA0 (same tag as v1 GetRequest)
+        if (expectGetResponse && pduTag != 0xA2 && pduTag != 0xA0) {
             throw IllegalStateException("Unexpected SNMP PDU 0x${pduTag.toString(16)}")
         }
-        decoder.readSequence()
-        decoder.readInteger() // request id
-        val errorStatus = decoder.readInteger()
-        val errorIndex = decoder.readInteger()
+        val pdu = decoder.readTaggedContent()
+        val pduDecoder = BerDecoder(pdu)
+        pduDecoder.readInteger() // request id
+        val errorStatus = pduDecoder.readInteger()
+        val errorIndex = pduDecoder.readInteger()
         if (errorStatus != 0) {
             throw IllegalStateException("SNMP error $errorStatus at index $errorIndex")
         }
-        val bindings = decoder.readSequence()
+        val bindings = pduDecoder.readSequence()
         val results = mutableListOf<SnmpVarbind>()
         val bindingDecoder = BerDecoder(bindings)
         while (bindingDecoder.hasRemaining()) {
@@ -165,6 +188,10 @@ internal object SnmpClient {
         fun readSequence(): ByteArray {
             val tag = readTag()
             require(tag == 0x30) { "Expected SEQUENCE" }
+            return readTaggedContent()
+        }
+
+        fun readTaggedContent(): ByteArray {
             val length = readLength()
             return readBytes(length)
         }
@@ -173,7 +200,10 @@ internal object SnmpClient {
             val tag = readTag()
             require(tag == 0x02) { "Expected INTEGER" }
             val length = readLength()
-            val valueBytes = readBytes(length)
+            return readIntegerBytes(readBytes(length))
+        }
+
+        private fun readIntegerBytes(valueBytes: ByteArray): Int {
             var value = 0
             valueBytes.forEach { value = (value shl 8) or (it.toInt() and 0xFF) }
             if (valueBytes.isNotEmpty() && valueBytes[0].toInt() and 0x80 != 0) {
@@ -217,7 +247,12 @@ internal object SnmpClient {
                     readTag(); readLength(); SnmpValue.Null
                 }
                 0x06 -> SnmpValue.ObjectId(readOid())
-                0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46 -> {
+                0x41, 0x42, 0x43, 0x46 -> {
+                    readTag()
+                    val length = readLength()
+                    SnmpValue.Gauge(readIntegerBytes(readBytes(length)).toLong())
+                }
+                0x40, 0x44, 0x45 -> {
                     readTag()
                     SnmpValue.Unsupported(readBytes(readLength()))
                 }
@@ -264,6 +299,7 @@ internal data class SnmpVarbind(
 
 internal sealed class SnmpValue {
     data class Integer(val value: Int) : SnmpValue()
+    data class Gauge(val value: Long) : SnmpValue()
     data class Octets(val bytes: ByteArray) : SnmpValue()
     data class ObjectId(val oid: String) : SnmpValue()
     data class Unsupported(val bytes: ByteArray) : SnmpValue()

@@ -29,7 +29,7 @@ class RouterWanLinkTest {
         val label = RouterWanLink.formatLinkSpeed(
             RouterInterface(1, "wan", null, 1000, 1)
         )
-        assertEquals("1.0 Gbps", label)
+        assertEquals("1000 Mbps", label)
     }
 
     @Test
@@ -38,6 +38,23 @@ class RouterWanLinkTest {
             RouterInterface(1, "wan", 100_000_000, null, 1)
         )
         assertEquals("100 Mbps", label)
+    }
+
+    @Test
+    fun negotiatedEthernetLabel_mapsTenMegabit() {
+        val label = RouterWanLink.negotiatedEthernetLabel(
+            RouterInterface(1, "wan", 10_000_000, null, 1)
+        )
+        assertEquals("10 Mbps", label)
+    }
+
+    @Test
+    fun formatPhoneLink_showsWifiSpeed() {
+        val text = RouterWanLink.formatPhoneLink(
+            PhoneLinkInfo("Office", 866, true)
+        )
+        assertTrue(text.contains("1000 Mbps"))
+        assertTrue(text.contains("Office"))
     }
 
     @Test

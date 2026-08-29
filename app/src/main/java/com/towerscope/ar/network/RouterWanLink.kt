@@ -12,17 +12,24 @@ data class RouterInterface(
     val operStatus: Int?
 )
 
+data class PhoneLinkInfo(
+    val ssid: String?,
+    val linkMbps: Int?,
+    val connected: Boolean
+)
+
 data class WanLinkResult(
     val routerHost: String,
     val community: String,
     val selectedInterface: RouterInterface?,
     val interfaces: List<RouterInterface>,
+    val phoneLink: PhoneLinkInfo? = null,
     val error: String? = null
 )
 
 /**
  * Reads router WAN / uplink Ethernet negotiated speed via SNMP (IF-MIB).
- * Requires SNMP enabled on the router (UDP 161).
+ * Also surfaces phone Wi‑Fi negotiated link speed when available.
  */
 object RouterWanLink {
 
@@ -31,6 +38,8 @@ object RouterWanLink {
     private const val IF_DESCR = "1.3.6.1.2.1.2.2.1.2"
     private const val IF_SPEED = "1.3.6.1.2.1.2.2.1.5"
     private const val IF_OPER_STATUS = "1.3.6.1.2.1.2.2.1.8"
+
+    private val FALLBACK_COMMUNITIES = listOf("public", "private")
 
     fun wanMatchScore(name: String): Int {
         val n = name.lowercase(Locale.US)
@@ -47,23 +56,38 @@ object RouterWanLink {
         }
     }
 
-    fun formatLinkSpeed(iface: RouterInterface): String? {
-        iface.speedMbps?.takeIf { it > 0 }?.let { mbps ->
-            return if (mbps >= 1000) {
-                String.format(Locale.US, "%.1f Gbps", mbps / 1000.0)
-            } else {
-                String.format(Locale.US, "%d Mbps", mbps)
-            }
-        }
-        iface.speedBps?.takeIf { it > 0 }?.let { bps ->
-            val mbps = bps / 1_000_000.0
-            return if (mbps >= 1000) {
-                String.format(Locale.US, "%.1f Gbps", mbps / 1000.0)
-            } else {
-                String.format(Locale.US, "%.0f Mbps", mbps)
-            }
-        }
+    fun resolveMbps(iface: RouterInterface): Long? {
+        iface.speedMbps?.takeIf { it > 0 }?.let { return it }
+        iface.speedBps?.takeIf { it > 0 }?.let { return it / 1_000_000 }
         return null
+    }
+
+    fun negotiatedEthernetLabel(iface: RouterInterface): String? {
+        val mbps = resolveMbps(iface) ?: return null
+        return when {
+            mbps <= 15 -> "10 Mbps"
+            mbps <= 150 -> "100 Mbps"
+            mbps <= 1_500 -> "1000 Mbps"
+            mbps < 10_000 -> String.format(Locale.US, "%d Mbps", mbps)
+            else -> String.format(Locale.US, "%.1f Gbps", mbps / 1000.0)
+        }
+    }
+
+    fun formatLinkSpeed(iface: RouterInterface): String? =
+        negotiatedEthernetLabel(iface)
+
+    fun formatPhoneLink(info: PhoneLinkInfo): String {
+        if (!info.connected || info.linkMbps == null || info.linkMbps <= 0) {
+            return "Wi‑Fi link: not connected"
+        }
+        val ssid = info.ssid?.let { " ($it)" }.orEmpty()
+        val label = when {
+            info.linkMbps <= 15 -> "10 Mbps"
+            info.linkMbps <= 150 -> "100 Mbps"
+            info.linkMbps <= 1_500 -> "1000 Mbps"
+            else -> "${info.linkMbps} Mbps"
+        }
+        return "Wi‑Fi link$ssid: $label (phone ↔ router)"
     }
 
     fun formatOperStatus(status: Int?): String = when (status) {
@@ -79,75 +103,87 @@ object RouterWanLink {
             .sortedWith(
                 compareByDescending<RouterInterface> { wanMatchScore(it.name) }
                     .thenByDescending { it.operStatus == 1 }
-                    .thenByDescending { it.speedMbps ?: 0 }
-                    .thenByDescending { it.speedBps ?: 0L }
+                    .thenByDescending { resolveMbps(it) ?: 0 }
             )
             .firstOrNull { wanMatchScore(it.name) > 0 }
-            ?: interfaces.maxByOrNull { it.speedMbps ?: 0 }
+            ?: interfaces.maxByOrNull { resolveMbps(it) ?: 0L }
     }
 
     suspend fun query(
         host: String,
-        community: String = "public"
+        community: String = "public",
+        phoneLink: PhoneLinkInfo? = null
     ): WanLinkResult = withContext(Dispatchers.IO) {
         val trimmedHost = host.trim()
-        val trimmedCommunity = community.trim().ifBlank { "public" }
+        val communities = buildList {
+            val trimmed = community.trim()
+            if (trimmed.isNotBlank()) add(trimmed)
+            addAll(FALLBACK_COMMUNITIES)
+        }.distinct()
+
         if (trimmedHost.isBlank()) {
             return@withContext WanLinkResult(
                 routerHost = host,
-                community = trimmedCommunity,
+                community = community,
                 selectedInterface = null,
                 interfaces = emptyList(),
+                phoneLink = phoneLink,
                 error = "Enter your router IP (defaults to gateway)"
             )
         }
 
-        runCatching {
-            val interfaces = loadInterfaces(trimmedHost, trimmedCommunity)
-            if (interfaces.isEmpty()) {
-                WanLinkResult(
-                    routerHost = trimmedHost,
-                    community = trimmedCommunity,
-                    selectedInterface = null,
-                    interfaces = emptyList(),
-                    error = "No SNMP interfaces returned. Enable SNMP on the router (UDP 161) " +
-                        "and check the community string."
-                )
+        var lastError: String? = null
+        for (candidate in communities) {
+            val result = runCatching { loadInterfaces(trimmedHost, candidate) }
+            if (result.isSuccess) {
+                val interfaces = result.getOrThrow()
+                if (interfaces.isNotEmpty()) {
+                    val selected = pickWanInterface(interfaces)
+                    return@withContext WanLinkResult(
+                        routerHost = trimmedHost,
+                        community = candidate,
+                        selectedInterface = selected,
+                        interfaces = interfaces.sortedBy { it.index },
+                        phoneLink = phoneLink,
+                        error = if (selected == null || wanMatchScore(selected.name) == 0) {
+                            "SNMP works, but no obvious WAN port was found — check the list below."
+                        } else {
+                            null
+                        }
+                    )
+                }
+                lastError = "SNMP responded but returned no interfaces with community \"$candidate\"."
             } else {
-                val selected = pickWanInterface(interfaces)
-                WanLinkResult(
-                    routerHost = trimmedHost,
-                    community = trimmedCommunity,
-                    selectedInterface = selected,
-                    interfaces = interfaces.sortedBy { it.index },
-                    error = if (selected == null || wanMatchScore(selected.name) == 0) {
-                        "SNMP works, but no obvious WAN interface was found. See the interface list below."
-                    } else {
-                        null
-                    }
-                )
+                lastError = result.exceptionOrNull()?.message ?: "SNMP failed"
             }
-        }.getOrElse { error ->
-            WanLinkResult(
-                routerHost = trimmedHost,
-                community = trimmedCommunity,
-                selectedInterface = null,
-                interfaces = emptyList(),
-                error = "SNMP query failed: ${error.message ?: "timeout or blocked"}. " +
-                    "Enable SNMP on the router and allow UDP 161 from your phone."
-            )
         }
+
+        WanLinkResult(
+            routerHost = trimmedHost,
+            community = communities.first(),
+            selectedInterface = null,
+            interfaces = emptyList(),
+            phoneLink = phoneLink,
+            error = buildString {
+                append("Could not read router WAN speed via SNMP. ")
+                append(lastError ?: "No response on UDP 161.")
+                append("\n\nEnable SNMP on the router (MikroTik: IP → SNMP). ")
+                append("Your phone Wi‑Fi link speed is shown above — that is not the WAN port.")
+            }
+        )
     }
 
     fun format(result: WanLinkResult): String = buildString {
-        appendLine("Router WAN link (SNMP)")
+        appendLine("Link speed")
+        result.phoneLink?.let { appendLine(formatPhoneLink(it)) }
+        appendLine()
+        appendLine("Router WAN (SNMP)")
         appendLine("Router: ${result.routerHost}")
         appendLine("Community: ${result.community}")
         val selected = result.selectedInterface
         if (selected != null) {
-            appendLine()
-            appendLine("WAN interface: ${selected.name}")
-            formatLinkSpeed(selected)?.let { appendLine("Link speed: $it") }
+            appendLine("WAN port: ${selected.name}")
+            negotiatedEthernetLabel(selected)?.let { appendLine("Negotiated: $it") }
             appendLine("Status: ${formatOperStatus(selected.operStatus)}")
         }
         if (result.error != null) {
@@ -156,9 +192,9 @@ object RouterWanLink {
         }
         if (result.interfaces.isNotEmpty()) {
             appendLine()
-            appendLine("Interfaces (${result.interfaces.size}):")
+            appendLine("All interfaces (${result.interfaces.size}):")
             result.interfaces.forEach { iface ->
-                val speed = formatLinkSpeed(iface) ?: "—"
+                val speed = negotiatedEthernetLabel(iface) ?: "—"
                 val marker = if (iface.index == selected?.index) " *" else ""
                 appendLine(
                     String.format(
@@ -175,37 +211,39 @@ object RouterWanLink {
     }.trim()
 
     private fun loadInterfaces(host: String, community: String): List<RouterInterface> {
-        val names = readNameTable(host, community)
-        if (names.isNotEmpty()) {
-            val highSpeed = readIndexedInt(host, community, IF_HIGH_SPEED)
-            val oper = readIndexedInt(host, community, IF_OPER_STATUS)
-            return names.map { (index, name) ->
-                RouterInterface(
-                    index = index,
-                    name = name,
-                    speedBps = null,
-                    speedMbps = highSpeed[index]?.toLong(),
-                    operStatus = oper[index]
-                )
-            }
-        }
+        val snmpVersion = SnmpClient.resolveVersion(host, community)
+            ?: throw IllegalStateException("No SNMP response on UDP 161 (community \"$community\")")
 
-        val descr = readIndexedString(host, community, IF_DESCR)
-        val speed = readIndexedLong(host, community, IF_SPEED)
-        val oper = readIndexedInt(host, community, IF_OPER_STATUS)
-        return descr.map { (index, name) ->
+        val names = readNameTable(host, community, snmpVersion)
+        val descr = readIndexedString(host, community, IF_DESCR, snmpVersion)
+        val allNames = if (names.isNotEmpty()) names else descr
+        if (allNames.isEmpty()) return emptyList()
+
+        val highSpeed = readIndexedLong(host, community, IF_HIGH_SPEED, snmpVersion)
+        val speedBps = readIndexedLong(host, community, IF_SPEED, snmpVersion)
+        val oper = readIndexedInt(host, community, IF_OPER_STATUS, snmpVersion)
+
+        return allNames.map { (index, name) ->
             RouterInterface(
                 index = index,
                 name = name,
-                speedBps = speed[index],
-                speedMbps = null,
+                speedBps = speedBps[index]?.takeIf { it > 0 },
+                speedMbps = highSpeed[index]?.takeIf { it > 0 },
                 operStatus = oper[index]
             )
         }
     }
 
-    private fun readNameTable(host: String, community: String): Map<Int, String> =
-        SnmpClient.walk(host, community, IF_NAME)
+    private fun walkTable(
+        host: String,
+        community: String,
+        baseOid: String,
+        snmpVersion: Int
+    ): List<SnmpVarbind> =
+        SnmpClient.walk(host, community, baseOid, snmpVersion)
+
+    private fun readNameTable(host: String, community: String, snmpVersion: Int): Map<Int, String> =
+        walkTable(host, community, IF_NAME, snmpVersion)
             .mapNotNull { vb ->
                 val index = vb.oid.substringAfterLast('.').toIntOrNull() ?: return@mapNotNull null
                 val name = vb.value.asDisplayString() ?: return@mapNotNull null
@@ -213,8 +251,13 @@ object RouterWanLink {
             }
             .toMap()
 
-    private fun readIndexedString(host: String, community: String, baseOid: String): Map<Int, String> =
-        SnmpClient.walk(host, community, baseOid)
+    private fun readIndexedString(
+        host: String,
+        community: String,
+        baseOid: String,
+        snmpVersion: Int
+    ): Map<Int, String> =
+        walkTable(host, community, baseOid, snmpVersion)
             .mapNotNull { vb ->
                 val index = vb.oid.substringAfterLast('.').toIntOrNull() ?: return@mapNotNull null
                 val value = vb.value.asDisplayString() ?: return@mapNotNull null
@@ -222,20 +265,30 @@ object RouterWanLink {
             }
             .toMap()
 
-    private fun readIndexedInt(host: String, community: String, baseOid: String): Map<Int, Int> =
-        SnmpClient.walk(host, community, baseOid)
+    private fun readIndexedInt(
+        host: String,
+        community: String,
+        baseOid: String,
+        snmpVersion: Int
+    ): Map<Int, Int> =
+        walkTable(host, community, baseOid, snmpVersion)
             .mapNotNull { vb ->
                 val index = vb.oid.substringAfterLast('.').toIntOrNull() ?: return@mapNotNull null
-                val value = (vb.value as? SnmpValue.Integer)?.value ?: return@mapNotNull null
+                val value = vb.value.asNumber()?.toInt() ?: return@mapNotNull null
                 index to value
             }
             .toMap()
 
-    private fun readIndexedLong(host: String, community: String, baseOid: String): Map<Int, Long> =
-        SnmpClient.walk(host, community, baseOid)
+    private fun readIndexedLong(
+        host: String,
+        community: String,
+        baseOid: String,
+        snmpVersion: Int
+    ): Map<Int, Long> =
+        walkTable(host, community, baseOid, snmpVersion)
             .mapNotNull { vb ->
                 val index = vb.oid.substringAfterLast('.').toIntOrNull() ?: return@mapNotNull null
-                val value = (vb.value as? SnmpValue.Integer)?.value?.toLong() ?: return@mapNotNull null
+                val value = vb.value.asNumber() ?: return@mapNotNull null
                 index to value
             }
             .toMap()
@@ -243,6 +296,13 @@ object RouterWanLink {
     private fun SnmpValue.asDisplayString(): String? = when (this) {
         is SnmpValue.Octets -> String(bytes, Charsets.UTF_8).trim().ifBlank { null }
         is SnmpValue.Integer -> value.toString()
+        is SnmpValue.Gauge -> value.toString()
+        else -> null
+    }
+
+    private fun SnmpValue.asNumber(): Long? = when (this) {
+        is SnmpValue.Integer -> value.toLong()
+        is SnmpValue.Gauge -> value
         else -> null
     }
 }
