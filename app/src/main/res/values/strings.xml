@@ -94,6 +94,13 @@
     <string name="home_job_channel_plan_sub">Pick the cleanest Wi‑Fi channel</string>
     <string name="home_job_signal_walk">Signal walk</string>
     <string name="home_job_signal_walk_sub">Log RSSI while you walk</string>
+    <string name="signal_walk_weak_title">Weak signal spot</string>
+    <string name="signal_walk_weak_message">Signal dropped to %1$d dBm. Where are you on site?</string>
+    <string name="signal_walk_weak_hint">e.g. Kitchen, far bedroom, garage…</string>
+    <string name="signal_walk_weak_gps">GPS: %1$.6f, %2$.6f</string>
+    <string name="signal_walk_weak_no_gps">GPS not available</string>
+    <string name="signal_walk_weak_save">Save spot</string>
+    <string name="signal_walk_weak_skip">Keep walking</string>
     <string name="home_job_bufferbloat">Bufferbloat</string>
     <string name="home_job_bufferbloat_sub">Latency spike under download load</string>
     <string name="home_job_port_scan">Port scanner</string>
