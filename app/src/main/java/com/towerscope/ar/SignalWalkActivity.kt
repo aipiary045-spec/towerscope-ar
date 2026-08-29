@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.material.button.MaterialButton
@@ -32,7 +33,7 @@ class SignalWalkActivity : AppCompatActivity() {
     private lateinit var toggleButton: MaterialButton
     private var recordJob: Job? = null
     private var lastSnapshot = SignalWalkSnapshot(emptyList(), false, 0.0)
-    private var fusedLocation = LocationServices.getFusedLocationProviderClient(this)
+    private lateinit var fusedLocation: FusedLocationProviderClient
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -43,6 +44,7 @@ class SignalWalkActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_signal_walk)
         SystemBars.apply(findViewById(R.id.signalWalkRoot))
+        fusedLocation = LocationServices.getFusedLocationProviderClient(this)
         monitor = WifiMonitor(this)
 
         statusView = findViewById(R.id.signalWalkStatus)
