@@ -6,7 +6,6 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import com.towerscope.ar.util.CelestialBodies
 import com.towerscope.ar.util.GeoUtils
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -21,13 +20,15 @@ data class DeviceHeading(
     val pitchDegrees: Double,
     val rollDegrees: Double,
     val tilted: Boolean,
-    /** Approximate heading change rate in degrees per second. */
     val rotationRateDps: Double,
     val magneticInterference: Boolean
 )
 
 /**
- * Device heading for portrait compass use (top of phone = forward).
+ * Device heading for portrait compass use (top of phone = forward, screen toward user).
+ *
+ * Uses [SensorManager.AXIS_X] + [SensorManager.AXIS_Z] remap — the standard portrait
+ * upright mapping. Do not use X+Y; that rotates the azimuth reference and breaks aiming.
  */
 class DeviceHeadingClient(context: Context) {
 
@@ -37,11 +38,14 @@ class DeviceHeadingClient(context: Context) {
     fun headingUpdates(locationProvider: () -> UserLocation? = { null }): Flow<DeviceHeading> =
         callbackFlow {
             val rotation = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+                ?: sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
+
             if (rotation == null) {
                 close()
                 return@callbackFlow
             }
 
+            val usesGeomagneticNorth = rotation.type == Sensor.TYPE_ROTATION_VECTOR
             val magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
             val rotationMatrix = FloatArray(9)
             val remappedMatrix = FloatArray(9)
@@ -64,7 +68,8 @@ class DeviceHeadingClient(context: Context) {
                             )
                             return
                         }
-                        Sensor.TYPE_ROTATION_VECTOR -> Unit
+                        Sensor.TYPE_ROTATION_VECTOR,
+                        Sensor.TYPE_GAME_ROTATION_VECTOR -> Unit
                         else -> return
                     }
 
@@ -72,59 +77,47 @@ class DeviceHeadingClient(context: Context) {
                     val remapped = SensorManager.remapCoordinateSystem(
                         rotationMatrix,
                         SensorManager.AXIS_X,
-                        SensorManager.AXIS_Y,
+                        SensorManager.AXIS_Z,
                         remappedMatrix
                     )
                     val matrixForOrientation = if (remapped) remappedMatrix else rotationMatrix
                     SensorManager.getOrientation(matrixForOrientation, orientation)
+
                     val pitchDegrees = Math.toDegrees(orientation[1].toDouble())
                     val rollDegrees = Math.toDegrees(orientation[2].toDouble())
-                    val tilted = HeadingFilter.isTilted(pitchDegrees, rollDegrees)
+                    val tilted = isAimTilted(matrixForOrientation)
 
                     var degrees = Math.toDegrees(orientation[0].toDouble())
                     degrees = GeoUtils.normalizeBearing(degrees)
 
                     val sampleNanos = event.timestamp
-                    val rotationRateDps = previousRawHeading?.let { previous ->
-                        previousSampleNanos?.let { previousNanos ->
-                            val deltaMs = (sampleNanos - previousNanos) / 1_000_000.0
-                            if (deltaMs <= 0.0) {
-                                0.0
-                            } else {
-                                val delta = CelestialBodies.signedDeltaDegrees(previous, degrees)
-                                abs(delta) / (deltaMs / 1000.0)
-                            }
-                        }
-                    } ?: 0.0
+                    val rotationRateDps = computeRotationRateDps(
+                        previousRawHeading,
+                        previousSampleNanos,
+                        degrees,
+                        sampleNanos
+                    )
                     previousRawHeading = degrees
                     previousSampleNanos = sampleNanos
 
-                    val location = locationProvider()
-                    if (location != null) {
-                        val field = GeomagneticField(
-                            location.latitude.toFloat(),
-                            location.longitude.toFloat(),
-                            (location.altitudeMeters ?: 0.0).toFloat(),
-                            System.currentTimeMillis()
-                        )
-                        degrees = GeoUtils.normalizeBearing(degrees + field.declination)
-                    }
-
-                    val speed = location?.speedMps
-                    val gpsBearing = location?.bearingDegrees
-                    if (
-                        speed != null && speed >= GPS_BLEND_MIN_SPEED_MPS &&
-                        gpsBearing != null && latestAccuracy < SensorManager.SENSOR_STATUS_ACCURACY_HIGH
-                    ) {
-                        degrees = HeadingFilter.blend(degrees, gpsBearing.toDouble(), GPS_BLEND_WEIGHT)
+                    if (usesGeomagneticNorth) {
+                        val location = locationProvider()
+                        if (location != null) {
+                            val field = GeomagneticField(
+                                location.latitude.toFloat(),
+                                location.longitude.toFloat(),
+                                (location.altitudeMeters ?: 0.0).toFloat(),
+                                System.currentTimeMillis()
+                            )
+                            degrees = GeoUtils.normalizeBearing(degrees + field.declination)
+                        }
                     }
 
                     if (latestAccuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
                         return
                     }
 
-                    val baseAlpha = HeadingFilter.alphaForAccuracy(latestAccuracy)
-                    val alpha = HeadingFilter.alphaForMotion(baseAlpha, rotationRateDps)
+                    val alpha = HeadingFilter.alphaForAccuracy(latestAccuracy)
                     smoothedHeading = HeadingFilter.smooth(smoothedHeading, degrees, alpha)
 
                     trySend(
@@ -149,15 +142,35 @@ class DeviceHeadingClient(context: Context) {
                 }
             }
 
-            sensorManager.registerListener(listener, rotation, SensorManager.SENSOR_DELAY_GAME)
+            sensorManager.registerListener(listener, rotation, SensorManager.SENSOR_DELAY_UI)
             magnetometer?.let {
                 sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_NORMAL)
             }
             awaitClose { sensorManager.unregisterListener(listener) }
         }
 
-    companion object {
-        private const val GPS_BLEND_MIN_SPEED_MPS = 1.4f
-        private const val GPS_BLEND_WEIGHT = 0.22
+    internal companion object {
+        /**
+         * True when the phone top edge is not aimed near the horizon (too flat or tipped).
+         * Uses device +Y in world frame from the portrait compass remap matrix.
+         */
+        internal fun isAimTilted(matrix: FloatArray): Boolean {
+            val deviceYWorldZ = abs(matrix[7])
+            return deviceYWorldZ > 0.47f
+        }
+
+        private fun computeRotationRateDps(
+            previousHeading: Double?,
+            previousNanos: Long?,
+            heading: Double,
+            sampleNanos: Long
+        ): Double {
+            val previous = previousHeading ?: return 0.0
+            val prevNanos = previousNanos ?: return 0.0
+            val deltaMs = (sampleNanos - prevNanos) / 1_000_000.0
+            if (deltaMs <= 0.0) return 0.0
+            val delta = GeoUtils.relativeBearingDegrees(previous, heading)
+            return abs(delta) / (deltaMs / 1000.0)
+        }
     }
 }

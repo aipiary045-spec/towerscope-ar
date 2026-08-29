@@ -348,7 +348,9 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private val headingClient = DeviceHeadingClient(application)
     private val fileStore = TowerFileStore(application)
     private val losProfileService = LosProfileService()
-    private val prefs = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val prefs = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE).also {
+        migrateHeadingOffsetIfNeeded(it)
+    }
     private val _uiState = MutableStateFlow(
         TowerUiState(
             maxDistanceMeters = loadMaxDistanceMeters(),
@@ -400,6 +402,16 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         if (!prefs.contains(KEY_MAX_DISTANCE)) return TowerUiState.DEFAULT_MAX_DISTANCE_METERS
         return prefs.getFloat(KEY_MAX_DISTANCE, TowerUiState.DEFAULT_MAX_DISTANCE_METERS)
             .coerceIn(TowerUiState.MIN_DISTANCE_METERS, TowerUiState.MAX_DISTANCE_METERS)
+    }
+
+    private fun migrateHeadingOffsetIfNeeded(prefs: android.content.SharedPreferences) {
+        val version = prefs.getInt(KEY_HEADING_REMAP_VERSION, 0)
+        if (version < HEADING_REMAP_VERSION) {
+            prefs.edit()
+                .remove(KEY_HEADING_OFFSET)
+                .putInt(KEY_HEADING_REMAP_VERSION, HEADING_REMAP_VERSION)
+                .apply()
+        }
     }
 
     private fun loadHeadingOffset(): Double? {
@@ -1249,6 +1261,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_HUD_EXPANDED = "hud_expanded"
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
         private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
+        private const val KEY_HEADING_REMAP_VERSION = "heading_remap_version"
+        private const val HEADING_REMAP_VERSION = 2
         private const val SIGHTING_DURATION_MS = 2_500L
         private const val SIGHTING_SAMPLE_MS = 50L
         private const val SIGHTING_MIN_SAMPLES = 20
