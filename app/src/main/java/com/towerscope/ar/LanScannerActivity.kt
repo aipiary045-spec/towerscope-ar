@@ -186,9 +186,11 @@ class LanScannerActivity : AppCompatActivity() {
 
     private fun portScanHost(ip: String) {
         if (scanJob?.isActive == true) return
+        val target = ip.trim()
+        if (target.isBlank()) return
         setPortMode(true)
-        hostInput.setText(ip)
-        startPortScan()
+        hostInput.setText(target)
+        startPortScan(targetHost = target)
     }
 
     private fun startDiscoverScan() {
@@ -209,8 +211,9 @@ class LanScannerActivity : AppCompatActivity() {
         }
     }
 
-    private fun startPortScan() {
-        val hostOverride = hostInput.text?.toString().orEmpty()
+    private fun startPortScan(targetHost: String? = null) {
+        val hostOverride = targetHost?.trim().orEmpty()
+            .ifBlank { hostInput.text?.toString().orEmpty().trim() }
         val ports = PortScanner.portsFor(selectedPreset(), extraPortsInput.text?.toString().orEmpty())
         val singleHost = hostOverride.isNotBlank()
 
@@ -219,7 +222,7 @@ class LanScannerActivity : AppCompatActivity() {
 
         scanJob = lifecycleScope.launch {
             val targets = if (singleHost) {
-                listOf(hostOverride.trim())
+                listOf(hostOverride)
             } else {
                 val subnet = SubnetScanner.localSubnet(this@LanScannerActivity)
                 if (subnet == null) {
@@ -294,7 +297,7 @@ class LanScannerActivity : AppCompatActivity() {
                 singleHost -> getString(
                     R.string.port_scan_done_single,
                     openCount,
-                    networkResult.targets.first()
+                    hostOverride
                 )
                 else -> getString(
                     R.string.port_scan_done_network,
