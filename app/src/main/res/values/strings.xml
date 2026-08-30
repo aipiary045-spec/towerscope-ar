@@ -32,10 +32,12 @@
     <string name="compass_warning_metal">Metal nearby — move away from roof edge, ladder, or mount</string>
     <string name="compass_warning_tilt">Hold phone upright — top edge points at the target</string>
     <string name="compass_sighting_progress">Sighting… %1$d%%</string>
-    <string name="compass_align_error">ALIGN %1$s</string>
+    <string name="install_dashboard_import">Import sites</string>
     <string name="home_job_aim">Compass</string>
     <string name="compass_sight_toggle">Switch radar / camera sight</string>
-    <string name="compass_sight_hint">Camera viewfinder — use the radar below for aim</string>
+    <string name="compass_sight_hint">Camera sight · markers show site bearings</string>
+    <string name="compass_align_hint">Facing a site? Press and hold the TURN readout to align the compass to it.</string>
+    <string name="compass_align_hint_ack">Got it</string>
     <string name="compass_warning_custom_location">Bearings use your custom pin — switch to My GPS if you are not at that pin</string>
     <string name="compass_radar_hint">Compass radar — top of disc is the direction you face</string>
     <string name="compass_sight_mode">Sight</string>

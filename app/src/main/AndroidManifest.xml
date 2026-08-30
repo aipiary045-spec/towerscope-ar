@@ -42,12 +42,6 @@
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
-            android:name=".InstallationHubActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.TowerScopeAR" />
-
-        <activity
             android:name=".MainActivity"
             android:exported="false"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|keyboardHidden"

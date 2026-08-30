@@ -175,14 +175,39 @@
                 android:layout_height="52dp"
                 android:layout_marginTop="8dp"
                 android:text="@string/install_dashboard_refresh_los" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/installDashboardSiteBrowserButton"
+                    style="@style/Widget.TowerScope.Button.Ghost"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/site_browser_title" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/installDashboardImportButton"
+                    style="@style/Widget.TowerScope.Button.Ghost"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/install_dashboard_import" />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 
-    <include
-        android:id="@+id/installDashboardFooter"
-        layout="@layout/include_tool_actions"
+    <FrameLayout
+        android:id="@+id/installBottomNav"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/item_gap"
-        android:layout_marginBottom="14dp" />
+        android:layout_height="wrap_content">
+
+        <include layout="@layout/include_bottom_nav" />
+    </FrameLayout>
 </LinearLayout>

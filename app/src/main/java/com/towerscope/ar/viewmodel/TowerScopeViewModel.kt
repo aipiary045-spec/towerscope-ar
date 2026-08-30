@@ -964,6 +964,12 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         prefs.edit().putBoolean(KEY_ONBOARDING_DONE, true).apply()
     }
 
+    fun hasSeenAlignHint(): Boolean = prefs.getBoolean(KEY_ALIGN_HINT_SEEN, false)
+
+    fun markAlignHintSeen() {
+        prefs.edit().putBoolean(KEY_ALIGN_HINT_SEEN, true).apply()
+    }
+
     /** Show figure-8 / tilt coaching overlay on Aim. */
     fun beginCompassImprove() {
         _uiState.update {
@@ -1290,6 +1296,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_HUD_THEME = "hud_theme"
         private const val KEY_HUD_EXPANDED = "hud_expanded"
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
+        private const val KEY_ALIGN_HINT_SEEN = "align_hint_seen"
         private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
         private const val KEY_HEADING_REMAP_VERSION = "heading_remap_version"
         private const val HEADING_REMAP_VERSION = 5

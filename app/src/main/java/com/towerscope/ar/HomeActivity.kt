@@ -165,7 +165,7 @@ class HomeActivity : AppCompatActivity() {
             iconTint = R.color.accent_yellow,
             title = R.string.home_hub_install,
             subtitle = R.string.home_hub_install_sub
-        ) { startActivity(Intent(this, InstallationHubActivity::class.java)) }
+        ) { startActivity(Intent(this, InstallDashboardActivity::class.java)) }
     }
 
     private fun observeState() {

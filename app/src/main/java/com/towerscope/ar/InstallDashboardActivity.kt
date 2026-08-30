@@ -13,6 +13,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.towerscope.ar.ui.BottomNav
+import com.towerscope.ar.ui.BottomNavTab
 import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.util.DisplayUnits
@@ -55,8 +57,9 @@ class InstallDashboardActivity : AppCompatActivity() {
         setContentView(R.layout.activity_install_dashboard)
         SystemBars.apply(
             root = findViewById(R.id.installDashboardRoot),
-            alsoBottom = findViewById(R.id.installDashboardFooter)
+            alsoBottom = findViewById(R.id.installBottomNav)
         )
+        BottomNav.bind(this, BottomNavTab.INSTALL)
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
 
         sitesSummary = findViewById(R.id.installDashboardSitesSummary)
@@ -85,9 +88,12 @@ class InstallDashboardActivity : AppCompatActivity() {
             startedLosScan = false
             maybeStartLosScan(force = true)
         }
-        findViewById<android.view.View>(R.id.toolBackButton).setOnClickListener { finish() }
-        findViewById<android.view.View>(R.id.toolShareButton).isEnabled = false
-        findViewById<android.view.View>(R.id.toolShareButton).alpha = 0.4f
+        findViewById<android.view.View>(R.id.installDashboardSiteBrowserButton).setOnClickListener {
+            startActivity(Intent(this, SiteBrowserActivity::class.java))
+        }
+        findViewById<android.view.View>(R.id.installDashboardImportButton).setOnClickListener {
+            startActivity(Intent(this, DataMenuActivity::class.java))
+        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

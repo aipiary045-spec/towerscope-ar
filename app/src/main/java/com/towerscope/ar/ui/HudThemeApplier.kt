@@ -23,12 +23,11 @@ object HudThemeApplier {
 
     fun colorsFor(theme: HudTheme, view: View): Colors {
         val ctx = view.context
-        val muted = ContextCompat.getColor(ctx, R.color.text_muted)
         return when (theme) {
             HudTheme.LIGHT -> Colors(
                 panel = ContextCompat.getColor(ctx, R.color.theme_day_panel),
                 text = ContextCompat.getColor(ctx, R.color.theme_day_text),
-                mutedText = muted,
+                mutedText = ContextCompat.getColor(ctx, R.color.theme_day_muted),
                 accent = ContextCompat.getColor(ctx, R.color.theme_day_accent),
                 secondary = ContextCompat.getColor(ctx, R.color.theme_day_secondary),
                 warning = ContextCompat.getColor(ctx, R.color.status_blocked)
@@ -36,9 +35,17 @@ object HudThemeApplier {
             HudTheme.DARK -> Colors(
                 panel = ContextCompat.getColor(ctx, R.color.theme_night_panel),
                 text = ContextCompat.getColor(ctx, R.color.theme_night_text),
-                mutedText = muted,
+                mutedText = ContextCompat.getColor(ctx, R.color.text_muted),
                 accent = ContextCompat.getColor(ctx, R.color.theme_night_accent),
                 secondary = ContextCompat.getColor(ctx, R.color.theme_night_secondary),
+                warning = ContextCompat.getColor(ctx, R.color.status_blocked)
+            )
+            HudTheme.HIGH_CONTRAST -> Colors(
+                panel = ContextCompat.getColor(ctx, R.color.theme_hc_panel),
+                text = ContextCompat.getColor(ctx, R.color.theme_hc_text),
+                mutedText = ContextCompat.getColor(ctx, R.color.theme_hc_muted),
+                accent = ContextCompat.getColor(ctx, R.color.theme_hc_accent),
+                secondary = ContextCompat.getColor(ctx, R.color.theme_hc_secondary),
                 warning = ContextCompat.getColor(ctx, R.color.status_blocked)
             )
         }

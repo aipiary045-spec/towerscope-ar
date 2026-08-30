@@ -52,11 +52,13 @@
 
     <color name="theme_day_panel">#F2FFFFFF</color>
     <color name="theme_day_text">#0E1628</color>
+    <color name="theme_day_muted">#44526B</color>
     <color name="theme_day_accent">#2A5BE0</color>
     <color name="theme_day_secondary">#0E7A9A</color>
 
     <color name="theme_hc_panel">#F2000000</color>
     <color name="theme_hc_text">#FFFFFFFF</color>
+    <color name="theme_hc_muted">#D9FFFFFF</color>
     <color name="theme_hc_accent">#4CC9FF</color>
     <color name="theme_hc_secondary">#2F6BFF</color>
 </resources>

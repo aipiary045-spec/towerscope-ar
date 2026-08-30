@@ -6,31 +6,33 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_topo_screen">
 
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/compassViewport"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="168dp"
         android:layout_marginBottom="118dp"
-        android:layout_marginHorizontal="12dp"
-        android:orientation="vertical">
+        android:layout_marginHorizontal="12dp">
 
         <androidx.camera.view.PreviewView
             android:id="@+id/compassCameraPreview"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginBottom="6dp"
-            android:layout_weight="0"
+            android:layout_height="match_parent"
             android:contentDescription="@string/compass_sight_hint"
+            android:visibility="gone" />
+
+        <com.towerscope.ar.ui.CompassSightOverlayView
+            android:id="@+id/compassSightOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:visibility="gone" />
 
         <com.towerscope.ar.ui.CompassRadarView
             android:id="@+id/compassRadar"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="match_parent"
             android:contentDescription="@string/compass_radar_hint" />
-    </LinearLayout>
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/topChrome"
@@ -69,22 +71,22 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
                 android:background="@drawable/bg_hud_chip"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
+                android:paddingHorizontal="9dp"
+                android:paddingVertical="6dp"
                 android:text="GPS · —"
                 android:textColor="@color/chip_text_on_dark"
-                android:textSize="10sp" />
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/compassChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_hud_chip"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
+                android:paddingHorizontal="9dp"
+                android:paddingVertical="6dp"
                 android:text="Compass · —"
                 android:textColor="@color/chip_text_on_dark"
-                android:textSize="10sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <HorizontalScrollView
@@ -170,19 +172,8 @@
                         android:fontFamily="@font/source_sans3_semibold"
                         android:text="—"
                         android:textColor="@color/accent_yellow"
-                        android:textSize="24sp"
+                        android:textSize="26sp"
                         android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/aimErrorLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:fontFamily="monospace"
-                        android:text="ALIGN —"
-                        android:textColor="@color/text_muted"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -234,7 +225,13 @@
             android:id="@+id/visibleCount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:contentDescription="Adjust visible range"
+            android:focusable="true"
             android:fontFamily="@font/source_sans3_semibold"
+            android:minHeight="36dp"
+            android:gravity="center_vertical"
             android:text="Visible 0 / 0"
             android:textColor="@color/text_primary"
             android:textSize="11sp"

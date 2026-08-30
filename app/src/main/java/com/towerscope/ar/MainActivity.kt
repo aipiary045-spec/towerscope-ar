@@ -28,8 +28,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
+import com.towerscope.ar.data.Tower
 import com.towerscope.ar.ui.CompassCameraController
 import com.towerscope.ar.ui.CompassRadarView
+import com.towerscope.ar.ui.CompassSightOverlayView
 import com.towerscope.ar.ui.HudThemeApplier
 import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.SettingsBottomSheet
@@ -64,7 +66,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var focusTowerLabel: TextView
     private lateinit var aimFocusHud: View
     private lateinit var aimTurnLabel: TextView
-    private lateinit var aimErrorLabel: TextView
     private lateinit var aimDistanceLabel: TextView
     private lateinit var aimSignalLabel: TextView
     private lateinit var visibleCount: TextView
@@ -73,6 +74,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var compassRadar: CompassRadarView
     private lateinit var compassViewport: View
     private lateinit var compassCameraPreview: PreviewView
+    private lateinit var compassSightOverlay: CompassSightOverlayView
     private lateinit var sightModeButton: ImageButton
     private lateinit var compassImproveOverlay: View
     private lateinit var compassImproveStatus: TextView
@@ -87,6 +89,8 @@ class MainActivity : AppCompatActivity() {
     private var lastChipSignature: String? = null
     private var compassDisplayMode = CompassDisplayMode.RADAR
     private var cameraController: CompassCameraController? = null
+    private var sightHorizontalFovDegrees = CompassSightOverlayView.DEFAULT_HORIZONTAL_FOV_DEGREES
+    private var alignHintShownThisSession = false
 
     private enum class CompassDisplayMode {
         RADAR,
@@ -161,7 +165,6 @@ class MainActivity : AppCompatActivity() {
         focusTowerLabel = findViewById(R.id.focusTowerLabel)
         aimFocusHud = findViewById(R.id.aimFocusHud)
         aimTurnLabel = findViewById(R.id.aimTurnLabel)
-        aimErrorLabel = findViewById(R.id.aimErrorLabel)
         aimDistanceLabel = findViewById(R.id.aimDistanceLabel)
         aimSignalLabel = findViewById(R.id.aimSignalLabel)
         visibleCount = findViewById(R.id.visibleCount)
@@ -169,6 +172,7 @@ class MainActivity : AppCompatActivity() {
         towerChips = findViewById(R.id.towerChips)
         compassViewport = findViewById(R.id.compassViewport)
         compassCameraPreview = findViewById(R.id.compassCameraPreview)
+        compassSightOverlay = findViewById(R.id.compassSightOverlay)
         compassRadar = findViewById(R.id.compassRadar)
         sightModeButton = findViewById(R.id.sightModeButton)
         compassImproveOverlay = findViewById(R.id.compassImproveOverlay)
@@ -212,6 +216,7 @@ class MainActivity : AppCompatActivity() {
                 false
             }
         }
+        visibleCount.setOnClickListener { openSettings() }
         compassImproveDoneButton.setOnClickListener { viewModel.dismissCompassImprove() }
         bindSightingButton(compassImproveSunButton, CompassSightingTarget.SUN)
         bindSightingButton(compassImproveTowerButton, CompassSightingTarget.TOWER)
@@ -238,7 +243,11 @@ class MainActivity : AppCompatActivity() {
         renderTheme(state)
         renderCompassImprove(state)
         maybeToastStatus(state)
-        renderRadar(state)
+        if (compassDisplayMode == CompassDisplayMode.SIGHT) {
+            renderSight(state)
+        } else {
+            renderRadar(state)
+        }
 
         visibleCount.text = buildString {
             append("Visible ${visible.size} / ${state.towers.size}")
@@ -275,6 +284,43 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun renderSight(state: TowerUiState) {
+        if (compassDisplayMode != CompassDisplayMode.SIGHT) return
+        val colors = HudThemeApplier.colorsFor(state.hudTheme, compassSightOverlay)
+        val focusId = state.focusTower()?.id
+        val ranked = state.visibleTowers().mapNotNull { tower ->
+            val bearing = state.bearingTo(tower) ?: return@mapNotNull null
+            val distance = state.distanceTo(tower) ?: return@mapNotNull null
+            Triple(tower, distance, bearing)
+        }.sortedBy { it.second }
+        val limited = linkedMapOf<String, Triple<Tower, Double, Double>>()
+        focusId?.let { id ->
+            ranked.firstOrNull { it.first.id == id }?.let { limited[id] = it }
+        }
+        ranked.forEach { entry ->
+            if (limited.size >= 5) return@forEach
+            limited.putIfAbsent(entry.first.id, entry)
+        }
+        val markers = limited.values.map { (tower, distance, bearing) ->
+            CompassSightOverlayView.SightMarker(
+                towerId = tower.id,
+                name = tower.name,
+                bearingDegrees = bearing,
+                distanceMeters = distance,
+                isFocus = tower.id == focusId
+            )
+        }
+        compassSightOverlay.update(
+            headingDegrees = state.effectiveHeadingDegrees(),
+            markers = markers,
+            rotationRateDps = state.compassRotationRateDps,
+            horizontalFovDegrees = sightHorizontalFovDegrees,
+            accentColor = colors.accent,
+            secondaryColor = colors.secondary,
+            textColor = colors.text
+        )
+    }
+
     private fun toggleSightMode() {
         if (compassDisplayMode == CompassDisplayMode.RADAR) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -297,29 +343,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyDisplayMode() {
         val sight = compassDisplayMode == CompassDisplayMode.SIGHT
-        val cameraParams = compassCameraPreview.layoutParams as LinearLayout.LayoutParams
-        val radarParams = compassRadar.layoutParams as LinearLayout.LayoutParams
-
-        if (sight) {
-            compassCameraPreview.isVisible = true
-            compassRadar.isVisible = true
-            cameraParams.height = 0
-            cameraParams.weight = 0.9f
-            radarParams.height = 0
-            radarParams.weight = 1.1f
-            compassCameraPreview.contentDescription = getString(R.string.compass_sight_hint)
-            compassRadar.contentDescription = getString(R.string.compass_radar_hint)
-        } else {
-            compassCameraPreview.isVisible = false
-            compassRadar.isVisible = true
-            cameraParams.height = 0
-            cameraParams.weight = 0f
-            radarParams.height = 0
-            radarParams.weight = 1f
-            compassRadar.contentDescription = getString(R.string.compass_radar_hint)
-        }
-        compassCameraPreview.layoutParams = cameraParams
-        compassRadar.layoutParams = radarParams
+        compassCameraPreview.isVisible = sight
+        compassSightOverlay.isVisible = sight
+        compassRadar.isVisible = !sight
 
         sightModeButton.imageTintList = android.content.res.ColorStateList.valueOf(
             ContextCompat.getColor(
@@ -334,12 +360,17 @@ class MainActivity : AppCompatActivity() {
             if (cameraController == null) {
                 cameraController = CompassCameraController(
                     activity = this,
-                    previewView = compassCameraPreview
+                    previewView = compassCameraPreview,
+                    onHorizontalFovDegrees = { fov ->
+                        sightHorizontalFovDegrees = fov
+                        renderSight(viewModel.uiState.value)
+                    }
                 )
             }
             cameraController?.start()
         } else {
             cameraController?.stop()
+            compassSightOverlay.stopFrameLoop()
         }
         render(viewModel.uiState.value)
     }
@@ -361,9 +392,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderNearbyChips(state: TowerUiState) {
         val matches = state.nearestMatches(5)
+        val focusId = state.focusTower()?.id
         val signature = matches.joinToString("|") { tower ->
             val distance = state.distanceTo(tower)?.toInt() ?: -1
-            "${tower.id}:$distance:${state.hudTheme.name}"
+            "${tower.id}:$distance:${state.hudTheme.name}:${tower.id == focusId}"
         }
         if (signature == lastChipSignature && towerChips.childCount == matches.size) return
         lastChipSignature = signature
@@ -373,6 +405,7 @@ class MainActivity : AppCompatActivity() {
         val density = resources.displayMetrics.density
         matches.forEach { tower ->
             val distance = state.distanceTo(tower)
+            val isFocus = tower.id == focusId
             val label = if (distance != null) {
                 "${tower.name}  ${GeoUtils.formatDistance(distance)}"
             } else {
@@ -380,13 +413,15 @@ class MainActivity : AppCompatActivity() {
             }
             val chip = TextView(this).apply {
                 text = label
-                setTextColor(chipColors.text)
-                textSize = 11f
+                setTextColor(if (isFocus) chipColors.accent else chipColors.text)
+                textSize = 12f
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                minHeight = (40 * density).toInt()
                 setPadding(
-                    (10 * density).toInt(),
-                    (5 * density).toInt(),
-                    (10 * density).toInt(),
-                    (5 * density).toInt()
+                    (12 * density).toInt(),
+                    (8 * density).toInt(),
+                    (12 * density).toInt(),
+                    (8 * density).toInt()
                 )
                 background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_hud_match_chip)
                 isClickable = true
@@ -397,7 +432,14 @@ class MainActivity : AppCompatActivity() {
                 )
                 params.marginEnd = (6 * density).toInt()
                 layoutParams = params
-                setOnClickListener { openTowerDetails(tower.id) }
+                // First tap focuses the site for aiming; tapping the focused site opens details.
+                setOnClickListener {
+                    if (viewModel.uiState.value.focusTower()?.id == tower.id) {
+                        openTowerDetails(tower.id)
+                    } else {
+                        viewModel.selectTower(tower.id)
+                    }
+                }
             }
             towerChips.addView(chip)
         }
@@ -528,35 +570,20 @@ class MainActivity : AppCompatActivity() {
             relative != null -> GeoUtils.formatAimTurn(relative)
             else -> "AIM —"
         }
+        // Red → yellow → green ramp as aim closes in.
         aimTurnLabel.setTextColor(
             ContextCompat.getColor(
                 this,
                 when {
                     relative == null -> R.color.text_muted
                     kotlin.math.abs(relative) <= 12.0 -> R.color.status_clear
-                    else -> R.color.accent_yellow
+                    kotlin.math.abs(relative) <= 45.0 -> R.color.accent_yellow
+                    else -> R.color.chip_poor
                 }
             )
         )
 
-        val error = state.focusTowerHeadingErrorDegrees()
-        if (error != null && heading != null) {
-            aimErrorLabel.isVisible = true
-            val signed = String.format(java.util.Locale.US, "%+.0f°", error)
-            aimErrorLabel.text = getString(R.string.compass_align_error, signed)
-            aimErrorLabel.setTextColor(
-                ContextCompat.getColor(
-                    this,
-                    when {
-                        kotlin.math.abs(error) <= 3.0 -> R.color.status_clear
-                        kotlin.math.abs(error) <= 12.0 -> R.color.accent_yellow
-                        else -> R.color.chip_poor
-                    }
-                )
-            )
-        } else {
-            aimErrorLabel.isVisible = false
-        }
+        maybeShowAlignHint(heading != null)
 
         aimDistanceLabel.text = distance?.let { GeoUtils.formatDistance(it) } ?: "—"
 
@@ -585,6 +612,23 @@ class MainActivity : AppCompatActivity() {
             aimSignalLabel.text = "Est.  —"
             aimSignalLabel.setTextColor(ContextCompat.getColor(this, R.color.text_muted))
         }
+    }
+
+    private fun maybeShowAlignHint(headingAvailable: Boolean) {
+        if (alignHintShownThisSession || !headingAvailable) return
+        if (viewModel.hasSeenAlignHint()) return
+        alignHintShownThisSession = true
+        Snackbar.make(
+            findViewById(R.id.root),
+            getString(R.string.compass_align_hint),
+            Snackbar.LENGTH_INDEFINITE
+        )
+            .setAnchorView(bottomPanel)
+            .setBackgroundTint(ContextCompat.getColor(this, R.color.surface_elevated))
+            .setTextColor(ContextCompat.getColor(this, R.color.text_primary))
+            .setActionTextColor(ContextCompat.getColor(this, R.color.accent_teal))
+            .setAction(R.string.compass_align_hint_ack) { viewModel.markAlignHintSeen() }
+            .show()
     }
 
     private fun renderTheme(state: TowerUiState) {
@@ -738,12 +782,9 @@ class MainActivity : AppCompatActivity() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("WispEaze field tips")
             .setMessage(
-                    "1. Import network sites from Home (or Settings → Import / manage sites).\n" +
-                    "2. Tap the location chip and confirm it says My GPS when you are on site.\n" +
-                    "3. Hold the phone upright and rotate until the tower sits at the top of the radar.\n" +
-                    "4. Or pitch the top edge toward the tower when sighting a specific aim.\n" +
-                    "5. Tap Improve compass and move the phone in a figure-8 if aiming feels off.\n" +
-                    "6. Tap a site on the radar for details, or use Check LOS for ranked profiles."
+                "Import your sites from Home, then get outside for a GPS fix.\n\n" +
+                    "Turn until the site hits the top of the disc — the big readout goes green on target.\n\n" +
+                    "Aim off? Face the site and hold the TURN readout to align the compass."
             )
             .setPositiveButton("Got it") { _, _ ->
                 viewModel.markOnboardingComplete()
