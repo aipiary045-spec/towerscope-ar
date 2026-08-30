@@ -141,8 +141,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:fontFamily="monospace"
+                android:lineSpacingExtra="1dp"
                 android:textColor="@color/text_muted"
-                android:textSize="12sp"
+                android:textSize="11sp"
                 android:visibility="gone" />
 
             <TextView

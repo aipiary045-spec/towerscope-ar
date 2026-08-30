@@ -95,6 +95,10 @@ data class TowerUiState(
     val compassRotationRateDps: Double = 0.0,
     val compassHeadingSource: com.towerscope.ar.location.HeadingSourceArbiter.Source =
         com.towerscope.ar.location.HeadingSourceArbiter.Source.FUSED,
+    val compassFusedRawDegrees: Double? = null,
+    val compassMagneticRawDegrees: Double? = null,
+    val compassDeclinationDegrees: Double? = null,
+    val compassFieldMicroTesla: Double? = null,
     val compassSightingActive: Boolean = false,
     val compassSightingProgress: Float = 0f,
     val hudTheme: HudTheme = HudTheme.DARK,
@@ -523,7 +527,11 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                         compassTilted = heading.tilted,
                         compassMagneticInterference = heading.magneticInterference,
                         compassRotationRateDps = heading.rotationRateDps,
-                        compassHeadingSource = heading.headingSource
+                        compassHeadingSource = heading.headingSource,
+                        compassFusedRawDegrees = heading.fusedRawDegrees,
+                        compassMagneticRawDegrees = heading.magneticRawDegrees,
+                        compassDeclinationDegrees = heading.declinationDegrees,
+                        compassFieldMicroTesla = heading.magneticFieldMicroTesla
                     )
                 }
             }

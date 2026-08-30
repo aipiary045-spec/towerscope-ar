@@ -22,7 +22,14 @@ data class DeviceHeading(
     val tilted: Boolean,
     val rotationRateDps: Double,
     val magneticInterference: Boolean,
-    val headingSource: HeadingSourceArbiter.Source
+    val headingSource: HeadingSourceArbiter.Source,
+    /** Raw magnetic-referenced headings from each source, before declination/smoothing. */
+    val fusedRawDegrees: Double? = null,
+    val magneticRawDegrees: Double? = null,
+    /** Declination applied (degrees), null when no location fix yet. */
+    val declinationDegrees: Double? = null,
+    /** Total geomagnetic field strength (µT). Earth normal is ~25–65. */
+    val magneticFieldMicroTesla: Double? = null
 )
 
 /**
@@ -68,6 +75,7 @@ class DeviceHeadingClient(context: Context) {
             var previousRawHeading: Double? = null
             var previousSampleNanos: Long? = null
             var magneticInterference = false
+            var magneticFieldMicroTesla: Double? = null
             val magneticMonitor = MagneticFieldMonitor()
             val arbiter = HeadingSourceArbiter()
 
@@ -110,6 +118,7 @@ class DeviceHeadingClient(context: Context) {
                 previousSampleNanos = sampleNanos
 
                 // Both sources are magnetic-referenced; correct to true north when possible.
+                var declinationDegrees: Double? = null
                 val location = locationProvider()
                 if (location != null) {
                     val field = GeomagneticField(
@@ -118,6 +127,7 @@ class DeviceHeadingClient(context: Context) {
                         (location.altitudeMeters ?: 0.0).toFloat(),
                         System.currentTimeMillis()
                     )
+                    declinationDegrees = field.declination.toDouble()
                     degrees = GeoUtils.normalizeBearing(degrees + field.declination)
                 }
 
@@ -137,7 +147,11 @@ class DeviceHeadingClient(context: Context) {
                         tilted = tilted,
                         rotationRateDps = rotationRateDps,
                         magneticInterference = magneticInterference,
-                        headingSource = choice.source
+                        headingSource = choice.source,
+                        fusedRawDegrees = fusedHeading,
+                        magneticRawDegrees = magneticHeading,
+                        declinationDegrees = declinationDegrees,
+                        magneticFieldMicroTesla = magneticFieldMicroTesla
                     )
                 )
             }
@@ -163,6 +177,11 @@ class DeviceHeadingClient(context: Context) {
                                 event.values[2]
                             )
                             System.arraycopy(event.values, 0, geomagnetic, 0, 3)
+                            magneticFieldMicroTesla = kotlin.math.sqrt(
+                                (event.values[0] * event.values[0] +
+                                    event.values[1] * event.values[1] +
+                                    event.values[2] * event.values[2]).toDouble()
+                            )
                             hasMagnetic = true
                             if (rotation == null) emitHeading(event.timestamp)
                         }
