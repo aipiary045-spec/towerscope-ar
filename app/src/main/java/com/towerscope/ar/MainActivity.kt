@@ -18,8 +18,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.camera.view.PreviewView
-import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
@@ -28,10 +26,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
-import com.towerscope.ar.data.Tower
-import com.towerscope.ar.ui.CompassCameraController
 import com.towerscope.ar.ui.CompassRadarView
-import com.towerscope.ar.ui.CompassSightOverlayView
 import com.towerscope.ar.ui.HudThemeApplier
 import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.SettingsBottomSheet
@@ -73,9 +68,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var towerChips: LinearLayout
     private lateinit var compassRadar: CompassRadarView
     private lateinit var compassViewport: View
-    private lateinit var compassCameraPreview: PreviewView
-    private lateinit var compassSightOverlay: CompassSightOverlayView
-    private lateinit var sightModeButton: ImageButton
     private lateinit var compassImproveOverlay: View
     private lateinit var compassImproveStatus: TextView
     private lateinit var compassImproveDoneButton: MaterialButton
@@ -87,27 +79,7 @@ class MainActivity : AppCompatActivity() {
     private var onboardingShownThisSession = false
     private var lastToastMessage: String? = null
     private var lastChipSignature: String? = null
-    private var compassDisplayMode = CompassDisplayMode.RADAR
-    private var cameraController: CompassCameraController? = null
-    private var sightHorizontalFovDegrees = CompassSightOverlayView.DEFAULT_HORIZONTAL_FOV_DEGREES
     private var alignHintShownThisSession = false
-
-    private enum class CompassDisplayMode {
-        RADAR,
-        SIGHT
-    }
-
-    private val cameraPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            enableSightMode()
-        } else {
-            Toast.makeText(this, R.string.compass_sight_permission, Toast.LENGTH_SHORT).show()
-            compassDisplayMode = CompassDisplayMode.RADAR
-            applyDisplayMode()
-        }
-    }
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -171,10 +143,7 @@ class MainActivity : AppCompatActivity() {
         nearestHeader = findViewById(R.id.nearestHeader)
         towerChips = findViewById(R.id.towerChips)
         compassViewport = findViewById(R.id.compassViewport)
-        compassCameraPreview = findViewById(R.id.compassCameraPreview)
-        compassSightOverlay = findViewById(R.id.compassSightOverlay)
         compassRadar = findViewById(R.id.compassRadar)
-        sightModeButton = findViewById(R.id.sightModeButton)
         compassImproveOverlay = findViewById(R.id.compassImproveOverlay)
         compassImproveStatus = findViewById(R.id.compassImproveStatus)
         compassImproveDoneButton = findViewById(R.id.compassImproveDoneButton)
@@ -205,7 +174,6 @@ class MainActivity : AppCompatActivity() {
     private fun wireActions() {
         findViewById<MaterialButton>(R.id.grantPermissionsButton).setOnClickListener { requestPermissions() }
         settingsButton.setOnClickListener { openSettings() }
-        sightModeButton.setOnClickListener { toggleSightMode() }
         calibrateButton.setOnClickListener { viewModel.beginCompassImprove() }
         calibrateButton.setOnLongClickListener {
             if (viewModel.uiState.value.isHeadingCalibrated) {
@@ -243,11 +211,7 @@ class MainActivity : AppCompatActivity() {
         renderTheme(state)
         renderCompassImprove(state)
         maybeToastStatus(state)
-        if (compassDisplayMode == CompassDisplayMode.SIGHT) {
-            renderSight(state)
-        } else {
-            renderRadar(state)
-        }
+        renderRadar(state)
 
         visibleCount.text = buildString {
             append("Visible ${visible.size} / ${state.towers.size}")
@@ -282,97 +246,6 @@ class MainActivity : AppCompatActivity() {
             textColor = colors.text,
             mutedColor = colors.mutedText
         )
-    }
-
-    private fun renderSight(state: TowerUiState) {
-        if (compassDisplayMode != CompassDisplayMode.SIGHT) return
-        val colors = HudThemeApplier.colorsFor(state.hudTheme, compassSightOverlay)
-        val focusId = state.focusTower()?.id
-        val ranked = state.visibleTowers().mapNotNull { tower ->
-            val bearing = state.bearingTo(tower) ?: return@mapNotNull null
-            val distance = state.distanceTo(tower) ?: return@mapNotNull null
-            Triple(tower, distance, bearing)
-        }.sortedBy { it.second }
-        val limited = linkedMapOf<String, Triple<Tower, Double, Double>>()
-        focusId?.let { id ->
-            ranked.firstOrNull { it.first.id == id }?.let { limited[id] = it }
-        }
-        ranked.forEach { entry ->
-            if (limited.size >= 5) return@forEach
-            limited.putIfAbsent(entry.first.id, entry)
-        }
-        val markers = limited.values.map { (tower, distance, bearing) ->
-            CompassSightOverlayView.SightMarker(
-                towerId = tower.id,
-                name = tower.name,
-                bearingDegrees = bearing,
-                distanceMeters = distance,
-                isFocus = tower.id == focusId
-            )
-        }
-        compassSightOverlay.update(
-            headingDegrees = state.effectiveHeadingDegrees(),
-            markers = markers,
-            rotationRateDps = state.compassRotationRateDps,
-            horizontalFovDegrees = sightHorizontalFovDegrees,
-            accentColor = colors.accent,
-            secondaryColor = colors.secondary,
-            textColor = colors.text
-        )
-    }
-
-    private fun toggleSightMode() {
-        if (compassDisplayMode == CompassDisplayMode.RADAR) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                return
-            }
-            enableSightMode()
-        } else {
-            compassDisplayMode = CompassDisplayMode.RADAR
-            applyDisplayMode()
-        }
-    }
-
-    private fun enableSightMode() {
-        compassDisplayMode = CompassDisplayMode.SIGHT
-        applyDisplayMode()
-    }
-
-    private fun applyDisplayMode() {
-        val sight = compassDisplayMode == CompassDisplayMode.SIGHT
-        compassCameraPreview.isVisible = sight
-        compassSightOverlay.isVisible = sight
-        compassRadar.isVisible = !sight
-
-        sightModeButton.imageTintList = android.content.res.ColorStateList.valueOf(
-            ContextCompat.getColor(
-                this,
-                if (sight) R.color.accent_yellow else R.color.text_primary
-            )
-        )
-        sightModeButton.contentDescription = getString(
-            if (sight) R.string.compass_radar_mode else R.string.compass_sight_mode
-        )
-        if (sight) {
-            if (cameraController == null) {
-                cameraController = CompassCameraController(
-                    activity = this,
-                    previewView = compassCameraPreview,
-                    onHorizontalFovDegrees = { fov ->
-                        sightHorizontalFovDegrees = fov
-                        renderSight(viewModel.uiState.value)
-                    }
-                )
-            }
-            cameraController?.start()
-        } else {
-            cameraController?.stop()
-            compassSightOverlay.stopFrameLoop()
-        }
-        render(viewModel.uiState.value)
     }
 
     private fun maybeToastStatus(state: TowerUiState) {
@@ -647,9 +520,6 @@ class MainActivity : AppCompatActivity() {
         val colors = HudThemeApplier.colorsFor(state.hudTheme, settingsButton)
         settingsButton.imageTintList = android.content.res.ColorStateList.valueOf(colors.secondary)
         calibrateButton.imageTintList = android.content.res.ColorStateList.valueOf(colors.accent)
-        if (compassDisplayMode == CompassDisplayMode.RADAR) {
-            sightModeButton.imageTintList = android.content.res.ColorStateList.valueOf(colors.text)
-        }
     }
 
     private fun renderCompassImprove(state: TowerUiState) {
@@ -659,7 +529,6 @@ class MainActivity : AppCompatActivity() {
         topChrome.isVisible = !active
         bottomPanel.isVisible = !active
         settingsButton.isVisible = !active
-        sightModeButton.isVisible = !active
         calibrateButton.isVisible = !active
 
         if (!active) return
@@ -796,17 +665,6 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.syncFromFileStore()
-        if (compassDisplayMode == CompassDisplayMode.SIGHT &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            cameraController?.start()
-        }
-    }
-
-    override fun onPause() {
-        cameraController?.stop()
-        super.onPause()
     }
 
     companion object {
