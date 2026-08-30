@@ -146,28 +146,12 @@
                 android:textColor="@color/text_muted"
                 android:textSize="11sp" />
 
-            <LinearLayout
+            <include
+                android:id="@+id/hubSpeedRow"
+                layout="@layout/item_hub_tool_row"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="horizontal">
-
-                <include
-                    android:id="@+id/hubSpeedRow"
-                    layout="@layout/item_hub_tool_row"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="7dp"
-                    android:layout_weight="1" />
-
-                <include
-                    android:id="@+id/hubBufferbloatRow"
-                    layout="@layout/item_hub_tool_row"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="7dp"
-                    android:layout_weight="1" />
-            </LinearLayout>
+                android:layout_marginTop="10dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -192,28 +176,12 @@
                     android:layout_weight="1" />
             </LinearLayout>
 
-            <LinearLayout
+            <include
+                android:id="@+id/hubTraceRow"
+                layout="@layout/item_hub_tool_row"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:orientation="horizontal">
-
-                <include
-                    android:id="@+id/hubDnsRow"
-                    layout="@layout/item_hub_tool_row"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="7dp"
-                    android:layout_weight="1" />
-
-                <include
-                    android:id="@+id/hubTraceRow"
-                    layout="@layout/item_hub_tool_row"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="7dp"
-                    android:layout_weight="1" />
-            </LinearLayout>
+                android:layout_marginTop="14dp" />
         </LinearLayout>
     </ScrollView>
 

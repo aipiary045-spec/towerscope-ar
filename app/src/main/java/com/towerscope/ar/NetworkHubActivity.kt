@@ -50,17 +50,9 @@ class NetworkHubActivity : AppCompatActivity() {
             R.string.home_job_speed, R.string.home_job_speed_sub) {
             startActivity(Intent(this, SpeedTestActivity::class.java))
         }
-        bindTile(R.id.hubBufferbloatRow, R.drawable.ic_bandwidth, R.color.accent_yellow,
-            R.string.home_job_bufferbloat, R.string.home_job_bufferbloat_sub) {
-            startActivity(Intent(this, BufferbloatActivity::class.java))
-        }
         bindTile(R.id.hubPingRow, R.drawable.ic_ping_graph, R.color.accent_yellow,
             R.string.home_job_ping, R.string.home_job_ping_sub) {
             startActivity(Intent(this, PingMonitorActivity::class.java))
-        }
-        bindTile(R.id.hubDnsRow, R.drawable.ic_dns_lookup, R.color.accent_teal,
-            R.string.home_job_dns, R.string.home_job_dns_sub) {
-            startActivity(Intent(this, DnsLookupActivity::class.java))
         }
         bindTile(R.id.hubTraceRow, R.drawable.ic_traceroute, R.color.accent_yellow,
             R.string.home_job_traceroute, R.string.home_job_traceroute_sub) {
