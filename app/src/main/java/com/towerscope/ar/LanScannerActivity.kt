@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -13,6 +12,7 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
@@ -34,7 +34,9 @@ class LanScannerActivity : AppCompatActivity() {
 
     private lateinit var infoLabel: TextView
     private lateinit var statusLabel: TextView
-    private lateinit var modeSpinner: Spinner
+    private lateinit var modeHint: TextView
+    private lateinit var modeDiscoverButton: MaterialButton
+    private lateinit var modePortButton: MaterialButton
     private lateinit var hostInput: EditText
     private lateinit var portOptions: View
     private lateinit var presetSpinner: Spinner
@@ -44,6 +46,7 @@ class LanScannerActivity : AppCompatActivity() {
     private lateinit var scanButton: MaterialButton
     private var scanJob: Job? = null
     private var lastReport = ""
+    private var portMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,7 +56,9 @@ class LanScannerActivity : AppCompatActivity() {
 
         infoLabel = findViewById(R.id.lanInfoLabel)
         statusLabel = findViewById(R.id.lanStatus)
-        modeSpinner = findViewById(R.id.lanModeSpinner)
+        modeHint = findViewById(R.id.lanModeHint)
+        modeDiscoverButton = findViewById(R.id.lanModeDiscover)
+        modePortButton = findViewById(R.id.lanModePort)
         hostInput = findViewById(R.id.lanHostInput)
         portOptions = findViewById(R.id.lanPortOptions)
         presetSpinner = findViewById(R.id.lanPresetSpinner)
@@ -62,13 +67,6 @@ class LanScannerActivity : AppCompatActivity() {
         resultsList = findViewById(R.id.lanResultsList)
         scanButton = findViewById(R.id.lanScanButton)
 
-        modeSpinner.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            resources.getStringArray(R.array.lan_scan_modes)
-        ).also { adapter ->
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
         presetSpinner.adapter = ArrayAdapter(
             this,
             android.R.layout.simple_spinner_dropdown_item,
@@ -77,23 +75,16 @@ class LanScannerActivity : AppCompatActivity() {
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
 
-        val initialMode = intent.getStringExtra(EXTRA_MODE)
-        if (initialMode == MODE_PORT) {
-            modeSpinner.setSelection(MODE_PORT_INDEX)
+        portMode = intent.getStringExtra(EXTRA_MODE) == MODE_PORT
+        setPortMode(portMode)
+
+        modeDiscoverButton.setOnClickListener {
+            if (scanJob?.isActive == true) return@setOnClickListener
+            setPortMode(false)
         }
-        updateModeUi()
-
-        modeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                updateModeUi()
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        modePortButton.setOnClickListener {
+            if (scanJob?.isActive == true) return@setOnClickListener
+            setPortMode(true)
         }
 
         refreshSubnetInfo()
@@ -110,13 +101,25 @@ class LanScannerActivity : AppCompatActivity() {
         super.onStop()
     }
 
-    private fun isPortMode(): Boolean = modeSpinner.selectedItemPosition == MODE_PORT_INDEX
+    private fun setPortMode(enabled: Boolean) {
+        portMode = enabled
+        val selectedColor = ContextCompat.getColor(this, R.color.accent_teal)
+        val muted = ContextCompat.getColor(this, R.color.text_muted)
+        modeDiscoverButton.strokeWidth = if (enabled) 1 else 3
+        modePortButton.strokeWidth = if (enabled) 3 else 1
+        modeDiscoverButton.setTextColor(if (enabled) muted else selectedColor)
+        modePortButton.setTextColor(if (enabled) selectedColor else muted)
+        portOptions.isVisible = enabled
+        scanButton.text = getString(
+            if (enabled) R.string.lan_scan_start_ports else R.string.lan_scan_start
+        )
+        updateModeUi()
+    }
 
     private fun updateModeUi() {
-        portOptions.isVisible = isPortMode()
         resultsHeader.isVisible = false
         if (!scanJob?.isActive.orDefault()) {
-            statusLabel.text = if (isPortMode()) {
+            modeHint.text = if (portMode) {
                 getString(R.string.lan_scan_port_ready)
             } else {
                 getString(R.string.lan_scan_discover_ready)
@@ -169,11 +172,18 @@ class LanScannerActivity : AppCompatActivity() {
             finishScan()
             return
         }
-        if (isPortMode()) {
+        if (portMode) {
             startPortScan()
         } else {
             startDiscoverScan()
         }
+    }
+
+    private fun portScanHost(ip: String) {
+        if (scanJob?.isActive == true) return
+        setPortMode(true)
+        hostInput.setText(ip)
+        startPortScan()
     }
 
     private fun startDiscoverScan() {
@@ -301,19 +311,23 @@ class LanScannerActivity : AppCompatActivity() {
         resultsList.removeAllViews()
         lastReport = ""
         hostInput.isEnabled = false
-        modeSpinner.isEnabled = false
+        modeDiscoverButton.isEnabled = false
+        modePortButton.isEnabled = false
         presetSpinner.isEnabled = false
         extraPortsInput.isEnabled = false
         scanButton.text = getString(R.string.tool_stop)
-        resultsHeader.isVisible = isPortMode()
+        resultsHeader.isVisible = portMode
     }
 
     private fun finishScan() {
         hostInput.isEnabled = true
-        modeSpinner.isEnabled = true
+        modeDiscoverButton.isEnabled = true
+        modePortButton.isEnabled = true
         presetSpinner.isEnabled = true
         extraPortsInput.isEnabled = true
-        scanButton.text = getString(R.string.lan_scan_start)
+        scanButton.text = getString(
+            if (portMode) R.string.lan_scan_start_ports else R.string.lan_scan_start
+        )
         updateModeUi()
     }
 
@@ -339,7 +353,12 @@ class LanScannerActivity : AppCompatActivity() {
             }
         }
         row.findViewById<TextView>(R.id.subnetRowMeta).text = meta
-        row.setOnClickListener { openHostUrl(host) }
+        row.findViewById<MaterialButton>(R.id.subnetRowOpenButton).setOnClickListener {
+            openHostUrl(host)
+        }
+        row.findViewById<MaterialButton>(R.id.subnetRowPortButton).setOnClickListener {
+            portScanHost(host.ip)
+        }
         resultsList.addView(row)
     }
 
@@ -393,6 +412,5 @@ class LanScannerActivity : AppCompatActivity() {
         const val EXTRA_MODE = "lan_scan_mode"
         const val MODE_DISCOVER = "discover"
         const val MODE_PORT = "port"
-        private const val MODE_PORT_INDEX = 1
     }
 }

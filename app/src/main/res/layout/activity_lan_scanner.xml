@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/lanScannerRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -75,45 +76,73 @@
         android:textColor="@color/text_dim"
         android:textSize="11sp" />
 
-    <Spinner
-        android:id="@+id/lanModeSpinner"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:background="@drawable/bg_hud_input"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="4dp" />
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/lanModeDiscover"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:text="@string/lan_scan_mode_discover"
+            app:strokeWidth="2dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/lanModePort"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="@string/lan_scan_mode_port"
+            app:strokeWidth="1dp" />
+    </LinearLayout>
 
     <TextView
+        android:id="@+id/lanModeHint"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:fontFamily="@font/source_sans3_semibold"
-        android:letterSpacing="0.1"
-        android:text="@string/port_scan_host_label"
-        android:textColor="@color/text_dim"
-        android:textSize="11sp" />
-
-    <EditText
-        android:id="@+id/lanHostInput"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:background="@drawable/bg_hud_input"
-        android:fontFamily="monospace"
-        android:hint="@string/port_scan_host_hint"
-        android:inputType="textUri"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="12dp"
-        android:textColor="@color/text_primary"
-        android:textSize="14sp" />
+        android:layout_marginTop="8dp"
+        android:fontFamily="@font/source_sans3_regular"
+        android:text="@string/lan_scan_discover_ready"
+        android:textColor="@color/text_muted"
+        android:textSize="13sp" />
 
     <LinearLayout
         android:id="@+id/lanPortOptions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
         android:orientation="vertical"
         android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/source_sans3_semibold"
+            android:letterSpacing="0.1"
+            android:text="@string/port_scan_host_label"
+            android:textColor="@color/text_dim"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/lanHostInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_hud_input"
+            android:fontFamily="monospace"
+            android:hint="@string/port_scan_host_hint"
+            android:inputType="textUri"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="12dp"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
 
         <TextView
             android:layout_width="match_parent"

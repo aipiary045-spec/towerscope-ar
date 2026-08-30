@@ -57,17 +57,16 @@
     <string name="home_job_subnet">Subnet scanner</string>
     <string name="home_job_subnet_sub">IPs · MAC · ports · IPv6 · tap URL</string>
     <string name="home_job_lan_scan">LAN scanner</string>
-    <string name="home_job_lan_scan_sub">Discover hosts · deep port scan · tap URL</string>
-    <string name="lan_scan_mode_label">SCAN MODE</string>
+    <string name="home_job_lan_scan_sub">Discover devices or scan open ports on your LAN</string>
+    <string name="lan_scan_mode_label">WHAT TO RUN</string>
+    <string name="lan_scan_mode_discover">Discover</string>
+    <string name="lan_scan_mode_port">Port scan</string>
     <string name="lan_scan_start">Scan LAN</string>
+    <string name="lan_scan_start_ports">Scan ports</string>
     <string name="lan_scan_discover_ready">Discover active IPs · MAC · quick ports · tap URL</string>
     <string name="lan_scan_port_ready">Find devices, then scan open ports</string>
     <string name="lan_scan_discover_progress">Discovering %1$d / %2$d</string>
-    <string name="lan_scan_discover_done">Done · %1$d hosts · tap a URL to open</string>
-    <string-array name="lan_scan_modes">
-        <item>Discover — IPs · MAC · tap URL</item>
-        <item>Port scan — preset ports on LAN</item>
-    </string-array>
+    <string name="lan_scan_discover_done">Done · %1$d hosts · Open web or Port scan on any device</string>
     <string name="home_job_traceroute">Traceroute</string>
     <string name="home_job_traceroute_sub">Hop path · TTL probes</string>
     <string name="home_job_diagnose">Path Doctor</string>
