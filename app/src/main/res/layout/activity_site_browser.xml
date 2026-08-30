@@ -80,21 +80,24 @@
             android:textSize="12sp" />
     </LinearLayout>
 
-    <ScrollView
-        android:id="@+id/siteBrowserScroll"
+    <TextView
+        android:id="@+id/siteBrowserEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:fontFamily="@font/source_sans3_regular"
+        android:textColor="@color/text_muted"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/siteBrowserRecycler"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
         android:layout_weight="1"
-        android:clipToPadding="false">
-
-        <LinearLayout
-            android:id="@+id/siteBrowserList"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="8dp" />
-    </ScrollView>
+        android:clipToPadding="false"
+        android:paddingBottom="8dp" />
 
     <include
         layout="@layout/include_tool_actions"

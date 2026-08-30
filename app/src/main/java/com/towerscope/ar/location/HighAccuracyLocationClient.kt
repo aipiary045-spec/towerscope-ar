@@ -12,9 +12,12 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 data class UserLocation(
     val latitude: Double,
@@ -79,6 +82,22 @@ class HighAccuracyLocationClient(context: Context) {
 
         awaitClose {
             fusedClient.removeLocationUpdates(callback)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    suspend fun currentLocation(): UserLocation? {
+        if (!hasLocationPermission()) return null
+        return suspendCancellableCoroutine { cont ->
+            val token = CancellationTokenSource()
+            cont.invokeOnCancellation { token.cancel() }
+            fusedClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, token.token)
+                .addOnSuccessListener { location ->
+                    cont.resume(location?.toUserLocation())
+                }
+                .addOnFailureListener {
+                    cont.resume(null)
+                }
         }
     }
 

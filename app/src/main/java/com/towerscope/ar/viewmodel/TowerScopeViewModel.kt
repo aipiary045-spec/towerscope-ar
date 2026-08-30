@@ -562,14 +562,27 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(searchQuery = query) }
     }
 
-    fun selectTower(towerId: String?) {
+    fun selectTower(towerId: String?, loadProfile: Boolean = true) {
         _uiState.update { it.copy(selectedTowerId = towerId) }
         if (towerId != null) {
             prefs.edit().putString(KEY_SELECTED_TOWER_ID, towerId).apply()
-            loadLosProfile(towerId)
+            if (loadProfile) {
+                loadLosProfile(towerId)
+            }
         } else {
             prefs.edit().remove(KEY_SELECTED_TOWER_ID).apply()
             clearLosProfile()
+        }
+    }
+
+    /** One GPS fix for list screens — avoids streaming updates that rebuild the UI. */
+    fun refreshUserLocationOnce() {
+        if (!locationClient.hasLocationPermission()) return
+        viewModelScope.launch {
+            val location = withContext(Dispatchers.IO) { locationClient.currentLocation() }
+            if (location != null) {
+                _uiState.update { it.copy(userLocation = location) }
+            }
         }
     }
 
@@ -1279,6 +1292,13 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     /** Called when returning from DataMenuActivity so imports are reflected. */
     fun syncFromFileStore() {
         viewModelScope.launch {
+            val diskUpdated = withContext(Dispatchers.IO) { fileStore.lastUpdatedEpochMs() }
+            if (
+                diskUpdated == _uiState.value.towersUpdatedAtMs &&
+                _uiState.value.towers.isNotEmpty()
+            ) {
+                return@launch
+            }
             val restored = withContext(Dispatchers.IO) { fileStore.loadPersistedTowers() }
             if (restored == null) {
                 if (!fileStore.hasPersistedImport()) {
