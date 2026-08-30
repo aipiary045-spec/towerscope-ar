@@ -22,12 +22,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.data.LosProfileBuilder
+import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.LosProfileChartView
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.CardinalSector
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.LinkEstimate
+import com.towerscope.ar.viewmodel.LocationMode
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -55,8 +57,10 @@ class LosProfilesActivity : AppCompatActivity() {
     private lateinit var linkSettingsSummary: TextView
     private lateinit var linkSettingsToggle: TextView
     private lateinit var linkSettingsExpanded: View
+    private lateinit var locationSourceChip: LocationSourceChip
     private var linkSettingsOpen = false
     private var startedScan = false
+    private var priorityTowerId: String? = null
     private var lastCpeHeight: Float? = null
     private var lastRowsKey: String? = null
     private val frequencyPresets = listOf(2.4f, 3.65f, 5.2f, 5.8f, 6.0f, 24.0f, 60.0f)
@@ -84,6 +88,7 @@ class LosProfilesActivity : AppCompatActivity() {
             alsoBottom = findViewById(R.id.losFooter)
         )
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
+        priorityTowerId = TowerIntents.towerIdFrom(intent)?.also { viewModel.selectTower(it) }
 
         subtitle = findViewById(R.id.losRangeSubtitle)
         status = findViewById(R.id.losRangeStatus)
@@ -101,6 +106,15 @@ class LosProfilesActivity : AppCompatActivity() {
         linkSettingsSummary = findViewById(R.id.losLinkSettingsSummary)
         linkSettingsToggle = findViewById(R.id.losLinkSettingsToggle)
         linkSettingsExpanded = findViewById(R.id.losLinkSettingsExpanded)
+        locationSourceChip = LocationSourceChip(
+            chip = findViewById(R.id.losLocationChip),
+            fragmentManager = supportFragmentManager,
+            viewModel = viewModel,
+            onModeChanged = {
+                startedScan = false
+                maybeStartScan(force = true)
+            }
+        )
 
         frequencySlider.max = frequencyPresets.lastIndex
         cpeHeightSlider.max =
@@ -178,11 +192,8 @@ class LosProfilesActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    subtitle.text = if (state.hasInstallSite) {
-                        "Heat map button / tap row · long-press details · install site"
-                    } else {
-                        "Heat map button / tap row · long-press details · GPS"
-                    }
+                    locationSourceChip.render(state, this@LosProfilesActivity)
+                    subtitle.text = "Heat map button / tap row · long-press details"
                     status.text = state.losRangeStatus.orEmpty()
                     linkSettingsSummary.text = String.format(
                         Locale.US,
@@ -275,6 +286,8 @@ class LosProfilesActivity : AppCompatActivity() {
             append('|')
             append(state.clutterHeightMeters)
             append('|')
+            append(state.locationMode)
+            append('|')
             append(state.hasInstallSite)
             append('|')
             append(state.losRangeStatus)
@@ -328,11 +341,14 @@ class LosProfilesActivity : AppCompatActivity() {
         val state = viewModel.uiState.value
         if (!force && (startedScan || state.losRangeLoading || state.losRangeRows.isNotEmpty())) return
         if (state.positioningLocation() == null) {
-            status.text = "Waiting for GPS…"
+            status.text = when (state.locationMode) {
+                LocationMode.CUSTOM -> "Set a custom location on the Locate map"
+                LocationMode.CURRENT_GPS -> "Waiting for GPS fix"
+            }
             return
         }
         startedScan = true
-        viewModel.refreshLosRangeProfiles()
+        viewModel.refreshLosRangeProfiles(priorityTowerId)
     }
 
     private fun clearShimmers() {

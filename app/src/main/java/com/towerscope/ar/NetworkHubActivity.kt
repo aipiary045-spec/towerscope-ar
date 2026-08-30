@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import com.towerscope.ar.ui.BottomNav
 import com.towerscope.ar.ui.BottomNavTab
@@ -23,66 +24,59 @@ class NetworkHubActivity : AppCompatActivity() {
         )
         BottomNav.bind(this, BottomNavTab.NETWORK)
 
-        bindTile(
-            rowId = R.id.hubWifiRow,
-            icon = R.drawable.ic_wifi_signal,
-            title = R.string.home_job_wifi,
-            subtitle = R.string.home_job_wifi_sub
-        ) { startActivity(Intent(this, WifiMonitorActivity::class.java)) }
+        bindTile(R.id.hubConnectionRow, R.drawable.ic_my_location, R.color.accent_teal,
+            R.string.home_job_connection, R.string.home_job_connection_sub) {
+            startActivity(Intent(this, ConnectionSnapshotActivity::class.java))
+        }
+        bindTile(R.id.hubWifiRow, R.drawable.ic_wifi_signal, R.color.accent_teal,
+            R.string.home_job_wifi, R.string.home_job_wifi_sub) {
+            startActivity(Intent(this, WifiMonitorActivity::class.java))
+        }
+        bindTile(R.id.hubChannelRow, R.drawable.ic_layers, R.color.accent_yellow,
+            R.string.home_job_channel_plan, R.string.home_job_channel_plan_sub) {
+            startActivity(Intent(this, ChannelPlannerActivity::class.java))
+        }
+        bindTile(R.id.hubWalkRow, R.drawable.ic_person, R.color.accent_teal,
+            R.string.home_job_signal_walk, R.string.home_job_signal_walk_sub) {
+            startActivity(Intent(this, SignalWalkActivity::class.java))
+        }
 
-        bindTile(
-            rowId = R.id.hubSpeedRow,
-            icon = R.drawable.ic_speed_test,
-            title = R.string.home_job_speed,
-            subtitle = R.string.home_job_speed_sub
-        ) { startActivity(Intent(this, SpeedTestActivity::class.java)) }
+        bindTile(R.id.hubLanRow, R.drawable.ic_subnet_scan, R.color.accent_teal,
+            R.string.home_job_lan_scan, R.string.home_job_lan_scan_sub) {
+            startActivity(Intent(this, LanScannerActivity::class.java))
+        }
 
-        bindTile(
-            rowId = R.id.hubPingRow,
-            icon = R.drawable.ic_ping_graph,
-            title = R.string.home_job_ping,
-            subtitle = R.string.home_job_ping_sub
-        ) { startActivity(Intent(this, PingMonitorActivity::class.java)) }
-
-        bindTile(
-            rowId = R.id.hubSubnetRow,
-            icon = R.drawable.ic_subnet_scan,
-            title = R.string.home_job_subnet,
-            subtitle = R.string.home_job_subnet_sub
-        ) { startActivity(Intent(this, SubnetScannerActivity::class.java)) }
-
-        bindTile(
-            rowId = R.id.hubDnsRow,
-            icon = R.drawable.ic_dns_lookup,
-            title = R.string.home_job_dns,
-            subtitle = R.string.home_job_dns_sub
-        ) { startActivity(Intent(this, DnsLookupActivity::class.java)) }
-
-        bindTile(
-            rowId = R.id.hubTraceRow,
-            icon = R.drawable.ic_traceroute,
-            title = R.string.home_job_traceroute,
-            subtitle = R.string.home_job_traceroute_sub
-        ) { startActivity(Intent(this, TraceRouteActivity::class.java)) }
-
-        bindTile(
-            rowId = R.id.hubBandwidthRow,
-            icon = R.drawable.ic_bandwidth,
-            title = R.string.home_job_bandwidth,
-            subtitle = R.string.home_job_bandwidth_sub
-        ) { startActivity(Intent(this, BandwidthMonitorActivity::class.java)) }
-
-        bindTile(
-            rowId = R.id.hubDiagnoseRow,
-            icon = R.drawable.ic_network_diagnose,
-            title = R.string.home_job_diagnose,
-            subtitle = R.string.home_job_diagnose_sub
-        ) { startActivity(Intent(this, NetworkDiagnoseActivity::class.java)) }
+        bindTile(R.id.hubSpeedRow, R.drawable.ic_speed_test, R.color.accent_yellow,
+            R.string.home_job_speed, R.string.home_job_speed_sub) {
+            startActivity(Intent(this, SpeedTestActivity::class.java))
+        }
+        bindTile(R.id.hubPingRow, R.drawable.ic_ping_graph, R.color.accent_yellow,
+            R.string.home_job_ping, R.string.home_job_ping_sub) {
+            startActivity(Intent(this, PingMonitorActivity::class.java))
+        }
+        bindTile(R.id.hubTraceRow, R.drawable.ic_traceroute, R.color.accent_yellow,
+            R.string.home_job_traceroute, R.string.home_job_traceroute_sub) {
+            startActivity(Intent(this, TraceRouteActivity::class.java))
+        }
+        bindTile(R.id.hubDiagnoseRow, R.drawable.ic_network_diagnose, R.color.accent_yellow,
+            R.string.home_job_diagnose, R.string.home_job_diagnose_sub) {
+            startActivity(Intent(this, NetworkDiagnoseActivity::class.java))
+        }
     }
 
-    private fun bindTile(rowId: Int, icon: Int, title: Int, subtitle: Int, onClick: () -> Unit) {
+    private fun bindTile(
+        rowId: Int,
+        icon: Int,
+        iconTint: Int,
+        title: Int,
+        subtitle: Int,
+        onClick: () -> Unit
+    ) {
         val row = findViewById<View>(rowId)
-        row.findViewById<ImageView>(R.id.hubToolIcon).setImageResource(icon)
+        row.findViewById<ImageView>(R.id.hubToolIcon).apply {
+            setImageResource(icon)
+            setColorFilter(ContextCompat.getColor(this@NetworkHubActivity, iconTint))
+        }
         row.findViewById<TextView>(R.id.hubToolTitle).setText(title)
         row.findViewById<TextView>(R.id.hubToolSubtitle).setText(subtitle)
         row.setOnClickListener { onClick() }

@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
+import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -17,8 +18,10 @@ import com.towerscope.ar.network.MultiPingSnapshot
 import com.towerscope.ar.network.PingHistory
 import com.towerscope.ar.network.PingHostStats
 import com.towerscope.ar.network.PingMonitor
+import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.ui.SystemBars
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -26,6 +29,7 @@ import java.util.Locale
 class PingMonitorActivity : AppCompatActivity() {
 
     private lateinit var hostInput: EditText
+    private lateinit var durationGroup: RadioGroup
     private lateinit var statusLabel: TextView
     private lateinit var recentLabel: TextView
     private lateinit var recentScroll: HorizontalScrollView
@@ -34,7 +38,11 @@ class PingMonitorActivity : AppCompatActivity() {
     private lateinit var logView: TextView
     private lateinit var toggleButton: MaterialButton
     private var job: Job? = null
+    private var timeoutJob: Job? = null
     private val logLines = ArrayDeque<String>(120)
+    private var lastSnapshot: MultiPingSnapshot? = null
+    private var startedAtMs: Long = 0L
+    private var lastReport: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +51,7 @@ class PingMonitorActivity : AppCompatActivity() {
         SystemBars.apply(findViewById(R.id.pingRoot))
 
         hostInput = findViewById(R.id.pingHostInput)
+        durationGroup = findViewById(R.id.pingDurationGroup)
         statusLabel = findViewById(R.id.pingStatus)
         recentLabel = findViewById(R.id.pingRecentLabel)
         recentScroll = findViewById(R.id.pingRecentScroll)
@@ -57,17 +66,25 @@ class PingMonitorActivity : AppCompatActivity() {
         renderRecentChips()
 
         toggleButton.setOnClickListener {
-            if (job?.isActive == true) stopPing() else startPing()
+            if (job?.isActive == true) stopPing(showSummary = true) else startPing()
         }
+        findViewById<MaterialButton>(R.id.pingShareButton).setOnClickListener { share() }
         findViewById<MaterialButton>(R.id.pingBackButton).setOnClickListener {
-            stopPing()
+            stopPing(showSummary = false)
             finish()
         }
     }
 
     override fun onStop() {
-        stopPing()
+        stopPing(showSummary = false)
         super.onStop()
+    }
+
+    private fun durationSec(): Int? = when (durationGroup.checkedRadioButtonId) {
+        R.id.pingDuration1m -> 60
+        R.id.pingDuration2m -> 120
+        R.id.pingDuration5m -> 300
+        else -> null
     }
 
     private fun startPing() {
@@ -78,32 +95,103 @@ class PingMonitorActivity : AppCompatActivity() {
 
         logLines.clear()
         logView.text = "—"
+        lastReport = ""
         hostInput.isEnabled = false
         setRecentEnabled(false)
-        toggleButton.text = "Stop ping"
-        statusLabel.text = "Pinging ${hosts.size} host${if (hosts.size == 1) "" else "s"}…"
+        durationGroup.isEnabled = false
+        toggleButton.text = getString(R.string.tool_stop)
+        startedAtMs = System.currentTimeMillis()
+
+        val timed = durationSec()
+        statusLabel.text = if (timed != null) {
+            "Stability test · ${timed}s · ${hosts.size} host${if (hosts.size == 1) "" else "s"}"
+        } else {
+            "Live ping · ${hosts.size} host${if (hosts.size == 1) "" else "s"}"
+        }
+
         job = lifecycleScope.launch {
             PingMonitor.streamMany(hosts)
                 .catch { e ->
                     statusLabel.text = "Ping error: ${e.message ?: "failed"}"
-                    stopPing()
+                    stopPing(showSummary = true)
                 }
-                .collect { snapshot -> renderSnapshot(snapshot) }
+                .collect { snapshot ->
+                    lastSnapshot = snapshot
+                    renderSnapshot(snapshot)
+                }
+        }
+
+        timed?.let { sec ->
+            timeoutJob = lifecycleScope.launch {
+                delay(sec * 1000L)
+                if (job?.isActive == true) {
+                    stopPing(showSummary = true)
+                }
+            }
         }
     }
 
-    private fun stopPing() {
+    private fun stopPing(showSummary: Boolean) {
         job?.cancel()
         job = null
+        timeoutJob?.cancel()
+        timeoutJob = null
         hostInput.isEnabled = true
         setRecentEnabled(true)
-        toggleButton.text = "Start ping"
-        if (statusLabel.text.toString().startsWith("Live") ||
+        durationGroup.isEnabled = true
+        toggleButton.text = getString(R.string.ping_start)
+
+        if (showSummary && lastSnapshot != null) {
+            val elapsed = (System.currentTimeMillis() - startedAtMs) / 1000.0
+            lastReport = formatReport(lastSnapshot!!.hosts, elapsed)
+            statusLabel.text = "Finished · ${String.format(Locale.US, "%.0fs", elapsed)}"
+            logLines.addFirst("——— Summary ———")
+            logLines.addFirst(lastReport)
+            logView.text = logLines.joinToString("\n")
+        } else if (statusLabel.text.toString().startsWith("Live") ||
+            statusLabel.text.toString().startsWith("Stability") ||
             statusLabel.text.toString().startsWith("Pinging")
         ) {
             statusLabel.text = "Stopped"
         }
     }
+
+    private fun share() {
+        val body = lastReport.ifBlank {
+            lastSnapshot?.hosts?.let { formatReport(it, (System.currentTimeMillis() - startedAtMs) / 1000.0) }
+        }
+        if (!body.isNullOrBlank()) {
+            TestResultExport.shareText(this, "Ping & loss", body)
+        }
+    }
+
+    private fun formatReport(hosts: List<PingHostStats>, elapsedSec: Double): String = buildString {
+        appendLine("Ping & loss")
+        appendLine(String.format(Locale.US, "Duration: %.0f s", elapsedSec))
+        hosts.forEach { host ->
+            appendLine()
+            appendLine(host.displayTarget)
+            appendLine(
+                String.format(
+                    Locale.US,
+                    "Sent %d · Recv %d · Loss %.1f%%",
+                    host.sent,
+                    host.received,
+                    host.lossPercent
+                )
+            )
+            appendLine(
+                String.format(
+                    Locale.US,
+                    "Latency avg %s ms · min %s · max %s (%s)",
+                    formatMs(host.avgMs),
+                    formatMs(host.minMs),
+                    formatMs(host.maxMs),
+                    host.method
+                )
+            )
+        }
+    }.trim()
 
     private fun renderRecentChips() {
         val recent = PingHistory.recentHosts(this)
@@ -160,8 +248,19 @@ class PingMonitorActivity : AppCompatActivity() {
             logView.text = logLines.joinToString("\n")
         }
         renderHostRows(snapshot.hosts)
+        val elapsed = (System.currentTimeMillis() - startedAtMs) / 1000.0
         val alive = snapshot.hosts.count { it.received > 0 }
-        statusLabel.text = "Live · ${snapshot.hosts.size} targets · $alive responding"
+        statusLabel.text = if (durationSec() != null) {
+            String.format(
+                Locale.US,
+                "Stability · %.0fs · %d/%d responding",
+                elapsed,
+                alive,
+                snapshot.hosts.size
+            )
+        } else {
+            "Live · ${snapshot.hosts.size} targets · $alive responding"
+        }
     }
 
     private fun renderHostRows(hosts: List<PingHostStats>) {

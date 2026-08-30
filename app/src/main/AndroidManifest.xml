@@ -37,12 +37,6 @@
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
-            android:name=".InstallationHubActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.TowerScopeAR" />
-
-        <activity
             android:name=".MainActivity"
             android:exported="false"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|keyboardHidden"
@@ -80,6 +74,12 @@
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
+            android:name=".LanScannerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
             android:name=".SubnetScannerActivity"
             android:exported="false"
             android:screenOrientation="portrait"
@@ -92,19 +92,37 @@
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
-            android:name=".DnsLookupActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.TowerScopeAR" />
-
-        <activity
             android:name=".TraceRouteActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
-            android:name=".BandwidthMonitorActivity"
+            android:name=".ConnectionSnapshotActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".ChannelPlannerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".SignalWalkActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".BufferbloatActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".PortScannerActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TowerScopeAR" />
@@ -112,6 +130,18 @@
         <activity
             android:name=".DataMenuActivity"
             android:exported="false"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".InstallDashboardActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
+            android:name=".SiteBrowserActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.TowerScopeAR" />
     </application>
 </manifest>

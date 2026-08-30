@@ -13,15 +13,18 @@ import com.towerscope.ar.data.LosProfileService
 import com.towerscope.ar.data.Tower
 import com.towerscope.ar.data.TowerFileStore
 import com.towerscope.ar.location.DeviceHeadingClient
+import com.towerscope.ar.location.HeadingFilter
 import com.towerscope.ar.location.HighAccuracyLocationClient
 import com.towerscope.ar.location.UserLocation
 import com.towerscope.ar.ui.AppTheme
 import com.towerscope.ar.ui.HudTheme
+import com.towerscope.ar.util.CelestialBodies
 import com.towerscope.ar.util.CoordinateFormat
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.DistanceUnitSystem
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.LinkEstimate
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -69,6 +72,8 @@ data class TowerUiState(
      */
     val installLatitude: Double? = null,
     val installLongitude: Double? = null,
+    /** Whether to use live GPS or a custom pinned location for checks. */
+    val locationMode: LocationMode = LocationMode.CURRENT_GPS,
     /** Link frequency for Fresnel (GHz). */
     val frequencyGhz: Float = DEFAULT_FREQUENCY_GHZ,
     /** CPE / customer antenna height above ground (meters). */
@@ -83,6 +88,15 @@ data class TowerUiState(
     val coordinateFormat: CoordinateFormat = CoordinateFormat.DECIMAL,
     val deviceHeadingDegrees: Double? = null,
     val compassSensorAccuracy: Int = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM,
+    val compassPitchDegrees: Double? = null,
+    val compassRollDegrees: Double? = null,
+    val compassTilted: Boolean = false,
+    val compassMagneticInterference: Boolean = false,
+    val compassRotationRateDps: Double = 0.0,
+    val compassHeadingSource: com.towerscope.ar.location.HeadingSourceArbiter.Source =
+        com.towerscope.ar.location.HeadingSourceArbiter.Source.FUSED,
+    val compassSightingActive: Boolean = false,
+    val compassSightingProgress: Float = 0f,
     val hudTheme: HudTheme = HudTheme.DARK,
     /** Bottom HUD search/range/controls expanded. */
     val hudExpanded: Boolean = true,
@@ -123,22 +137,28 @@ data class TowerUiState(
 
     /**
      * Location used for bearings, distances, and LOS.
-     * Prefers a pinned install site when set; otherwise live GPS.
+     * Follows [locationMode]: custom pin when [LocationMode.CUSTOM], else live GPS.
      */
     fun positioningLocation(): UserLocation? {
-        val lat = installLatitude
-        val lon = installLongitude
-        if (lat != null && lon != null) {
-            return UserLocation(
-                latitude = lat,
-                longitude = lon,
-                altitudeMeters = userLocation?.altitudeMeters,
-                accuracyMeters = userLocation?.accuracyMeters ?: 0f,
-                bearingDegrees = userLocation?.bearingDegrees
-            )
+        return when (locationMode) {
+            LocationMode.CUSTOM -> {
+                val lat = installLatitude ?: return null
+                val lon = installLongitude ?: return null
+                UserLocation(
+                    latitude = lat,
+                    longitude = lon,
+                    altitudeMeters = userLocation?.altitudeMeters,
+                    accuracyMeters = userLocation?.accuracyMeters ?: 0f,
+                    bearingDegrees = userLocation?.bearingDegrees,
+                    speedMps = userLocation?.speedMps
+                )
+            }
+            LocationMode.CURRENT_GPS -> userLocation
         }
-        return userLocation
     }
+
+    fun usesCustomLocation(): Boolean =
+        locationMode == LocationMode.CUSTOM && hasInstallSite
 
     /**
      * Facing heading from the device compass, plus optional manual offset.
@@ -150,10 +170,32 @@ data class TowerUiState(
         return GeoUtils.normalizeBearing(device + offset)
     }
 
+    /** Signed error to focus tower: positive = turn right. */
+    fun focusTowerHeadingErrorDegrees(): Double? {
+        val heading = effectiveHeadingDegrees() ?: return null
+        val bearing = focusTower()?.let { bearingTo(it) } ?: return null
+        return GeoUtils.relativeBearingDegrees(heading, bearing)
+    }
+
+    val compassQualityIssue: CompassQualityIssue
+        get() = when {
+            compassMagneticInterference -> CompassQualityIssue.METAL
+            compassTilted -> CompassQualityIssue.TILT
+            needsCompassCalibration -> CompassQualityIssue.LOW_ACCURACY
+            else -> CompassQualityIssue.NONE
+        }
+
     /** Towers with known distance/bearing for the radar disc (relative to heading). */
     fun directionIndicators(): List<Triple<Tower, Double, Double>> {
         val heading = effectiveHeadingDegrees() ?: return emptyList()
-        return visibleTowers().mapNotNull { tower ->
+        val focus = focusTower()
+        val towers = visibleTowers().toMutableList()
+        focus?.let { tower ->
+            if (towers.none { it.id == tower.id }) {
+                towers.add(tower)
+            }
+        }
+        return towers.mapNotNull { tower ->
             val distance = distanceTo(tower) ?: return@mapNotNull null
             val bearing = bearingTo(tower) ?: return@mapNotNull null
             val relative = GeoUtils.relativeBearingDegrees(heading, bearing)
@@ -292,6 +334,35 @@ data class TowerUiState(
             .take(limit)
     }
 
+    /** Every loaded site sorted nearest-first; distance is null without a positioning fix. */
+    fun allTowersSortedByDistance(): List<Pair<Tower, Double?>> {
+        val location = positioningLocation()
+        return towers
+            .asSequence()
+            .filter { it.id !in hiddenTowerIds }
+            .map { tower ->
+                val distance = location?.let {
+                    GeoUtils.haversineMeters(
+                        it.latitude,
+                        it.longitude,
+                        tower.latitude,
+                        tower.longitude
+                    )
+                }
+                tower to distance
+            }
+            .sortedWith(compareBy(nullsLast()) { it.second })
+            .toList()
+    }
+
+    fun isTowerInRange(tower: Tower): Boolean {
+        val distance = distanceTo(tower) ?: return false
+        return distance <= maxDistanceMeters
+    }
+
+    fun bestLosCandidate(): LosRangeRow? =
+        losRangeRows.firstOrNull { !it.loading && it.error == null && it.profile != null }
+
     companion object {
         const val MIN_DISTANCE_METERS = 100f
         /** 10 miles in meters. */
@@ -315,7 +386,9 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private val headingClient = DeviceHeadingClient(application)
     private val fileStore = TowerFileStore(application)
     private val losProfileService = LosProfileService()
-    private val prefs = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val prefs = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE).also {
+        migrateHeadingOffsetIfNeeded(it)
+    }
     private val _uiState = MutableStateFlow(
         TowerUiState(
             maxDistanceMeters = loadMaxDistanceMeters(),
@@ -337,7 +410,9 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             installLatitude = prefs.getFloat(KEY_INSTALL_LAT, Float.NaN)
                 .takeIf { !it.isNaN() }?.toDouble(),
             installLongitude = prefs.getFloat(KEY_INSTALL_LON, Float.NaN)
-                .takeIf { !it.isNaN() }?.toDouble()
+                .takeIf { !it.isNaN() }?.toDouble(),
+            locationMode = loadLocationMode(),
+            selectedTowerId = prefs.getString(KEY_SELECTED_TOWER_ID, null)
         )
     ).also { flow ->
         DisplayUnits.apply(flow.value.distanceUnitSystem, flow.value.coordinateFormat)
@@ -346,6 +421,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
 
     private var locationJob: Job? = null
     private var headingJob: Job? = null
+    private var sightingJob: Job? = null
     private var losJob: Job? = null
     private var losRangeJob: Job? = null
     private var losLoadingTowerId: String? = null
@@ -367,6 +443,16 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             .coerceIn(TowerUiState.MIN_DISTANCE_METERS, TowerUiState.MAX_DISTANCE_METERS)
     }
 
+    private fun migrateHeadingOffsetIfNeeded(prefs: android.content.SharedPreferences) {
+        val version = prefs.getInt(KEY_HEADING_REMAP_VERSION, 0)
+        if (version < HEADING_REMAP_VERSION) {
+            prefs.edit()
+                .remove(KEY_HEADING_OFFSET)
+                .putInt(KEY_HEADING_REMAP_VERSION, HEADING_REMAP_VERSION)
+                .apply()
+        }
+    }
+
     private fun loadHeadingOffset(): Double? {
         if (!prefs.contains(KEY_HEADING_OFFSET)) return null
         val value = prefs.getFloat(KEY_HEADING_OFFSET, 0f).toDouble()
@@ -385,6 +471,13 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         return runCatching { CoordinateFormat.valueOf(raw) }.getOrDefault(CoordinateFormat.DECIMAL)
     }
 
+    private fun loadLocationMode(): LocationMode {
+        if (!prefs.contains(KEY_LOCATION_MODE)) {
+            return LocationMode.CURRENT_GPS
+        }
+        return LocationMode.fromStored(prefs.getString(KEY_LOCATION_MODE, null))
+    }
+
     private fun restorePersistedTowers() {
         viewModelScope.launch {
             val restored = withContext(Dispatchers.IO) { fileStore.loadPersistedTowers() } ?: return@launch
@@ -399,8 +492,11 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun startLocationUpdates() {
-        if (locationJob?.isActive == true) return
+    fun startLocationUpdates(includeHeading: Boolean = true) {
+        if (locationJob?.isActive == true) {
+            if (includeHeading) startDeviceHeadingUpdates()
+            return
+        }
         if (!locationClient.hasLocationPermission()) {
             _uiState.update {
                 it.copy(errorMessage = "Location permission is required for high-accuracy positioning.")
@@ -417,17 +513,25 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 _uiState.update { it.copy(userLocation = location) }
             }
         }
-        startDeviceHeadingUpdates()
+        if (includeHeading) {
+            startDeviceHeadingUpdates()
+        }
     }
 
     fun startDeviceHeadingUpdates() {
         if (headingJob?.isActive == true) return
         headingJob = viewModelScope.launch {
-            headingClient.headingUpdates { _uiState.value.userLocation }.collect { heading ->
+            headingClient.headingUpdates { _uiState.value.positioningLocation() }.collect { heading ->
                 _uiState.update {
                     it.copy(
                         deviceHeadingDegrees = heading.degrees,
-                        compassSensorAccuracy = heading.sensorAccuracy
+                        compassSensorAccuracy = heading.sensorAccuracy,
+                        compassPitchDegrees = heading.pitchDegrees,
+                        compassRollDegrees = heading.rollDegrees,
+                        compassTilted = heading.tilted,
+                        compassMagneticInterference = heading.magneticInterference,
+                        compassRotationRateDps = heading.rotationRateDps,
+                        compassHeadingSource = heading.headingSource
                     )
                 }
             }
@@ -458,12 +562,27 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(searchQuery = query) }
     }
 
-    fun selectTower(towerId: String?) {
+    fun selectTower(towerId: String?, loadProfile: Boolean = true) {
         _uiState.update { it.copy(selectedTowerId = towerId) }
         if (towerId != null) {
-            loadLosProfile(towerId)
+            prefs.edit().putString(KEY_SELECTED_TOWER_ID, towerId).apply()
+            if (loadProfile) {
+                loadLosProfile(towerId)
+            }
         } else {
+            prefs.edit().remove(KEY_SELECTED_TOWER_ID).apply()
             clearLosProfile()
+        }
+    }
+
+    /** One GPS fix for list screens — avoids streaming updates that rebuild the UI. */
+    fun refreshUserLocationOnce() {
+        if (!locationClient.hasLocationPermission()) return
+        viewModelScope.launch {
+            val location = withContext(Dispatchers.IO) { locationClient.currentLocation() }
+            if (location != null) {
+                _uiState.update { it.copy(userLocation = location) }
+            }
         }
     }
 
@@ -537,16 +656,35 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         prefs.edit()
             .putFloat(KEY_INSTALL_LAT, latitude.toFloat())
             .putFloat(KEY_INSTALL_LON, longitude.toFloat())
+            .putString(KEY_LOCATION_MODE, LocationMode.CUSTOM.name)
             .apply()
         _uiState.update {
             it.copy(
                 installLatitude = latitude,
                 installLongitude = longitude,
-                statusMessage = "Install site set"
+                locationMode = LocationMode.CUSTOM,
+                statusMessage = "Custom location set"
             )
         }
         clearLosProfile()
         clearLosRangeProfiles()
+    }
+
+    fun setLocationMode(mode: LocationMode) {
+        if (_uiState.value.locationMode == mode) return
+        prefs.edit().putString(KEY_LOCATION_MODE, mode.name).apply()
+        val message = when (mode) {
+            LocationMode.CURRENT_GPS -> "Using your location for checks"
+            LocationMode.CUSTOM -> if (_uiState.value.hasInstallSite) {
+                "Using custom location for checks"
+            } else {
+                "Set a custom location on the map"
+            }
+        }
+        _uiState.update { it.copy(locationMode = mode, statusMessage = message) }
+        clearLosProfile()
+        clearLosRangeProfiles()
+        _uiState.value.selectedTowerId?.let { loadLosProfile(it) }
     }
 
     fun setInstallSiteFromGps() {
@@ -559,11 +697,18 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             .remove(KEY_INSTALL_LAT)
             .remove(KEY_INSTALL_LON)
             .apply()
+        val nextMode = if (_uiState.value.locationMode == LocationMode.CUSTOM) {
+            prefs.edit().putString(KEY_LOCATION_MODE, LocationMode.CURRENT_GPS.name).apply()
+            LocationMode.CURRENT_GPS
+        } else {
+            _uiState.value.locationMode
+        }
         _uiState.update {
             it.copy(
                 installLatitude = null,
                 installLongitude = null,
-                statusMessage = "Install site cleared — using live GPS"
+                locationMode = nextMode,
+                statusMessage = "Custom location cleared — using your location"
             )
         }
         clearLosProfile()
@@ -634,10 +779,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 it.copy(
                     losProfile = null,
                     losProfileLoading = false,
-                    losProfileError = if (_uiState.value.hasInstallSite) {
-                        "Install site required for LOS profile"
+                    losProfileError = if (_uiState.value.locationMode == LocationMode.CUSTOM) {
+                        "Set a custom location on the Locate map"
                     } else {
-                        "Need GPS (or set install site on Locate) for LOS"
+                        "Waiting for GPS fix"
                     }
                 )
             }
@@ -692,7 +837,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
      * Build LOS profiles for towers in the saved range (separate from AR).
      * Results stream in and stay sorted best-clearance → worst.
      */
-    fun refreshLosRangeProfiles() {
+    fun refreshLosRangeProfiles(priorityTowerId: String? = null) {
         losRangeJob?.cancel()
         val location = _uiState.value.positioningLocation()
         if (location == null) {
@@ -700,16 +845,31 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 it.copy(
                     losRangeRows = emptyList(),
                     losRangeLoading = false,
-                    losRangeStatus = if (it.hasInstallSite) {
-                        "Install site missing coordinates"
+                    losRangeStatus = if (it.locationMode == LocationMode.CUSTOM) {
+                        "Set a custom location on the Locate map"
                     } else {
-                        "Waiting for GPS… (or set install site on Locate)"
+                        "Waiting for GPS fix"
                     }
                 )
             }
             return
         }
-        val targets = _uiState.value.towersInRangeForLos()
+        val targets = _uiState.value.towersInRangeForLos().toMutableList()
+        if (priorityTowerId != null) {
+            val tower = _uiState.value.towerById(priorityTowerId)
+            if (tower != null && tower.id !in _uiState.value.hiddenTowerIds &&
+                targets.none { it.first.id == priorityTowerId }
+            ) {
+                val distance = GeoUtils.haversineMeters(
+                    location.latitude,
+                    location.longitude,
+                    tower.latitude,
+                    tower.longitude
+                )
+                targets.add(tower to distance)
+                targets.sortBy { it.second }
+            }
+        }
         if (targets.isEmpty()) {
             _uiState.update {
                 it.copy(
@@ -724,7 +884,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         val seed = targets.map { (tower, distance) ->
             LosRangeRow(tower = tower, distanceMeters = distance, loading = true)
         }
-        val originLabel = if (_uiState.value.hasInstallSite) "install site" else "GPS"
+        val originLabel = when (_uiState.value.locationMode) {
+            LocationMode.CUSTOM -> "custom location"
+            LocationMode.CURRENT_GPS -> "your location"
+        }
         _uiState.update {
             it.copy(
                 losRangeRows = seed,
@@ -839,6 +1002,12 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         prefs.edit().putBoolean(KEY_ONBOARDING_DONE, true).apply()
     }
 
+    fun hasSeenAlignHint(): Boolean = prefs.getBoolean(KEY_ALIGN_HINT_SEEN, false)
+
+    fun markAlignHintSeen() {
+        prefs.edit().putBoolean(KEY_ALIGN_HINT_SEEN, true).apply()
+    }
+
     /** Show figure-8 / tilt coaching overlay on Aim. */
     fun beginCompassImprove() {
         _uiState.update {
@@ -852,6 +1021,124 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
 
     fun dismissCompassImprove() {
         _uiState.update { it.copy(compassImproveActive = false) }
+    }
+
+    fun calibrateHeadingToKnownAzimuth(
+        trueAzimuthDegrees: Double,
+        deviceSamples: List<Double>? = null
+    ) {
+        val state = _uiState.value
+        val device = deviceSamples?.let { HeadingFilter.circularMean(it) }
+            ?: state.deviceHeadingDegrees
+            ?: run {
+                _uiState.update { it.copy(statusMessage = "Waiting for compass…") }
+                return
+            }
+        val currentOffset = state.headingCalibrationOffsetDegrees ?: 0.0
+        val effective = GeoUtils.normalizeBearing(device + currentOffset)
+        val correction = CelestialBodies.signedDeltaDegrees(effective, trueAzimuthDegrees)
+        setHeadingOffsetDegrees(currentOffset + correction)
+    }
+
+    fun startCompassSighting(target: CompassSightingTarget) {
+        if (sightingJob?.isActive == true) return
+        val trueAzimuth = resolveSightingAzimuth(target) ?: return
+        sightingJob = viewModelScope.launch {
+            val samples = mutableListOf<Double>()
+            val startedAt = System.currentTimeMillis()
+            _uiState.update { it.copy(compassSightingActive = true, compassSightingProgress = 0f) }
+            while (true) {
+                val elapsed = System.currentTimeMillis() - startedAt
+                val progress = (elapsed.toFloat() / SIGHTING_DURATION_MS).coerceIn(0f, 1f)
+                _uiState.value.deviceHeadingDegrees?.let { samples += it }
+                _uiState.update { it.copy(compassSightingProgress = progress) }
+                if (elapsed >= SIGHTING_DURATION_MS) break
+                delay(SIGHTING_SAMPLE_MS)
+            }
+            _uiState.update { it.copy(compassSightingActive = false, compassSightingProgress = 0f) }
+            if (samples.size < SIGHTING_MIN_SAMPLES) {
+                _uiState.update { it.copy(statusMessage = "Hold steady a bit longer…") }
+                return@launch
+            }
+            calibrateHeadingToKnownAzimuth(trueAzimuth, samples)
+            val label = when (target) {
+                CompassSightingTarget.SUN -> "sun"
+                CompassSightingTarget.TOWER -> _uiState.value.focusTower()?.name ?: "tower"
+            }
+            _uiState.update {
+                it.copy(statusMessage = "Calibrated to $label (${samples.size} samples)")
+            }
+        }
+    }
+
+    fun cancelCompassSighting() {
+        sightingJob?.cancel()
+        sightingJob = null
+        _uiState.update { it.copy(compassSightingActive = false, compassSightingProgress = 0f) }
+    }
+
+    private fun resolveSightingAzimuth(target: CompassSightingTarget): Double? {
+        return when (target) {
+            CompassSightingTarget.SUN -> {
+                val location = _uiState.value.positioningLocation() ?: run {
+                    _uiState.update { it.copy(statusMessage = "Need GPS fix for sun calibration") }
+                    return null
+                }
+                CelestialBodies.preferredCalibrationTarget(
+                    location.latitude,
+                    location.longitude
+                )?.azimuthDegrees ?: run {
+                    _uiState.update { it.copy(statusMessage = "Sun/moon too low for calibration right now") }
+                    null
+                }
+            }
+            CompassSightingTarget.TOWER -> {
+                val tower = _uiState.value.focusTower() ?: run {
+                    _uiState.update { it.copy(statusMessage = "No tower in range to calibrate against") }
+                    return null
+                }
+                _uiState.value.bearingTo(tower) ?: run {
+                    _uiState.update { it.copy(statusMessage = "Need location to calibrate to tower") }
+                    null
+                }
+            }
+        }
+    }
+
+    fun calibrateHeadingToSun(): Boolean {
+        val location = _uiState.value.positioningLocation() ?: run {
+            _uiState.update { it.copy(statusMessage = "Need GPS fix for sun calibration") }
+            return false
+        }
+        val target = CelestialBodies.preferredCalibrationTarget(
+            location.latitude,
+            location.longitude
+        ) ?: run {
+            _uiState.update { it.copy(statusMessage = "Sun/moon too low for calibration right now") }
+            return false
+        }
+        calibrateHeadingToKnownAzimuth(target.azimuthDegrees)
+        val label = if (target.body == CelestialBodies.Body.SUN) "sun" else "moon"
+        _uiState.update {
+            it.copy(statusMessage = "Calibrated to $label · hold phone top toward it")
+        }
+        return true
+    }
+
+    fun calibrateHeadingToFocusTower(): Boolean {
+        val tower = _uiState.value.focusTower() ?: run {
+            _uiState.update { it.copy(statusMessage = "No tower in range to calibrate against") }
+            return false
+        }
+        val bearing = _uiState.value.bearingTo(tower) ?: run {
+            _uiState.update { it.copy(statusMessage = "Need location to calibrate to tower") }
+            return false
+        }
+        calibrateHeadingToKnownAzimuth(bearing)
+        _uiState.update {
+            it.copy(statusMessage = "Calibrated to ${tower.name} — face the site, then tap Done")
+        }
+        return true
     }
 
     fun setHeadingOffsetDegrees(offsetDegrees: Double) {
@@ -1005,6 +1292,13 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     /** Called when returning from DataMenuActivity so imports are reflected. */
     fun syncFromFileStore() {
         viewModelScope.launch {
+            val diskUpdated = withContext(Dispatchers.IO) { fileStore.lastUpdatedEpochMs() }
+            if (
+                diskUpdated == _uiState.value.towersUpdatedAtMs &&
+                _uiState.value.towers.isNotEmpty()
+            ) {
+                return@launch
+            }
             val restored = withContext(Dispatchers.IO) { fileStore.loadPersistedTowers() }
             if (restored == null) {
                 if (!fileStore.hasPersistedImport()) {
@@ -1047,7 +1341,13 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_HUD_THEME = "hud_theme"
         private const val KEY_HUD_EXPANDED = "hud_expanded"
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
+        private const val KEY_ALIGN_HINT_SEEN = "align_hint_seen"
         private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
+        private const val KEY_HEADING_REMAP_VERSION = "heading_remap_version"
+        private const val HEADING_REMAP_VERSION = 5
+        private const val SIGHTING_DURATION_MS = 2_500L
+        private const val SIGHTING_SAMPLE_MS = 50L
+        private const val SIGHTING_MIN_SAMPLES = 20
         private const val KEY_CLUTTER_HEIGHT = "clutter_height_meters"
         private const val KEY_SHOW_ELEVATION_PROFILE = "show_elevation_profile"
         private const val KEY_MAX_DISTANCE = "max_distance_meters"
@@ -1058,8 +1358,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_CPE_GAIN_DBI = "cpe_antenna_gain_dbi"
         private const val KEY_INSTALL_LAT = "install_latitude"
         private const val KEY_INSTALL_LON = "install_longitude"
+        private const val KEY_LOCATION_MODE = "location_mode"
         private const val KEY_DISTANCE_UNITS = "distance_unit_system"
         private const val KEY_COORD_FORMAT = "coordinate_format"
+        private const val KEY_SELECTED_TOWER_ID = "selected_tower_id"
         private const val MAX_LOS_RANGE_TOWERS = 40
         private const val LOS_RANGE_CONCURRENCY = 2
 

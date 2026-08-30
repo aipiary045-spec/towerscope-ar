@@ -25,9 +25,16 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:fontFamily="@font/source_sans3_regular"
-        android:text="Rank APs by estimated signal · from install or GPS"
+        android:text="Rank APs by estimated signal"
         android:textColor="@color/text_muted"
         android:textSize="14sp" />
+
+    <include
+        android:id="@+id/losLocationChip"
+        layout="@layout/include_location_source_chip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp" />
 
     <LinearLayout
         android:id="@+id/losLinkSettings"

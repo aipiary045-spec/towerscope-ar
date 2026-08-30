@@ -4,9 +4,6 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="@dimen/item_gap"
     android:background="@drawable/bg_metric_tile"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?attr/selectableItemBackground"
     android:orientation="vertical"
     android:paddingHorizontal="14dp"
     android:paddingVertical="12dp">
@@ -46,4 +43,29 @@
         android:text="MAC — · host"
         android:textColor="@color/text_muted"
         android:textSize="12sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/subnetRowOpenButton"
+            style="@style/Widget.TowerScope.Button.Ghost"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:text="Open web" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/subnetRowPortButton"
+            style="@style/Widget.TowerScope.Button.Ghost"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="@string/lan_scan_mode_port" />
+    </LinearLayout>
 </LinearLayout>

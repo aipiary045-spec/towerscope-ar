@@ -7,7 +7,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.towerscope.ar.HomeActivity
-import com.towerscope.ar.InstallationHubActivity
+import com.towerscope.ar.InstallDashboardActivity
 import com.towerscope.ar.NetworkHubActivity
 import com.towerscope.ar.R
 
@@ -48,8 +48,8 @@ object BottomNav {
             go(activity, NetworkHubActivity::class.java, clearHomeStack = activity is HomeActivity)
         }
         root.findViewById<android.view.View>(R.id.navInstall).setOnClickListener {
-            if (activity is InstallationHubActivity) return@setOnClickListener
-            go(activity, InstallationHubActivity::class.java, clearHomeStack = activity is HomeActivity)
+            if (activity is InstallDashboardActivity) return@setOnClickListener
+            go(activity, InstallDashboardActivity::class.java, clearHomeStack = activity is HomeActivity)
         }
         root.findViewById<android.view.View>(R.id.navSettings).setOnClickListener {
             if (activity.supportFragmentManager.findFragmentByTag(SettingsBottomSheet.TAG) == null) {

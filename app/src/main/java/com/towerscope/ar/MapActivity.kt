@@ -19,10 +19,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.CardinalSector
 import com.towerscope.ar.util.GeoUtils
+import com.towerscope.ar.viewmodel.LocationMode
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -43,7 +45,7 @@ import java.io.File
 import kotlin.math.max
 import kotlin.math.min
 /**
- * Free satellite map (Esri / USGS imagery via osmdroid):
+ * Free satellite map (Esri World Imagery via osmdroid):
  * live GPS, optional install/customer pin, in-range APs, and path to focus site.
  */
 class MapActivity : AppCompatActivity() {
@@ -54,6 +56,7 @@ class MapActivity : AppCompatActivity() {
     private lateinit var metaLabel: TextView
     private lateinit var towerChips: LinearLayout
     private lateinit var rangeToggle: MaterialButton
+    private lateinit var locationSourceChip: LocationSourceChip
 
     private var losLine: Polyline? = null
     private val towerMarkers = mutableMapOf<String, Marker>()
@@ -65,6 +68,13 @@ class MapActivity : AppCompatActivity() {
     private var lastSectorTowerId: String? = null
     private var lastActiveSector: CardinalSector? = null
     private var lastSectorRadiusMeters: Double = -1.0
+    private var lastInfoWindowTowerId: String? = null
+    private val markerIcons = mutableMapOf<Boolean, BitmapDrawable>()
+    private val markerSelection = mutableMapOf<String, Boolean>()
+    private var lastRenderSignature: String? = null
+    private var lastSnappedCustomLat: Double? = null
+    private var lastSnappedCustomLon: Double? = null
+    private var pendingLaunchTowerId: String? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -72,7 +82,7 @@ class MapActivity : AppCompatActivity() {
         val fineOk = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
         val coarseOk = result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (fineOk || coarseOk) {
-            viewModel.startLocationUpdates()
+            viewModel.startLocationUpdates(includeHeading = false)
             render(viewModel.uiState.value)
         } else {
             focusLabel.text = "Location permission required"
@@ -90,12 +100,22 @@ class MapActivity : AppCompatActivity() {
             alsoBottom = findViewById(R.id.mapBottomPanel)
         )
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
+        pendingLaunchTowerId = TowerIntents.towerIdFrom(intent)?.also { viewModel.selectTower(it) }
 
         mapView = findViewById(R.id.mapView)
         focusLabel = findViewById(R.id.mapFocusLabel)
         metaLabel = findViewById(R.id.mapMetaLabel)
         towerChips = findViewById(R.id.mapTowerChips)
         rangeToggle = findViewById(R.id.mapRangeToggle)
+        locationSourceChip = LocationSourceChip(
+            chip = findViewById(R.id.mapLocationChip),
+            fragmentManager = supportFragmentManager,
+            viewModel = viewModel,
+            onCoordinatesApplied = { latitude, longitude ->
+                snapToCustomLocation(latitude, longitude)
+                metaLabel.text = "Custom location set from coordinates"
+            }
+        )
 
         setupMap()
 
@@ -115,20 +135,22 @@ class MapActivity : AppCompatActivity() {
         }
         findViewById<android.widget.ImageButton>(R.id.mapInstallButton).setOnClickListener {
             viewModel.setInstallSiteFromGps()
-            metaLabel.text = "Install site set to GPS · long-press map to move"
+            metaLabel.text = "Custom location set to your GPS · long-press map to move"
         }
         findViewById<android.widget.ImageButton>(R.id.mapInstallButton).setOnLongClickListener {
             viewModel.clearInstallSite()
-            metaLabel.text = "Install site cleared · using live GPS"
+            metaLabel.text = "Custom location cleared"
             true
-        }
-        findViewById<android.widget.ImageButton>(R.id.mapBasemapButton).setOnClickListener {
-            cycleTileSource()
         }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state -> render(state) }
+                viewModel.uiState.collect { state ->
+                    val signature = mapRenderSignature(state)
+                    if (signature == lastRenderSignature) return@collect
+                    lastRenderSignature = signature
+                    render(state)
+                }
             }
         }
 
@@ -153,9 +175,10 @@ class MapActivity : AppCompatActivity() {
         mapView.setTileSource(ESRI_WORLD_IMAGERY)
         mapView.setMultiTouchControls(true)
         mapView.minZoomLevel = 3.0
-        mapView.maxZoomLevel = 18.0
+        mapView.maxZoomLevel = ESRI_MAX_ZOOM.toDouble()
         mapView.controller.setZoom(13.0)
-        mapView.isTilesScaledToDpi = true
+        // Native 256px tiles; past Esri's native zoom the service returns "no data" placeholders.
+        mapView.isTilesScaledToDpi = false
         mapView.setHorizontalMapRepetitionEnabled(false)
         mapView.setVerticalMapRepetitionEnabled(false)
         mapView.zoomController.setVisibility(CustomZoomButtonsController.Visibility.SHOW_AND_FADEOUT)
@@ -173,20 +196,12 @@ class MapActivity : AppCompatActivity() {
             override fun longPressHelper(p: GeoPoint?): Boolean {
                 if (p == null) return false
                 viewModel.setInstallSite(p.latitude, p.longitude)
-                metaLabel.text = "Install site pinned · Check LOS ranks from here"
+                snapToCustomLocation(p.latitude, p.longitude)
+                metaLabel.text = "Custom location pinned"
                 return true
             }
         }
         mapView.overlays.add(0, MapEventsOverlay(events))
-    }
-
-    private var tileIndex = 0
-    private fun cycleTileSource() {
-        tileIndex = (tileIndex + 1) % TILE_SOURCES.size
-        val source = TILE_SOURCES[tileIndex]
-        mapView.setTileSource(source)
-        mapView.invalidate()
-        metaLabel.text = "Basemap · ${source.name()}"
     }
 
     override fun onResume() {
@@ -203,7 +218,7 @@ class MapActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         if (hasLocationPermission()) {
-            viewModel.startLocationUpdates()
+            viewModel.startLocationUpdates(includeHeading = false)
         }
     }
 
@@ -214,7 +229,7 @@ class MapActivity : AppCompatActivity() {
 
     private fun ensureLocationPermission() {
         if (hasLocationPermission()) {
-            viewModel.startLocationUpdates()
+            viewModel.startLocationUpdates(includeHeading = false)
         } else {
             permissionLauncher.launch(
                 arrayOf(
@@ -225,6 +240,40 @@ class MapActivity : AppCompatActivity() {
         }
     }
 
+    private fun mapRenderSignature(state: TowerUiState): String {
+        val user = state.userLocation
+        val userKey = user?.let { "${coarseCoord(it.latitude)}:${coarseCoord(it.longitude)}" } ?: "none"
+        val installKey = if (state.hasInstallSite) {
+            "${coarseCoord(state.installLatitude!!)}:${coarseCoord(state.installLongitude!!)}"
+        } else {
+            "none"
+        }
+        val focusId = state.mapFocusTower()?.id ?: "none"
+        return buildString {
+            append(userKey)
+            append('|').append(installKey)
+            append('|').append(state.locationMode)
+            append('|').append(state.mapShowAllSites)
+            append('|').append(state.selectedTowerId)
+            append('|').append(focusId)
+            append('|').append(state.maxDistanceMeters)
+            append('|').append(state.towers.size)
+            append('|').append(state.hiddenTowerIds.hashCode())
+        }
+    }
+
+    private fun coarseCoord(value: Double): Int = (value * 10_000).toInt()
+
+    private fun applyPendingLaunchTower(state: TowerUiState) {
+        val towerId = pendingLaunchTowerId ?: return
+        val tower = state.towerById(towerId) ?: return
+        val distance = state.distanceTo(tower)
+        if (distance != null && distance > state.maxDistanceMeters) {
+            viewModel.setMapShowAllSites(true)
+        }
+        pendingLaunchTowerId = null
+    }
+
     private fun hasLocationPermission(): Boolean {
         val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -233,6 +282,8 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun render(state: TowerUiState) {
+        applyPendingLaunchTower(state)
+        lastRenderSignature = mapRenderSignature(state)
         val focus = state.mapFocusTower()
         val distance = focus?.let { state.distanceTo(it) }
         val bearing = focus?.let { state.bearingTo(it) }
@@ -249,7 +300,10 @@ class MapActivity : AppCompatActivity() {
             else -> focus.name
         }
         metaLabel.text = buildString {
-            if (state.hasInstallSite) append("From install  ·  ")
+            when (state.locationMode) {
+                LocationMode.CURRENT_GPS -> append("From your GPS  ·  ")
+                LocationMode.CUSTOM -> append("From custom pin  ·  ")
+            }
             if (distance != null) append(GeoUtils.formatDistance(distance))
             if (bearing != null) {
                 if (isNotEmpty() && !endsWith("  ·  ")) append("  ·  ")
@@ -270,10 +324,12 @@ class MapActivity : AppCompatActivity() {
         }
 
         renderChips(state)
+        locationSourceChip.render(state, this)
         renderMapOverlays(state)
+        snapToCustomLocationIfNeeded(state)
 
         if (!hasFittedOnce && state.userLocation != null && focus != null) {
-            fitToYouAndFocus()
+            fitToYouAndFocus(animated = false)
         } else if (!hasFittedOnce && state.userLocation != null) {
             centerOnUser()
             hasFittedOnce = true
@@ -283,8 +339,10 @@ class MapActivity : AppCompatActivity() {
     private fun renderChips(state: TowerUiState) {
         val matches = state.mapNearestMatches(8)
         val focusId = state.mapFocusTower()?.id
-        val signature = matches.joinToString("|") { "${it.id}:${state.distanceTo(it)?.toInt()}" } +
-            "|f=$focusId"
+        val signature = matches.joinToString("|") { tower ->
+            val distanceBucket = state.distanceTo(tower)?.let { (it / 50.0).toInt() } ?: -1
+            "${tower.id}:$distanceBucket"
+        } + "|f=$focusId"
         if (signature == lastChipSignature && towerChips.childCount == matches.size) return
         lastChipSignature = signature
 
@@ -344,6 +402,7 @@ class MapActivity : AppCompatActivity() {
         val stale = towerMarkers.keys.filter { it !in visibleIds }
         stale.forEach { id ->
             towerMarkers.remove(id)?.let { mapView.overlays.remove(it) }
+            markerSelection.remove(id)
         }
 
         visible.forEach { tower ->
@@ -370,12 +429,23 @@ class MapActivity : AppCompatActivity() {
                 }
                 mapView.overlays.add(marker)
                 towerMarkers[tower.id] = marker
+                markerSelection[tower.id] = selected
             } else {
                 existing.position = point
                 existing.title = tower.name
                 existing.snippet = state.distanceTo(tower)?.let(GeoUtils::formatDistance)
-                existing.icon = markerIcon(selected)
-                if (selected) existing.showInfoWindow()
+                val wasSelected = markerSelection[tower.id] == true
+                if (wasSelected != selected) {
+                    existing.icon = markerIcon(selected)
+                    markerSelection[tower.id] = selected
+                }
+                if (selected && lastInfoWindowTowerId != tower.id) {
+                    existing.showInfoWindow()
+                    lastInfoWindowTowerId = tower.id
+                } else if (!selected && lastInfoWindowTowerId == tower.id) {
+                    existing.closeInfoWindow()
+                    lastInfoWindowTowerId = null
+                }
             }
         }
 
@@ -402,7 +472,7 @@ class MapActivity : AppCompatActivity() {
             if (installMarker == null) {
                 installMarker = Marker(mapView).apply {
                     position = installPoint
-                    title = "Install site"
+                    title = "Custom location"
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     icon = installIcon()
                 }
@@ -458,7 +528,7 @@ class MapActivity : AppCompatActivity() {
         if (
             focus.id == lastSectorTowerId &&
             active == lastActiveSector &&
-            kotlin.math.abs(radius - lastSectorRadiusMeters) < 5.0 &&
+            kotlin.math.abs(radius - lastSectorRadiusMeters) < 50.0 &&
             sectorPolygons.size == CardinalSector.ALL.size
         ) {
             return
@@ -579,7 +649,7 @@ class MapActivity : AppCompatActivity() {
         }
     }
 
-    private fun fitToYouAndFocus() {
+    private fun fitToYouAndFocus(animated: Boolean = true) {
         val state = viewModel.uiState.value
         val points = mutableListOf<GeoPoint>()
         state.positioningLocation()?.let { points.add(GeoPoint(it.latitude, it.longitude)) }
@@ -590,38 +660,75 @@ class MapActivity : AppCompatActivity() {
                 points.add(GeoPoint(it.latitude, it.longitude))
             }
         }
-        if (points.isEmpty()) return
+        if (points.isEmpty()) {
+            hasFittedOnce = true
+            return
+        }
         if (points.size == 1) {
             mapView.controller.animateTo(points.first())
             mapView.controller.setZoom(15.0)
         } else {
             val box = BoundingBox.fromGeoPoints(points)
             mapView.post {
-                mapView.zoomToBoundingBox(box.increaseByScale(1.35f), true, (64 * resources.displayMetrics.density).toInt())
+                mapView.zoomToBoundingBox(
+                    box.increaseByScale(1.35f),
+                    animated,
+                    (64 * resources.displayMetrics.density).toInt()
+                )
             }
         }
         hasFittedOnce = true
     }
 
+    private fun snapToCustomLocationIfNeeded(state: TowerUiState) {
+        if (state.locationMode != LocationMode.CUSTOM) {
+            lastSnappedCustomLat = null
+            lastSnappedCustomLon = null
+            return
+        }
+        val lat = state.installLatitude ?: return
+        val lon = state.installLongitude ?: return
+        if (lat == lastSnappedCustomLat && lon == lastSnappedCustomLon) return
+        snapToCustomLocation(lat, lon)
+    }
+
+    private fun snapToCustomLocation(latitude: Double, longitude: Double) {
+        lastSnappedCustomLat = latitude
+        lastSnappedCustomLon = longitude
+        mapView.post {
+            val point = GeoPoint(latitude, longitude)
+            mapView.controller.setCenter(point)
+            if (mapView.zoomLevelDouble < 14.0) {
+                mapView.controller.setZoom(15.5)
+            }
+            hasFittedOnce = true
+            mapView.invalidate()
+        }
+    }
+
     private fun centerOnUser() {
         val user = viewModel.uiState.value.userLocation ?: return
-        mapView.controller.animateTo(GeoPoint(user.latitude, user.longitude))
-        mapView.controller.setZoom(15.5)
-        hasFittedOnce = true
+        centerOnCoordinates(user.latitude, user.longitude)
+    }
+
+    private fun centerOnCoordinates(latitude: Double, longitude: Double) {
+        snapToCustomLocation(latitude, longitude)
     }
 
     private fun markerIcon(selected: Boolean): BitmapDrawable {
-        val color = ContextCompat.getColor(
-            this,
-            if (selected) R.color.accent_yellow else R.color.accent_teal
-        )
-        val drawable = ContextCompat.getDrawable(this, R.drawable.ic_tower_lattice)!!.mutate()
-        drawable.setTint(color)
-        val bmp = drawable.toBitmap(
-            (22 * resources.displayMetrics.density).toInt(),
-            (28 * resources.displayMetrics.density).toInt()
-        )
-        return BitmapDrawable(resources, bmp)
+        return markerIcons.getOrPut(selected) {
+            val color = ContextCompat.getColor(
+                this,
+                if (selected) R.color.accent_yellow else R.color.accent_teal
+            )
+            val drawable = ContextCompat.getDrawable(this, R.drawable.ic_tower_lattice)!!.mutate()
+            drawable.setTint(color)
+            val bmp = drawable.toBitmap(
+                (22 * resources.displayMetrics.density).toInt(),
+                (28 * resources.displayMetrics.density).toInt()
+            )
+            BitmapDrawable(resources, bmp)
+        }
     }
 
     private fun userIcon(): BitmapDrawable {
@@ -661,14 +768,18 @@ class MapActivity : AppCompatActivity() {
     }
 
     companion object {
+        // Esri returns "Map data not yet available" placeholder tiles above ~z18 in most areas.
+        private const val ESRI_MAX_ZOOM = 18
+
         private fun arcGisImagery(
             name: String,
             base: String,
-            copyright: String
+            copyright: String,
+            maxZoom: Int
         ): OnlineTileSourceBase = object : OnlineTileSourceBase(
             name,
             1,
-            18,
+            maxZoom,
             256,
             "",
             arrayOf(base),
@@ -685,15 +796,8 @@ class MapActivity : AppCompatActivity() {
         private val ESRI_WORLD_IMAGERY = arcGisImagery(
             name = "EsriWorldImagery",
             base = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/",
-            copyright = "© Esri, Maxar, Earthstar Geographics"
+            copyright = "© Esri, Maxar, Earthstar Geographics",
+            maxZoom = ESRI_MAX_ZOOM
         )
-
-        private val USGS_IMAGERY = arcGisImagery(
-            name = "UsgsImagery",
-            base = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/",
-            copyright = "© USGS National Map"
-        )
-
-        private val TILE_SOURCES = listOf(ESRI_WORLD_IMAGERY, USGS_IMAGERY)
     }
 }

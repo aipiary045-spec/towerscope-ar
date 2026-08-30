@@ -29,6 +29,7 @@ import com.towerscope.ar.util.CoordinateFormat
 import com.towerscope.ar.util.DistanceUnitSystem
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.LinkEstimate
+import com.towerscope.ar.viewmodel.LocationMode
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -340,15 +341,25 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                         String.format(java.util.Locale.US, "CPE GAIN  %.0f dBi", state.cpeAntennaGainDbi)
 
                     if (state.hasInstallSite) {
+                        val active = state.locationMode == LocationMode.CUSTOM
                         installStatus.text = String.format(
                             java.util.Locale.US,
-                            "Install site · %.5f, %.5f",
+                            if (active) {
+                                "Check location · custom · %.5f, %.5f"
+                            } else {
+                                "Pinned location (inactive) · %.5f, %.5f"
+                            },
                             state.installLatitude,
                             state.installLongitude
                         )
                         clearInstallButton.isVisible = true
                     } else {
-                        installStatus.text = "Install site · using live GPS (set on Locate map)"
+                        installStatus.text = when (state.locationMode) {
+                            LocationMode.CURRENT_GPS ->
+                                "Check location · using your GPS (pin on Locate map)"
+                            LocationMode.CUSTOM ->
+                                "Check location · set a custom pin on Locate map"
+                        }
                         clearInstallButton.isVisible = false
                     }
 
