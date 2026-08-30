@@ -52,6 +52,18 @@
     <string name="ping_start">Start ping</string>
     <string name="home_job_subnet">Subnet scanner</string>
     <string name="home_job_subnet_sub">IPs · MAC · ports · IPv6 · tap URL</string>
+    <string name="home_job_lan_scan">LAN scanner</string>
+    <string name="home_job_lan_scan_sub">Discover hosts · deep port scan · tap URL</string>
+    <string name="lan_scan_mode_label">SCAN MODE</string>
+    <string name="lan_scan_start">Scan LAN</string>
+    <string name="lan_scan_discover_ready">Discover active IPs · MAC · quick ports · tap URL</string>
+    <string name="lan_scan_port_ready">Find devices, then scan open ports</string>
+    <string name="lan_scan_discover_progress">Discovering %1$d / %2$d</string>
+    <string name="lan_scan_discover_done">Done · %1$d hosts · tap a URL to open</string>
+    <string-array name="lan_scan_modes">
+        <item>Discover — IPs · MAC · tap URL</item>
+        <item>Port scan — preset ports on LAN</item>
+    </string-array>
     <string name="home_job_dns">DNS lookup</string>
     <string name="home_job_dns_sub">A / AAAA · reverse PTR</string>
     <string name="home_job_traceroute">Traceroute</string>

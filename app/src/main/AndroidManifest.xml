@@ -74,6 +74,12 @@
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
+            android:name=".LanScannerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
             android:name=".SubnetScannerActivity"
             android:exported="false"
             android:screenOrientation="portrait"
