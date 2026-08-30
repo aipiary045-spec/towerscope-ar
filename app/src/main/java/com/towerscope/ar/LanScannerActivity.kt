@@ -355,7 +355,7 @@ class LanScannerActivity : AppCompatActivity() {
         withOpen.forEach { hostResult ->
             addPortHostHeader(hostResult.host)
             hostResult.openPorts.forEach { hit ->
-                addOpenPortRow(hit.port, hit.service, hit.connectMs)
+                addOpenPortRow(hostResult.host, hit.port, hit.service, hit.connectMs)
             }
         }
     }
@@ -432,12 +432,15 @@ class LanScannerActivity : AppCompatActivity() {
         resultsHeader.isVisible = true
     }
 
-    private fun addOpenPortRow(port: Int, service: String?, connectMs: Double) {
+    private fun addOpenPortRow(host: String, port: Int, service: String?, connectMs: Double) {
         val row = LayoutInflater.from(this).inflate(R.layout.item_port_scan_row, resultsList, false)
         val label = service?.let { "$port ($it)" } ?: port.toString()
+        val url = serviceUrl(host, port)
         row.findViewById<TextView>(R.id.portScanRowPort).text = label
+        row.findViewById<TextView>(R.id.portScanRowUrl).text = url
         row.findViewById<TextView>(R.id.portScanRowMs).text =
             String.format(Locale.US, "%.0f ms", connectMs)
+        row.setOnClickListener { openUrl(url) }
         row.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -447,14 +450,29 @@ class LanScannerActivity : AppCompatActivity() {
         resultsList.addView(row)
     }
 
-    private fun openHostUrl(host: SubnetHost) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(host.httpUrl))
+    private fun serviceUrl(host: String, port: Int): String {
+        val scheme = when (port) {
+            443, 8443 -> "https"
+            else -> "http"
+        }
+        return if (port == 80 || port == 443) {
+            "$scheme://$host/"
+        } else {
+            "$scheme://$host:$port/"
+        }
+    }
+
+    private fun openUrl(url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         runCatching {
             startActivity(intent)
         }.onFailure {
-            Toast.makeText(this, "No browser available for ${host.httpUrl}", Toast.LENGTH_SHORT)
-                .show()
+            Toast.makeText(this, "No browser available for $url", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun openHostUrl(host: SubnetHost) {
+        openUrl(host.httpUrl)
     }
 
     private fun share() {
