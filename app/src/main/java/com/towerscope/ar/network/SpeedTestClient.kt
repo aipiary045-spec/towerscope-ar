@@ -6,6 +6,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
@@ -68,6 +69,28 @@ object SpeedTestClient {
     private const val PARALLEL_STREAMS = 4
     private const val USER_AGENT =
         "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+    private const val LIBRESPEED_SERVER_LIST_URL =
+        "https://librespeed.org/backend-servers/servers.php"
+    private const val LIBRESPEED_CACHE_MS = 30 * 60 * 1000L
+
+    private data class LibreSpeedEndpoints(
+        val server: String,
+        val dlURL: String,
+        val ulURL: String,
+        val pingURL: String
+    )
+
+    private val libreSpeedFallback = LibreSpeedEndpoints(
+        server = "https://ams.speedtest.clouvider.net/backend",
+        dlURL = "garbage.php",
+        ulURL = "empty.php",
+        pingURL = "empty.php"
+    )
+
+    @Volatile
+    private var cachedLibreSpeedEndpoints: LibreSpeedEndpoints? = null
+    @Volatile
+    private var libreSpeedCacheExpiryMs: Long = 0L
 
     const val AUTO_SERVER_ID = "auto"
 
@@ -81,31 +104,14 @@ object SpeedTestClient {
             downloadUrl = { bytes -> "https://speed.cloudflare.com/__down?bytes=$bytes" },
             uploadUrl = "https://speed.cloudflare.com/__up"
         ),
-        SpeedTestServer(
-            id = "librespeed",
-            label = "LibreSpeed",
-            detail = "Public demo · up + down",
-            supportsUpload = true,
-            latencyUrl = "https://librespeed.org/backend/empty.php",
-            downloadUrl = { bytes ->
-                val chunks = (bytes / 1_048_576L).coerceIn(1L, 100L)
-                "https://librespeed.org/backend/garbage.php?ckSize=$chunks"
-            },
-            uploadUrl = "https://librespeed.org/backend/empty.php"
-        ),
+        buildLibreSpeedServer(libreSpeedFallback),
         SpeedTestServer(
             id = "hetzner",
             label = "Hetzner",
-            detail = "EU · download only",
+            detail = "EU Falkenstein · download only",
             supportsUpload = false,
-            latencyUrl = "https://speed.hetzner.de/1MB.bin",
-            downloadUrl = { bytes ->
-                when {
-                    bytes <= 1_500_000L -> "https://speed.hetzner.de/1MB.bin"
-                    bytes <= 12_000_000L -> "https://speed.hetzner.de/10MB.bin"
-                    else -> "https://speed.hetzner.de/100MB.bin"
-                }
-            },
+            latencyUrl = "https://fsn1-speed.hetzner.com/100MB.bin",
+            downloadUrl = { bytes -> hetznerDownloadUrl(bytes) },
             uploadUrl = null
         )
     )
@@ -135,7 +141,10 @@ object SpeedTestClient {
                 )
             }
         } else {
-            serverById(serverId) ?: servers.first()
+            when (serverId) {
+                "librespeed" -> buildLibreSpeedServer(resolveLibreSpeedEndpoints())
+                else -> serverById(serverId) ?: servers.first()
+            }
         }
 
         onProgress(
@@ -468,7 +477,86 @@ object SpeedTestClient {
             "https://speed.cloudflare.com" to "https://speed.cloudflare.com/"
         url.contains("librespeed.org") ->
             "https://librespeed.org" to "https://librespeed.org/"
+        url.contains("clouvider.net") ->
+            "https://ams.speedtest.clouvider.net" to "https://ams.speedtest.clouvider.net/"
         else -> null
+    }
+
+    private fun buildLibreSpeedServer(endpoints: LibreSpeedEndpoints): SpeedTestServer {
+        val pingUrl = appendQuery(joinUrl(endpoints.server, endpoints.pingURL), "cors=true")
+        val uploadUrl = appendQuery(joinUrl(endpoints.server, endpoints.ulURL), "cors=true")
+        return SpeedTestServer(
+            id = "librespeed",
+            label = "LibreSpeed",
+            detail = "Public network · up + down",
+            supportsUpload = true,
+            latencyUrl = pingUrl,
+            downloadUrl = { bytes ->
+                val chunks = (bytes / 1_048_576L).coerceIn(1L, 100L)
+                appendQuery(
+                    joinUrl(endpoints.server, endpoints.dlURL),
+                    "ckSize=$chunks&cors=true"
+                )
+            },
+            uploadUrl = uploadUrl
+        )
+    }
+
+    private fun resolveLibreSpeedEndpoints(): LibreSpeedEndpoints {
+        val now = System.currentTimeMillis()
+        val cached = cachedLibreSpeedEndpoints
+        if (cached != null && now < libreSpeedCacheExpiryMs) return cached
+
+        val resolved = runCatching {
+            fetchLibreSpeedServerList()
+                .shuffled()
+                .take(12)
+                .firstNotNullOfOrNull { entry ->
+                    val pingUrl = appendQuery(joinUrl(entry.server, entry.pingURL), "cors=true")
+                    if (probeLatencyMs(pingUrl) != null) entry else null
+                }
+        }.getOrNull() ?: libreSpeedFallback
+
+        cachedLibreSpeedEndpoints = resolved
+        libreSpeedCacheExpiryMs = now + LIBRESPEED_CACHE_MS
+        return resolved
+    }
+
+    private fun fetchLibreSpeedServerList(): List<LibreSpeedEndpoints> {
+        openGet(LIBRESPEED_SERVER_LIST_URL, null).use { connection ->
+            val code = connection.responseCode
+            if (code !in 200..299) error("HTTP $code")
+            val body = connection.inputStream.bufferedReader().readText()
+            val array = JSONArray(body)
+            return buildList {
+                for (i in 0 until array.length()) {
+                    val entry = array.getJSONObject(i)
+                    add(
+                        LibreSpeedEndpoints(
+                            server = entry.getString("server"),
+                            dlURL = entry.getString("dlURL"),
+                            ulURL = entry.getString("ulURL"),
+                            pingURL = entry.getString("pingURL")
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    internal fun joinUrl(base: String, path: String): String {
+        val normalizedBase = base.trimEnd('/')
+        val normalizedPath = path.trimStart('/')
+        return if (normalizedPath.isEmpty()) normalizedBase else "$normalizedBase/$normalizedPath"
+    }
+
+    internal fun appendQuery(url: String, query: String): String =
+        if (url.contains('?')) "$url&$query" else "$url?$query"
+
+    internal fun hetznerDownloadUrl(bytes: Long): String = when {
+        bytes <= 150_000_000L -> "https://fsn1-speed.hetzner.com/100MB.bin"
+        bytes <= 1_500_000_000L -> "https://fsn1-speed.hetzner.com/1GB.bin"
+        else -> "https://fsn1-speed.hetzner.com/10GB.bin"
     }
 
     private fun openGet(url: String, originReferer: Pair<String, String>?): HttpURLConnection {
