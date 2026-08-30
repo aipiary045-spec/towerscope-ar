@@ -67,10 +67,16 @@ object HudThemeApplier {
     }
 
     fun statusChipBackground(view: View, fillColor: Int): android.graphics.drawable.GradientDrawable {
+        val density = view.resources.displayMetrics.density
         return android.graphics.drawable.GradientDrawable().apply {
             shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-            cornerRadius = 10f * view.resources.displayMetrics.density
-            setColor(fillColor)
+            cornerRadius = 10f * density
+            // Translucent fill + outline so the colored status text stays readable.
+            setColor(androidx.core.graphics.ColorUtils.setAlphaComponent(fillColor, 38))
+            setStroke(
+                (1f * density).toInt().coerceAtLeast(1),
+                androidx.core.graphics.ColorUtils.setAlphaComponent(fillColor, 130)
+            )
         }
     }
 }

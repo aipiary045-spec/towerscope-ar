@@ -218,6 +218,8 @@ class MainActivity : AppCompatActivity() {
         compassImproveDoneButton.setOnClickListener { viewModel.dismissCompassImprove() }
         bindSightingButton(compassImproveSunButton, CompassSightingTarget.SUN)
         bindSightingButton(compassImproveTowerButton, CompassSightingTarget.TOWER)
+        // Field alignment: face the focus site, then press and hold the aim readout.
+        bindSightingButton(aimFocusHud, CompassSightingTarget.TOWER)
         focusTowerLabel.setOnClickListener {
             viewModel.uiState.value.focusTower()?.let { openTowerDetails(it.id) }
         }
@@ -527,10 +529,14 @@ class MainActivity : AppCompatActivity() {
             null
         }
 
-        aimTurnLabel.text = if (relative != null) {
-            GeoUtils.formatAimTurn(relative)
-        } else {
-            "AIM —"
+        aimTurnLabel.text = when {
+            state.compassSightingActive ->
+                getString(
+                    R.string.compass_sighting_progress,
+                    (state.compassSightingProgress * 100).toInt()
+                )
+            relative != null -> GeoUtils.formatAimTurn(relative)
+            else -> "AIM —"
         }
         aimTurnLabel.setTextColor(
             ContextCompat.getColor(
@@ -641,6 +647,8 @@ class MainActivity : AppCompatActivity() {
             append(
                 state.compassPitchDegrees?.let { String.format(fmt, "%.0f°", it) } ?: "—"
             )
+            append('\n')
+            append(getString(R.string.compass_align_hold_hint))
         }
     }
 
@@ -721,7 +729,7 @@ class MainActivity : AppCompatActivity() {
         compassImproveTowerButton.alpha = if (compassImproveTowerButton.isEnabled) 1f else 0.45f
     }
 
-    private fun bindSightingButton(button: MaterialButton, target: CompassSightingTarget) {
+    private fun bindSightingButton(button: View, target: CompassSightingTarget) {
         button.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
