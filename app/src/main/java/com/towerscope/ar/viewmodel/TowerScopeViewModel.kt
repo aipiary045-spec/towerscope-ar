@@ -188,7 +188,14 @@ data class TowerUiState(
     /** Towers with known distance/bearing for the radar disc (relative to heading). */
     fun directionIndicators(): List<Triple<Tower, Double, Double>> {
         val heading = effectiveHeadingDegrees() ?: return emptyList()
-        return visibleTowers().mapNotNull { tower ->
+        val focus = focusTower()
+        val towers = visibleTowers().toMutableList()
+        focus?.let { tower ->
+            if (towers.none { it.id == tower.id }) {
+                towers.add(tower)
+            }
+        }
+        return towers.mapNotNull { tower ->
             val distance = distanceTo(tower) ?: return@mapNotNull null
             val bearing = bearingTo(tower) ?: return@mapNotNull null
             val relative = GeoUtils.relativeBearingDegrees(heading, bearing)
@@ -404,7 +411,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 .takeIf { !it.isNaN() }?.toDouble(),
             installLongitude = prefs.getFloat(KEY_INSTALL_LON, Float.NaN)
                 .takeIf { !it.isNaN() }?.toDouble(),
-            locationMode = loadLocationMode()
+            locationMode = loadLocationMode(),
+            selectedTowerId = prefs.getString(KEY_SELECTED_TOWER_ID, null)
         )
     ).also { flow ->
         DisplayUnits.apply(flow.value.distanceUnitSystem, flow.value.coordinateFormat)
@@ -557,8 +565,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     fun selectTower(towerId: String?) {
         _uiState.update { it.copy(selectedTowerId = towerId) }
         if (towerId != null) {
+            prefs.edit().putString(KEY_SELECTED_TOWER_ID, towerId).apply()
             loadLosProfile(towerId)
         } else {
+            prefs.edit().remove(KEY_SELECTED_TOWER_ID).apply()
             clearLosProfile()
         }
     }
@@ -814,7 +824,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
      * Build LOS profiles for towers in the saved range (separate from AR).
      * Results stream in and stay sorted best-clearance → worst.
      */
-    fun refreshLosRangeProfiles() {
+    fun refreshLosRangeProfiles(priorityTowerId: String? = null) {
         losRangeJob?.cancel()
         val location = _uiState.value.positioningLocation()
         if (location == null) {
@@ -831,7 +841,22 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             }
             return
         }
-        val targets = _uiState.value.towersInRangeForLos()
+        val targets = _uiState.value.towersInRangeForLos().toMutableList()
+        if (priorityTowerId != null) {
+            val tower = _uiState.value.towerById(priorityTowerId)
+            if (tower != null && tower.id !in _uiState.value.hiddenTowerIds &&
+                targets.none { it.first.id == priorityTowerId }
+            ) {
+                val distance = GeoUtils.haversineMeters(
+                    location.latitude,
+                    location.longitude,
+                    tower.latitude,
+                    tower.longitude
+                )
+                targets.add(tower to distance)
+                targets.sortBy { it.second }
+            }
+        }
         if (targets.isEmpty()) {
             _uiState.update {
                 it.copy(
@@ -1316,6 +1341,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_LOCATION_MODE = "location_mode"
         private const val KEY_DISTANCE_UNITS = "distance_unit_system"
         private const val KEY_COORD_FORMAT = "coordinate_format"
+        private const val KEY_SELECTED_TOWER_ID = "selected_tower_id"
         private const val MAX_LOS_RANGE_TOWERS = 40
         private const val LOS_RANGE_CONCURRENCY = 2
 

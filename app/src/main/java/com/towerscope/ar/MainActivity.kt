@@ -100,6 +100,7 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
+        TowerIntents.towerIdFrom(intent)?.let { viewModel.selectTower(it) }
         bindViews()
         applySystemBarInsets()
         wireActions()

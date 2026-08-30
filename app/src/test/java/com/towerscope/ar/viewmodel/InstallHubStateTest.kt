@@ -52,4 +52,35 @@ class InstallHubStateTest {
         assertTrue(state.isTowerInRange(state.towers[0]))
         assertFalse(state.isTowerInRange(state.towers[1]))
     }
+
+    @Test
+    fun focusTower_honorsSelectedSiteEvenWhenOutOfRange() {
+        val far = tower("far", "far", 36.0, -96.0)
+        val state = TowerUiState(
+            userLocation = gps,
+            maxDistanceMeters = 1_000f,
+            selectedTowerId = "far",
+            towers = listOf(
+                tower("near", "near", 35.01, -96.0),
+                far
+            )
+        )
+        assertEquals(far, state.focusTower())
+    }
+
+    @Test
+    fun directionIndicators_includesOutOfRangeFocusTower() {
+        val state = TowerUiState(
+            userLocation = gps,
+            deviceHeadingDegrees = 0.0,
+            maxDistanceMeters = 1_000f,
+            selectedTowerId = "far",
+            towers = listOf(
+                tower("near", "near", 35.01, -96.0),
+                tower("far", "far", 36.0, -96.0)
+            )
+        )
+        val ids = state.directionIndicators().map { it.first.id }.toSet()
+        assertTrue(ids.contains("far"))
+    }
 }

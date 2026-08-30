@@ -60,6 +60,7 @@ class LosProfilesActivity : AppCompatActivity() {
     private lateinit var locationSourceChip: LocationSourceChip
     private var linkSettingsOpen = false
     private var startedScan = false
+    private var priorityTowerId: String? = null
     private var lastCpeHeight: Float? = null
     private var lastRowsKey: String? = null
     private val frequencyPresets = listOf(2.4f, 3.65f, 5.2f, 5.8f, 6.0f, 24.0f, 60.0f)
@@ -87,6 +88,7 @@ class LosProfilesActivity : AppCompatActivity() {
             alsoBottom = findViewById(R.id.losFooter)
         )
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
+        priorityTowerId = TowerIntents.towerIdFrom(intent)?.also { viewModel.selectTower(it) }
 
         subtitle = findViewById(R.id.losRangeSubtitle)
         status = findViewById(R.id.losRangeStatus)
@@ -346,7 +348,7 @@ class LosProfilesActivity : AppCompatActivity() {
             return
         }
         startedScan = true
-        viewModel.refreshLosRangeProfiles()
+        viewModel.refreshLosRangeProfiles(priorityTowerId)
     }
 
     private fun clearShimmers() {

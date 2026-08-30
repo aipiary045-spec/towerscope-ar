@@ -74,6 +74,7 @@ class MapActivity : AppCompatActivity() {
     private var lastRenderSignature: String? = null
     private var lastSnappedCustomLat: Double? = null
     private var lastSnappedCustomLon: Double? = null
+    private var pendingLaunchTowerId: String? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -99,6 +100,7 @@ class MapActivity : AppCompatActivity() {
             alsoBottom = findViewById(R.id.mapBottomPanel)
         )
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
+        pendingLaunchTowerId = TowerIntents.towerIdFrom(intent)?.also { viewModel.selectTower(it) }
 
         mapView = findViewById(R.id.mapView)
         focusLabel = findViewById(R.id.mapFocusLabel)
@@ -262,6 +264,16 @@ class MapActivity : AppCompatActivity() {
 
     private fun coarseCoord(value: Double): Int = (value * 10_000).toInt()
 
+    private fun applyPendingLaunchTower(state: TowerUiState) {
+        val towerId = pendingLaunchTowerId ?: return
+        val tower = state.towerById(towerId) ?: return
+        val distance = state.distanceTo(tower)
+        if (distance != null && distance > state.maxDistanceMeters) {
+            viewModel.setMapShowAllSites(true)
+        }
+        pendingLaunchTowerId = null
+    }
+
     private fun hasLocationPermission(): Boolean {
         val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -270,6 +282,7 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun render(state: TowerUiState) {
+        applyPendingLaunchTower(state)
         lastRenderSignature = mapRenderSignature(state)
         val focus = state.mapFocusTower()
         val distance = focus?.let { state.distanceTo(it) }

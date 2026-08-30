@@ -155,13 +155,14 @@
     <string name="site_browser_title">Site browser</string>
     <string name="site_browser_sub">Search imported APs · open in compass, map, or LOS</string>
     <string name="site_browser_hub_sub">Search all sites · aim or map</string>
-    <string name="site_browser_search_hint">Search by site name</string>
+    <string name="site_browser_search_hint">Search by name, ID, or coordinates</string>
     <string name="site_browser_status_empty">No sites loaded</string>
     <string name="site_browser_status_count">%1$d sites · nearest first</string>
     <string name="site_browser_status_filtered">%1$d of %2$d sites</string>
     <string name="site_browser_empty_import">Import KML, KMZ, or CSV from Sites</string>
     <string name="site_browser_empty_search">No sites match your search</string>
     <string name="site_browser_in_range">IN RANGE</string>
+    <string name="site_browser_out_of_range">out of range</string>
     <string name="site_browser_details">Details</string>
     <string name="site_browser_aim">Aim</string>
     <string name="site_browser_map">Map</string>
