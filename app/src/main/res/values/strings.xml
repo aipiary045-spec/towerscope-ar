@@ -67,6 +67,8 @@
     <string name="lan_scan_port_ready">Find devices, then scan open ports</string>
     <string name="lan_scan_discover_progress">Discovering %1$d / %2$d</string>
     <string name="lan_scan_discover_done">Done · %1$d hosts · Open web or Port scan on any device</string>
+    <string name="lan_scan_no_open_ports">Scanned %1$d device(s) · no open ports in this preset</string>
+    <string name="lan_scan_port_results_header">OPEN PORTS</string>
     <string name="home_job_traceroute">Traceroute</string>
     <string name="home_job_traceroute_sub">Hop path · TTL probes</string>
     <string name="home_job_diagnose">Path Doctor</string>

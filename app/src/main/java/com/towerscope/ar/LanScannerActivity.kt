@@ -18,6 +18,7 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.ConnectionSnapshotCollector
+import com.towerscope.ar.network.NetworkPortScanResult
 import com.towerscope.ar.network.PortScanPreset
 import com.towerscope.ar.network.PortScanner
 import com.towerscope.ar.network.SubnetHost
@@ -43,6 +44,7 @@ class LanScannerActivity : AppCompatActivity() {
     private lateinit var extraPortsInput: EditText
     private lateinit var resultsHeader: TextView
     private lateinit var resultsList: LinearLayout
+    private lateinit var contentScroll: android.widget.ScrollView
     private lateinit var scanButton: MaterialButton
     private var scanJob: Job? = null
     private var lastReport = ""
@@ -65,6 +67,7 @@ class LanScannerActivity : AppCompatActivity() {
         extraPortsInput = findViewById(R.id.lanExtraPortsInput)
         resultsHeader = findViewById(R.id.lanResultsHeader)
         resultsList = findViewById(R.id.lanResultsList)
+        contentScroll = findViewById(R.id.lanContentScroll)
         scanButton = findViewById(R.id.lanScanButton)
 
         presetSpinner.adapter = ArrayAdapter(
@@ -117,7 +120,9 @@ class LanScannerActivity : AppCompatActivity() {
     }
 
     private fun updateModeUi() {
-        resultsHeader.isVisible = false
+        if (!hasPortResults()) {
+            resultsHeader.isVisible = false
+        }
         if (!scanJob?.isActive.orDefault()) {
             modeHint.text = if (portMode) {
                 getString(R.string.lan_scan_port_ready)
@@ -252,18 +257,10 @@ class LanScannerActivity : AppCompatActivity() {
 
             resultsList.removeAllViews()
             var openCount = 0
-            var lastHeaderHost: String? = null
             val networkResult = PortScanner.scanMany(targets, ports) {
                     hostIndex, hostTotal, host, scanned, portTotal, hit ->
-                withContext(Dispatchers.Main) {
-                    if (lastHeaderHost != host) {
-                        lastHeaderHost = host
-                        addPortHostHeader(host)
-                    }
-                    if (hit != null) {
-                        openCount++
-                        addOpenPortRow(hit.port, hit.service, hit.connectMs)
-                    }
+                withContext(Dispatchers.Main.immediate) {
+                    if (hit != null) openCount++
                     statusLabel.text = getString(
                         R.string.port_scan_scanning_progress,
                         host,
@@ -276,6 +273,9 @@ class LanScannerActivity : AppCompatActivity() {
                 }
             }
 
+            renderPortResults(networkResult)
+            contentScroll.post { contentScroll.fullScroll(android.view.View.FOCUS_DOWN) }
+
             lastReport = if (singleHost && networkResult.results.size == 1) {
                 PortScanner.format(networkResult.results.first())
             } else {
@@ -283,6 +283,7 @@ class LanScannerActivity : AppCompatActivity() {
             }
 
             val withOpen = networkResult.results.count { it.openPorts.isNotEmpty() }
+            openCount = networkResult.results.sumOf { it.openPorts.size }
             statusLabel.text = when {
                 networkResult.error != null -> networkResult.error
                 openCount == 0 -> getString(
@@ -315,6 +316,7 @@ class LanScannerActivity : AppCompatActivity() {
         modePortButton.isEnabled = false
         presetSpinner.isEnabled = false
         extraPortsInput.isEnabled = false
+        if (portMode) portOptions.isVisible = false
         scanButton.text = getString(R.string.tool_stop)
         resultsHeader.isVisible = portMode
     }
@@ -325,13 +327,57 @@ class LanScannerActivity : AppCompatActivity() {
         modePortButton.isEnabled = true
         presetSpinner.isEnabled = true
         extraPortsInput.isEnabled = true
+        if (portMode) portOptions.isVisible = true
         scanButton.text = getString(
             if (portMode) R.string.lan_scan_start_ports else R.string.lan_scan_start
         )
         updateModeUi()
     }
 
+    private fun hasPortResults(): Boolean = resultsList.childCount > 0 && portMode
+
+    private fun renderPortResults(result: NetworkPortScanResult) {
+        resultsList.removeAllViews()
+        val withOpen = result.results.filter { it.openPorts.isNotEmpty() }
+        resultsHeader.isVisible = true
+        resultsHeader.text = if (withOpen.isEmpty()) {
+            "RESULTS"
+        } else {
+            getString(R.string.lan_scan_port_results_header)
+        }
+        if (withOpen.isEmpty()) {
+            resultsList.addView(buildResultsNote(getString(R.string.lan_scan_no_open_ports, result.targets.size)))
+            return
+        }
+        withOpen.forEach { hostResult ->
+            addPortHostHeader(hostResult.host)
+            hostResult.openPorts.forEach { hit ->
+                addOpenPortRow(hit.port, hit.service, hit.connectMs)
+            }
+        }
+    }
+
+    private fun buildResultsNote(message: String): TextView =
+        TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            background = getDrawable(R.drawable.bg_metric_tile)
+            setPadding(
+                resources.getDimensionPixelSize(R.dimen.card_padding_lg),
+                resources.getDimensionPixelSize(R.dimen.card_padding_lg),
+                resources.getDimensionPixelSize(R.dimen.card_padding_lg),
+                resources.getDimensionPixelSize(R.dimen.card_padding_lg)
+            )
+            text = message
+            setTextColor(getColor(R.color.text_muted))
+            textSize = 13f
+        }
+
     private fun appendDiscoverHost(host: SubnetHost) {
+        resultsHeader.isVisible = true
+        resultsHeader.text = "RESULTS"
         val row = LayoutInflater.from(this).inflate(R.layout.item_subnet_host_row, resultsList, false)
         row.findViewById<TextView>(R.id.subnetRowIp).text = host.ip
         row.findViewById<TextView>(R.id.subnetRowUrl).text = host.httpUrl
@@ -389,6 +435,12 @@ class LanScannerActivity : AppCompatActivity() {
         row.findViewById<TextView>(R.id.portScanRowPort).text = label
         row.findViewById<TextView>(R.id.portScanRowMs).text =
             String.format(Locale.US, "%.0f ms", connectMs)
+        row.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            bottomMargin = resources.getDimensionPixelSize(R.dimen.item_gap)
+        }
         resultsList.addView(row)
     }
 
