@@ -27,8 +27,9 @@ data class DeviceHeading(
 /**
  * Device heading for portrait compass use (top of phone = forward, screen toward user).
  *
- * Uses [SensorManager.AXIS_X] + [SensorManager.AXIS_Z] remap — the standard portrait
- * upright mapping. Do not use X+Y; that rotates the azimuth reference and breaks aiming.
+ * Uses the rotation-vector matrix directly — [CompassHeadingMath] extracts azimuth from
+ * device +Y. Do not remap to X+Z; that tracks the screen/camera axis instead of the
+ * top edge and makes tower bearings wrong.
  */
 class DeviceHeadingClient(context: Context) {
 
@@ -48,7 +49,6 @@ class DeviceHeadingClient(context: Context) {
             val usesGeomagneticNorth = rotation.type == Sensor.TYPE_ROTATION_VECTOR
             val magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
             val rotationMatrix = FloatArray(9)
-            val remappedMatrix = FloatArray(9)
             val orientation = FloatArray(3)
             var latestAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
             var smoothedHeading: Double? = null
@@ -74,21 +74,13 @@ class DeviceHeadingClient(context: Context) {
                     }
 
                     SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                    val remapped = SensorManager.remapCoordinateSystem(
-                        rotationMatrix,
-                        SensorManager.AXIS_X,
-                        SensorManager.AXIS_Z,
-                        remappedMatrix
-                    )
-                    val matrixForOrientation = if (remapped) remappedMatrix else rotationMatrix
-                    SensorManager.getOrientation(matrixForOrientation, orientation)
+                    SensorManager.getOrientation(rotationMatrix, orientation)
 
                     val pitchDegrees = Math.toDegrees(orientation[1].toDouble())
                     val rollDegrees = Math.toDegrees(orientation[2].toDouble())
-                    val tilted = isAimTilted(matrixForOrientation)
+                    val tilted = CompassHeadingMath.isAimTilted(rotationMatrix)
 
-                    var degrees = Math.toDegrees(orientation[0].toDouble())
-                    degrees = GeoUtils.normalizeBearing(degrees)
+                    var degrees = CompassHeadingMath.magneticHeadingDegrees(rotationMatrix)
 
                     val sampleNanos = event.timestamp
                     val rotationRateDps = computeRotationRateDps(
@@ -142,7 +134,7 @@ class DeviceHeadingClient(context: Context) {
                 }
             }
 
-            sensorManager.registerListener(listener, rotation, SensorManager.SENSOR_DELAY_UI)
+            sensorManager.registerListener(listener, rotation, SensorManager.SENSOR_DELAY_GAME)
             magnetometer?.let {
                 sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_NORMAL)
             }
@@ -150,15 +142,6 @@ class DeviceHeadingClient(context: Context) {
         }
 
     internal companion object {
-        /**
-         * True when the phone top edge is not aimed near the horizon (too flat or tipped).
-         * Uses device +Y in world frame from the portrait compass remap matrix.
-         */
-        internal fun isAimTilted(matrix: FloatArray): Boolean {
-            val deviceYWorldZ = abs(matrix[7])
-            return deviceYWorldZ > 0.47f
-        }
-
         private fun computeRotationRateDps(
             previousHeading: Double?,
             previousNanos: Long?,

@@ -1291,7 +1291,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
         private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
         private const val KEY_HEADING_REMAP_VERSION = "heading_remap_version"
-        private const val HEADING_REMAP_VERSION = 2
+        private const val HEADING_REMAP_VERSION = 3
         private const val SIGHTING_DURATION_MS = 2_500L
         private const val SIGHTING_SAMPLE_MS = 50L
         private const val SIGHTING_MIN_SAMPLES = 20
