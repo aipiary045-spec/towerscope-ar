@@ -87,6 +87,21 @@
                 android:textSize="10sp" />
         </LinearLayout>
 
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_hud_panel"
+            android:paddingHorizontal="12dp"
+            android:paddingBottom="6dp"
+            android:scrollbars="none">
+
+            <include
+                android:id="@+id/locationSourceChip"
+                layout="@layout/include_location_source_chip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </HorizontalScrollView>
+
         <TextView
             android:id="@+id/trackingWarning"
             android:layout_width="match_parent"
@@ -119,6 +134,16 @@
                 android:textColor="@color/accent_teal"
                 android:textSize="17sp"
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/compassBearingLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="monospace"
+                android:textColor="@color/text_muted"
+                android:textSize="12sp"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/focusTowerLabel"

@@ -31,12 +31,14 @@ import com.google.android.material.snackbar.Snackbar
 import com.towerscope.ar.ui.CompassCameraController
 import com.towerscope.ar.ui.CompassRadarView
 import com.towerscope.ar.ui.HudThemeApplier
+import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.SettingsBottomSheet
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.LinkEstimate
 import com.towerscope.ar.viewmodel.CompassQualityIssue
 import com.towerscope.ar.viewmodel.CompassSightingTarget
+import com.towerscope.ar.viewmodel.LocationMode
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -56,7 +58,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var calibrateButton: ImageButton
     private lateinit var gpsChip: TextView
     private lateinit var compassChip: TextView
+    private lateinit var locationSourceChipView: TextView
+    private lateinit var locationSourceChip: LocationSourceChip
     private lateinit var headingLabel: TextView
+    private lateinit var compassBearingLabel: TextView
     private lateinit var focusTowerLabel: TextView
     private lateinit var aimFocusHud: View
     private lateinit var aimTurnLabel: TextView
@@ -146,7 +151,15 @@ class MainActivity : AppCompatActivity() {
         calibrateButton = findViewById(R.id.calibrateButton)
         gpsChip = findViewById(R.id.gpsChip)
         compassChip = findViewById(R.id.compassChip)
+        locationSourceChipView = findViewById(R.id.locationSourceChip)
+        locationSourceChip = LocationSourceChip(
+            chip = locationSourceChipView,
+            fragmentManager = supportFragmentManager,
+            viewModel = viewModel,
+            onModeChanged = { render(viewModel.uiState.value) }
+        )
         headingLabel = findViewById(R.id.headingLabel)
+        compassBearingLabel = findViewById(R.id.compassBearingLabel)
         focusTowerLabel = findViewById(R.id.focusTowerLabel)
         aimFocusHud = findViewById(R.id.aimFocusHud)
         aimTurnLabel = findViewById(R.id.aimTurnLabel)
@@ -220,6 +233,7 @@ class MainActivity : AppCompatActivity() {
     private fun render(state: TowerUiState) {
         val visible = state.visibleTowers()
         renderTrackingChips(state)
+        locationSourceChip.render(state, this)
         renderCompass(state)
         renderTheme(state)
         renderCompassImprove(state)
@@ -440,13 +454,16 @@ class MainActivity : AppCompatActivity() {
         compassChip.background = HudThemeApplier.statusChipBackground(compassChip, compassColor)
 
         val showWarning = state.towers.isNotEmpty() && (
-            state.compassQualityIssue != CompassQualityIssue.NONE ||
+            (state.locationMode == LocationMode.CUSTOM && state.hasInstallSite) ||
+                state.compassQualityIssue != CompassQualityIssue.NONE ||
                 state.userLocation == null ||
                 (accuracy != null && accuracy > 25f)
             )
         trackingWarning.isVisible = showWarning
         if (trackingWarning.isVisible) {
             trackingWarning.text = when {
+                state.locationMode == LocationMode.CUSTOM && state.hasInstallSite ->
+                    getString(R.string.compass_warning_custom_location)
                 state.compassQualityIssue == CompassQualityIssue.METAL ->
                     getString(R.string.compass_warning_metal)
                 state.compassQualityIssue == CompassQualityIssue.TILT ->
@@ -480,6 +497,7 @@ class MainActivity : AppCompatActivity() {
         if (focus == null) {
             focusTowerLabel.text = "No tower in range"
             aimFocusHud.isVisible = false
+            compassBearingLabel.isVisible = false
             return
         }
 
@@ -488,6 +506,16 @@ class MainActivity : AppCompatActivity() {
 
         val distance = state.distanceTo(focus)
         val bearing = state.bearingTo(focus)
+        if (bearing != null && heading != null) {
+            compassBearingLabel.isVisible = true
+            compassBearingLabel.text = getString(
+                R.string.compass_bearing_debug,
+                GeoUtils.formatAzimuthPadded(bearing),
+                GeoUtils.formatAzimuthPadded(heading)
+            )
+        } else {
+            compassBearingLabel.isVisible = false
+        }
         val relative = if (heading != null && bearing != null) {
             GeoUtils.relativeBearingDegrees(heading, bearing)
         } else {
@@ -709,11 +737,12 @@ class MainActivity : AppCompatActivity() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("WispEaze field tips")
             .setMessage(
-                "1. Import network sites from Home (or Settings → Import / manage sites).\n" +
-                    "2. Go outdoors for a clear GPS fix.\n" +
-                    "3. Hold the phone upright — the top of the disc is the direction you face.\n" +
-                    "4. Tap Improve compass and move the phone in a figure-8 if aiming feels off.\n" +
-                    "5. Tap a site on the radar for details, or use Check LOS for ranked profiles."
+                    "1. Import network sites from Home (or Settings → Import / manage sites).\n" +
+                    "2. Tap the location chip and confirm it says My GPS when you are on site.\n" +
+                    "3. Hold the phone upright and rotate until the tower sits at the top of the radar.\n" +
+                    "4. Or pitch the top edge toward the tower when sighting a specific aim.\n" +
+                    "5. Tap Improve compass and move the phone in a figure-8 if aiming feels off.\n" +
+                    "6. Tap a site on the radar for details, or use Check LOS for ranked profiles."
             )
             .setPositiveButton("Got it") { _, _ ->
                 viewModel.markOnboardingComplete()

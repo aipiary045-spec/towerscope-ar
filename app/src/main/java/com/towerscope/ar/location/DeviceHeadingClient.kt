@@ -80,7 +80,10 @@ class DeviceHeadingClient(context: Context) {
                     val rollDegrees = Math.toDegrees(orientation[2].toDouble())
                     val tilted = CompassHeadingMath.isAimTilted(rotationMatrix)
 
-                    var degrees = CompassHeadingMath.magneticHeadingDegrees(rotationMatrix)
+                    var degrees = CompassHeadingMath.magneticHeadingDegrees(
+                        rotationMatrix,
+                        pitchDegrees
+                    )
 
                     val sampleNanos = event.timestamp
                     val rotationRateDps = computeRotationRateDps(

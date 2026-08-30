@@ -36,6 +36,8 @@
     <string name="home_job_aim">Compass</string>
     <string name="compass_sight_toggle">Switch radar / camera sight</string>
     <string name="compass_sight_hint">Camera viewfinder — use the radar below for aim</string>
+    <string name="compass_bearing_debug">Tower BRG %1$s · You face %2$s</string>
+    <string name="compass_warning_custom_location">Bearings use your custom pin — switch to My GPS if you are not at that pin</string>
     <string name="compass_radar_hint">Compass radar — top of disc is the direction you face</string>
     <string name="compass_sight_mode">Sight</string>
     <string name="compass_radar_mode">Radar</string>

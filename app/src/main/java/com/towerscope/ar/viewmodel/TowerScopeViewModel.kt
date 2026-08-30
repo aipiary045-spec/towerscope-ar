@@ -463,9 +463,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
 
     private fun loadLocationMode(): LocationMode {
         if (!prefs.contains(KEY_LOCATION_MODE)) {
-            val hasInstall = !prefs.getFloat(KEY_INSTALL_LAT, Float.NaN).isNaN() &&
-                !prefs.getFloat(KEY_INSTALL_LON, Float.NaN).isNaN()
-            return if (hasInstall) LocationMode.CUSTOM else LocationMode.CURRENT_GPS
+            return LocationMode.CURRENT_GPS
         }
         return LocationMode.fromStored(prefs.getString(KEY_LOCATION_MODE, null))
     }
@@ -1291,7 +1289,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
         private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
         private const val KEY_HEADING_REMAP_VERSION = "heading_remap_version"
-        private const val HEADING_REMAP_VERSION = 3
+        private const val HEADING_REMAP_VERSION = 4
         private const val SIGHTING_DURATION_MS = 2_500L
         private const val SIGHTING_SAMPLE_MS = 50L
         private const val SIGHTING_MIN_SAMPLES = 20
