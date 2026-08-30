@@ -93,6 +93,8 @@ data class TowerUiState(
     val compassTilted: Boolean = false,
     val compassMagneticInterference: Boolean = false,
     val compassRotationRateDps: Double = 0.0,
+    val compassHeadingSource: com.towerscope.ar.location.HeadingSourceArbiter.Source =
+        com.towerscope.ar.location.HeadingSourceArbiter.Source.FUSED,
     val compassSightingActive: Boolean = false,
     val compassSightingProgress: Float = 0f,
     val hudTheme: HudTheme = HudTheme.DARK,
@@ -520,7 +522,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                         compassRollDegrees = heading.rollDegrees,
                         compassTilted = heading.tilted,
                         compassMagneticInterference = heading.magneticInterference,
-                        compassRotationRateDps = heading.rotationRateDps
+                        compassRotationRateDps = heading.rotationRateDps,
+                        compassHeadingSource = heading.headingSource
                     )
                 }
             }
@@ -1289,7 +1292,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
         private const val KEY_HEADING_OFFSET = "heading_calibration_offset_deg"
         private const val KEY_HEADING_REMAP_VERSION = "heading_remap_version"
-        private const val HEADING_REMAP_VERSION = 4
+        private const val HEADING_REMAP_VERSION = 5
         private const val SIGHTING_DURATION_MS = 2_500L
         private const val SIGHTING_SAMPLE_MS = 50L
         private const val SIGHTING_MIN_SAMPLES = 20

@@ -8,59 +8,57 @@ import org.junit.Test
 class CompassHeadingMathTest {
 
     @Test
-    fun magneticHeading_topEdgeNorth_whenPitchedForward() {
+    fun magneticHeading_topEdgeNorth_whenFlat() {
         val matrix = rotationMatrix(
             deviceXWorld = Triple(1.0, 0.0, 0.0),
             deviceYWorld = Triple(0.0, 1.0, 0.0),
             deviceZWorld = Triple(0.0, 0.0, 1.0)
         )
-        assertEquals(
-            0.0,
-            CompassHeadingMath.magneticHeadingDegrees(matrix, pitchDegrees = 0.0),
-            0.5
-        )
+        assertEquals(0.0, CompassHeadingMath.magneticHeadingDegrees(matrix), 0.5)
     }
 
     @Test
-    fun magneticHeading_topEdgeEast_whenPitchedForward() {
+    fun magneticHeading_topEdgeEast_whenFlat() {
         val matrix = rotationMatrix(
-            deviceXWorld = Triple(0.0, 1.0, 0.0),
+            deviceXWorld = Triple(0.0, -1.0, 0.0),
             deviceYWorld = Triple(1.0, 0.0, 0.0),
             deviceZWorld = Triple(0.0, 0.0, 1.0)
         )
-        assertEquals(
-            90.0,
-            CompassHeadingMath.magneticHeadingDegrees(matrix, pitchDegrees = 0.0),
-            0.5
-        )
+        assertEquals(90.0, CompassHeadingMath.magneticHeadingDegrees(matrix), 0.5)
     }
 
     @Test
     fun magneticHeading_bodyFacingNorth_whenUpright() {
+        // Screen toward user who faces north: device z (out of screen) points south.
         val matrix = rotationMatrix(
             deviceXWorld = Triple(1.0, 0.0, 0.0),
             deviceYWorld = Triple(0.0, 0.0, 1.0),
             deviceZWorld = Triple(0.0, -1.0, 0.0)
         )
-        assertEquals(
-            0.0,
-            CompassHeadingMath.magneticHeadingDegrees(matrix, pitchDegrees = -80.0),
-            0.5
-        )
+        assertEquals(0.0, CompassHeadingMath.magneticHeadingDegrees(matrix), 0.5)
     }
 
     @Test
     fun magneticHeading_bodyFacingEast_whenUpright() {
+        // User faces east: device z points west, device x (right hand) points south.
         val matrix = rotationMatrix(
-            deviceXWorld = Triple(0.0, 1.0, 0.0),
+            deviceXWorld = Triple(0.0, -1.0, 0.0),
             deviceYWorld = Triple(0.0, 0.0, 1.0),
             deviceZWorld = Triple(-1.0, 0.0, 0.0)
         )
-        assertEquals(
-            90.0,
-            CompassHeadingMath.magneticHeadingDegrees(matrix, pitchDegrees = -80.0),
-            0.5
+        assertEquals(90.0, CompassHeadingMath.magneticHeadingDegrees(matrix), 0.5)
+    }
+
+    @Test
+    fun magneticHeading_pitchedForty5Degrees_bothAxesAgree() {
+        // Phone pitched 45° from upright aiming north: y and -z both project north.
+        val s = kotlin.math.sqrt(0.5)
+        val matrix = rotationMatrix(
+            deviceXWorld = Triple(1.0, 0.0, 0.0),
+            deviceYWorld = Triple(0.0, s, s),
+            deviceZWorld = Triple(0.0, -s, s)
         )
+        assertEquals(0.0, CompassHeadingMath.magneticHeadingDegrees(matrix), 1.0)
     }
 
     @Test

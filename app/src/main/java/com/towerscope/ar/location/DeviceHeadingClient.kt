@@ -21,15 +21,20 @@ data class DeviceHeading(
     val rollDegrees: Double,
     val tilted: Boolean,
     val rotationRateDps: Double,
-    val magneticInterference: Boolean
+    val magneticInterference: Boolean,
+    val headingSource: HeadingSourceArbiter.Source
 )
 
 /**
- * Device heading for portrait compass use (top of phone = forward, screen toward user).
+ * Device heading for portrait compass use.
  *
- * Uses the rotation-vector matrix directly — [CompassHeadingMath] extracts azimuth from
- * device +Y. Do not remap to X+Z; that tracks the screen/camera axis instead of the
- * top edge and makes tower bearings wrong.
+ * Runs two independent heading sources and lets [HeadingSourceArbiter] pick:
+ * - Fused rotation vector (smooth, but yaw reference can be stale/arbitrary on some devices)
+ * - Raw accelerometer + magnetometer via [SensorManager.getRotationMatrix]
+ *   (noisier, but always referenced to the real magnetic field)
+ *
+ * [CompassHeadingMath] extracts azimuth tilt-aware: body-facing (−Z) when the phone is
+ * upright, top-edge (+Y) when pitched toward the target.
  */
 class DeviceHeadingClient(context: Context) {
 
@@ -40,92 +45,135 @@ class DeviceHeadingClient(context: Context) {
         callbackFlow {
             val rotation = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
                 ?: sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
+            val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            val magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
-            if (rotation == null) {
+            val hasMagneticPipeline = accelerometer != null && magnetometer != null
+            if (rotation == null && !hasMagneticPipeline) {
                 close()
                 return@callbackFlow
             }
 
-            val usesGeomagneticNorth = rotation.type == Sensor.TYPE_ROTATION_VECTOR
-            val magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+            val fusedHasMagneticReference = rotation?.type == Sensor.TYPE_ROTATION_VECTOR
             val rotationMatrix = FloatArray(9)
+            val magneticMatrix = FloatArray(9)
             val orientation = FloatArray(3)
+            val gravity = FloatArray(3)
+            val geomagnetic = FloatArray(3)
+            var hasRotation = false
+            var hasGravity = false
+            var hasMagnetic = false
             var latestAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
             var smoothedHeading: Double? = null
             var previousRawHeading: Double? = null
             var previousSampleNanos: Long? = null
             var magneticInterference = false
             val magneticMonitor = MagneticFieldMonitor()
+            val arbiter = HeadingSourceArbiter()
+
+            fun emitHeading(sampleNanos: Long) {
+                val fusedHeading = if (hasRotation) {
+                    CompassHeadingMath.magneticHeadingDegrees(rotationMatrix)
+                } else {
+                    null
+                }
+                val magneticHeading = if (
+                    hasGravity && hasMagnetic &&
+                    SensorManager.getRotationMatrix(magneticMatrix, null, gravity, geomagnetic)
+                ) {
+                    CompassHeadingMath.magneticHeadingDegrees(magneticMatrix)
+                } else {
+                    null
+                }
+
+                val choice = arbiter.choose(
+                    fusedHeadingDegrees = fusedHeading,
+                    magnetometerHeadingDegrees = magneticHeading,
+                    fusedHasMagneticReference = fusedHasMagneticReference
+                ) ?: return
+
+                val shapeMatrix = if (hasRotation) rotationMatrix else magneticMatrix
+                SensorManager.getOrientation(shapeMatrix, orientation)
+                val pitchDegrees = Math.toDegrees(orientation[1].toDouble())
+                val rollDegrees = Math.toDegrees(orientation[2].toDouble())
+                val tilted = CompassHeadingMath.isAimTilted(shapeMatrix)
+
+                var degrees = choice.headingDegrees
+
+                val rotationRateDps = computeRotationRateDps(
+                    previousRawHeading,
+                    previousSampleNanos,
+                    degrees,
+                    sampleNanos
+                )
+                previousRawHeading = degrees
+                previousSampleNanos = sampleNanos
+
+                // Both sources are magnetic-referenced; correct to true north when possible.
+                val location = locationProvider()
+                if (location != null) {
+                    val field = GeomagneticField(
+                        location.latitude.toFloat(),
+                        location.longitude.toFloat(),
+                        (location.altitudeMeters ?: 0.0).toFloat(),
+                        System.currentTimeMillis()
+                    )
+                    degrees = GeoUtils.normalizeBearing(degrees + field.declination)
+                }
+
+                if (latestAccuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
+                    return
+                }
+
+                val alpha = HeadingFilter.alphaForAccuracy(latestAccuracy)
+                smoothedHeading = HeadingFilter.smooth(smoothedHeading, degrees, alpha)
+
+                trySend(
+                    DeviceHeading(
+                        degrees = smoothedHeading!!,
+                        sensorAccuracy = latestAccuracy,
+                        pitchDegrees = pitchDegrees,
+                        rollDegrees = rollDegrees,
+                        tilted = tilted,
+                        rotationRateDps = rotationRateDps,
+                        magneticInterference = magneticInterference,
+                        headingSource = choice.source
+                    )
+                )
+            }
 
             val listener = object : SensorEventListener {
                 override fun onSensorChanged(event: SensorEvent) {
                     when (event.sensor.type) {
+                        Sensor.TYPE_ACCELEROMETER -> {
+                            if (!hasGravity) {
+                                System.arraycopy(event.values, 0, gravity, 0, 3)
+                                hasGravity = true
+                            } else {
+                                for (i in 0..2) {
+                                    gravity[i] = 0.8f * gravity[i] + 0.2f * event.values[i]
+                                }
+                            }
+                            if (rotation == null) emitHeading(event.timestamp)
+                        }
                         Sensor.TYPE_MAGNETIC_FIELD -> {
                             magneticInterference = magneticMonitor.observe(
                                 event.values[0],
                                 event.values[1],
                                 event.values[2]
                             )
-                            return
+                            System.arraycopy(event.values, 0, geomagnetic, 0, 3)
+                            hasMagnetic = true
+                            if (rotation == null) emitHeading(event.timestamp)
                         }
                         Sensor.TYPE_ROTATION_VECTOR,
-                        Sensor.TYPE_GAME_ROTATION_VECTOR -> Unit
+                        Sensor.TYPE_GAME_ROTATION_VECTOR -> {
+                            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+                            hasRotation = true
+                            emitHeading(event.timestamp)
+                        }
                         else -> return
                     }
-
-                    SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                    SensorManager.getOrientation(rotationMatrix, orientation)
-
-                    val pitchDegrees = Math.toDegrees(orientation[1].toDouble())
-                    val rollDegrees = Math.toDegrees(orientation[2].toDouble())
-                    val tilted = CompassHeadingMath.isAimTilted(rotationMatrix)
-
-                    var degrees = CompassHeadingMath.magneticHeadingDegrees(
-                        rotationMatrix,
-                        pitchDegrees
-                    )
-
-                    val sampleNanos = event.timestamp
-                    val rotationRateDps = computeRotationRateDps(
-                        previousRawHeading,
-                        previousSampleNanos,
-                        degrees,
-                        sampleNanos
-                    )
-                    previousRawHeading = degrees
-                    previousSampleNanos = sampleNanos
-
-                    if (usesGeomagneticNorth) {
-                        val location = locationProvider()
-                        if (location != null) {
-                            val field = GeomagneticField(
-                                location.latitude.toFloat(),
-                                location.longitude.toFloat(),
-                                (location.altitudeMeters ?: 0.0).toFloat(),
-                                System.currentTimeMillis()
-                            )
-                            degrees = GeoUtils.normalizeBearing(degrees + field.declination)
-                        }
-                    }
-
-                    if (latestAccuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
-                        return
-                    }
-
-                    val alpha = HeadingFilter.alphaForAccuracy(latestAccuracy)
-                    smoothedHeading = HeadingFilter.smooth(smoothedHeading, degrees, alpha)
-
-                    trySend(
-                        DeviceHeading(
-                            degrees = smoothedHeading!!,
-                            sensorAccuracy = latestAccuracy,
-                            pitchDegrees = pitchDegrees,
-                            rollDegrees = rollDegrees,
-                            tilted = tilted,
-                            rotationRateDps = rotationRateDps,
-                            magneticInterference = magneticInterference
-                        )
-                    )
                 }
 
                 override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
@@ -137,9 +185,14 @@ class DeviceHeadingClient(context: Context) {
                 }
             }
 
-            sensorManager.registerListener(listener, rotation, SensorManager.SENSOR_DELAY_GAME)
+            rotation?.let {
+                sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_GAME)
+            }
+            accelerometer?.let {
+                sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_GAME)
+            }
             magnetometer?.let {
-                sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_NORMAL)
+                sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_GAME)
             }
             awaitClose { sensorManager.unregisterListener(listener) }
         }

@@ -448,7 +448,15 @@ class MainActivity : AppCompatActivity() {
         } else {
             ""
         }
-        compassChip.text = "$compassLabel$offsetTag"
+        val sourceTag = if (
+            state.compassHeadingSource ==
+            com.towerscope.ar.location.HeadingSourceArbiter.Source.MAGNETOMETER
+        ) {
+            " · MAG"
+        } else {
+            ""
+        }
+        compassChip.text = "$compassLabel$offsetTag$sourceTag"
         val compassColor = ContextCompat.getColor(this, compassColorRes)
         compassChip.setTextColor(compassColor)
         compassChip.background = HudThemeApplier.statusChipBackground(compassChip, compassColor)

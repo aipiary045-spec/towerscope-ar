@@ -29,10 +29,13 @@ object CompassHeadingMath {
     /**
      * Magnetic azimuth in degrees (0 = north, clockwise).
      */
-    fun magneticHeadingDegrees(rotationMatrix: FloatArray, pitchDegrees: Double): Double {
+    fun magneticHeadingDegrees(rotationMatrix: FloatArray): Double {
         require(rotationMatrix.size >= 9) { "rotation matrix must have 9 elements" }
         val topHoriz = horizontalMagnitude(rotationMatrix, ReferenceAxis.TOP_EDGE)
         val bodyHoriz = horizontalMagnitude(rotationMatrix, ReferenceAxis.BODY_FACING)
+        val pitchDegrees = Math.toDegrees(
+            kotlin.math.asin((-rotationMatrix[7]).toDouble().coerceIn(-1.0, 1.0))
+        )
 
         val axis = when {
             topHoriz < MIN_HORIZONTAL_PROJECTION && bodyHoriz >= MIN_HORIZONTAL_PROJECTION ->
