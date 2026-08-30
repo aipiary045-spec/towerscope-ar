@@ -28,7 +28,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
-import com.towerscope.ar.data.Tower
 import com.towerscope.ar.ui.CompassCameraController
 import com.towerscope.ar.ui.CompassRadarView
 import com.towerscope.ar.ui.HudThemeApplier
@@ -62,7 +61,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var locationSourceChipView: TextView
     private lateinit var locationSourceChip: LocationSourceChip
     private lateinit var headingLabel: TextView
-    private lateinit var compassBearingLabel: TextView
     private lateinit var focusTowerLabel: TextView
     private lateinit var aimFocusHud: View
     private lateinit var aimTurnLabel: TextView
@@ -160,7 +158,6 @@ class MainActivity : AppCompatActivity() {
             onModeChanged = { render(viewModel.uiState.value) }
         )
         headingLabel = findViewById(R.id.headingLabel)
-        compassBearingLabel = findViewById(R.id.compassBearingLabel)
         focusTowerLabel = findViewById(R.id.focusTowerLabel)
         aimFocusHud = findViewById(R.id.aimFocusHud)
         aimTurnLabel = findViewById(R.id.aimTurnLabel)
@@ -508,7 +505,6 @@ class MainActivity : AppCompatActivity() {
         if (focus == null) {
             focusTowerLabel.text = "No tower in range"
             aimFocusHud.isVisible = false
-            compassBearingLabel.isVisible = false
             return
         }
 
@@ -517,12 +513,6 @@ class MainActivity : AppCompatActivity() {
 
         val distance = state.distanceTo(focus)
         val bearing = state.bearingTo(focus)
-        if (bearing != null && heading != null) {
-            compassBearingLabel.isVisible = true
-            compassBearingLabel.text = buildDiagnostics(state, focus, bearing, heading, distance)
-        } else {
-            compassBearingLabel.isVisible = false
-        }
         val relative = if (heading != null && bearing != null) {
             GeoUtils.relativeBearingDegrees(heading, bearing)
         } else {
@@ -594,61 +584,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             aimSignalLabel.text = "Est.  —"
             aimSignalLabel.setTextColor(ContextCompat.getColor(this, R.color.text_muted))
-        }
-    }
-
-    private fun buildDiagnostics(
-        state: TowerUiState,
-        focus: Tower,
-        bearing: Double,
-        heading: Double,
-        distance: Double?
-    ): String {
-        val loc = state.positioningLocation()
-        val fmt = java.util.Locale.US
-        return buildString {
-            append("Tower BRG ${GeoUtils.formatAzimuthPadded(bearing)}")
-            distance?.let { append("  ·  ${GeoUtils.formatDistance(it)}") }
-            append('\n')
-            append("Face ${GeoUtils.formatAzimuthPadded(heading)} ")
-            append(
-                if (state.compassHeadingSource ==
-                    com.towerscope.ar.location.HeadingSourceArbiter.Source.MAGNETOMETER
-                ) "MAG" else "FUSED"
-            )
-            val fused = state.compassFusedRawDegrees
-            val mag = state.compassMagneticRawDegrees
-            if (fused != null || mag != null) {
-                append(" (raw F")
-                append(fused?.let { String.format(fmt, "%03.0f", it) } ?: "—")
-                append("/M")
-                append(mag?.let { String.format(fmt, "%03.0f", it) } ?: "—")
-                append(")")
-            }
-            append('\n')
-            if (loc != null) {
-                append(
-                    String.format(fmt, "Pos %.5f, %.5f", loc.latitude, loc.longitude)
-                )
-                append(if (state.usesCustomLocation()) " PIN" else " GPS")
-                append('\n')
-            }
-            append(String.format(fmt, "Site %.5f, %.5f", focus.latitude, focus.longitude))
-            append('\n')
-            append("Decl ")
-            append(
-                state.compassDeclinationDegrees?.let { String.format(fmt, "%+.1f°", it) } ?: "—"
-            )
-            append("  ·  Field ")
-            append(
-                state.compassFieldMicroTesla?.let { String.format(fmt, "%.0fµT", it) } ?: "—"
-            )
-            append("  ·  Pitch ")
-            append(
-                state.compassPitchDegrees?.let { String.format(fmt, "%.0f°", it) } ?: "—"
-            )
-            append('\n')
-            append(getString(R.string.compass_align_hold_hint))
         }
     }
 
