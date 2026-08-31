@@ -8,23 +8,7 @@
     android:paddingHorizontal="@dimen/screen_padding"
     android:paddingTop="18dp">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/source_sans3_semibold"
-        android:text="@string/home_job_channel_plan"
-        android:textColor="@color/text_primary"
-        android:textSize="@dimen/screen_title"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:fontFamily="@font/source_sans3_regular"
-        android:text="@string/home_job_channel_plan_sub"
-        android:textColor="@color/text_muted"
-        android:textSize="14sp" />
+    <include layout="@layout/include_tool_scaffold_header" />
 
     <TextView
         android:id="@+id/channelPlannerStatus"

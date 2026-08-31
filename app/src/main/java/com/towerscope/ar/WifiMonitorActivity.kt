@@ -3,8 +3,6 @@ package com.towerscope.ar
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -13,11 +11,14 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.InterferenceLevel
 import com.towerscope.ar.network.WifiMonitor
 import com.towerscope.ar.network.WifiScanAp
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.ToolScaffold
+import com.towerscope.ar.ui.WifiScanAdapter
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -39,7 +40,7 @@ class WifiMonitorActivity : AppCompatActivity() {
     private lateinit var interferenceLevel: TextView
     private lateinit var interferenceHints: TextView
     private lateinit var scanStatus: TextView
-    private lateinit var scanList: LinearLayout
+    private lateinit var scanAdapter: WifiScanAdapter
     private lateinit var scanButton: MaterialButton
     private var scanJob: Job? = null
     private var latestScan: List<WifiScanAp> = emptyList()
@@ -62,6 +63,11 @@ class WifiMonitorActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_wifi_monitor)
         SystemBars.apply(findViewById(R.id.wifiRoot))
+        ToolScaffold.bind(
+            activity = this,
+            titleRes = R.string.home_job_wifi,
+            subtitleRes = R.string.home_job_wifi_sub
+        )
         monitor = WifiMonitor(this)
 
         ssidLabel = findViewById(R.id.wifiSsid)
@@ -73,11 +79,16 @@ class WifiMonitorActivity : AppCompatActivity() {
         interferenceLevel = findViewById(R.id.wifiInterferenceLevel)
         interferenceHints = findViewById(R.id.wifiInterferenceHints)
         scanStatus = findViewById(R.id.wifiScanStatus)
-        scanList = findViewById(R.id.wifiScanList)
         scanButton = findViewById(R.id.wifiScanButton)
 
+        scanAdapter = WifiScanAdapter()
+        findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.wifiScanList).apply {
+            layoutManager = LinearLayoutManager(this@WifiMonitorActivity)
+            adapter = scanAdapter
+            itemAnimator = null
+        }
+
         scanButton.setOnClickListener { ensureScanPermissionAndStart() }
-        findViewById<MaterialButton>(R.id.wifiBackButton).setOnClickListener { finish() }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -227,36 +238,6 @@ class WifiMonitorActivity : AppCompatActivity() {
     }
 
     private fun renderScanRows(results: List<WifiScanAp>) {
-        scanList.removeAllViews()
-        val inflater = LayoutInflater.from(this)
-        // Show overlapping first, then by RSSI
-        val ordered = results.sortedWith(
-            compareByDescending<WifiScanAp> { it.coChannelWithActive }
-                .thenByDescending { it.overlapWithActive }
-                .thenByDescending { it.rssiDbm }
-        )
-        ordered.take(40).forEach { ap ->
-            val row = inflater.inflate(R.layout.item_wifi_scan_row, scanList, false)
-            row.findViewById<TextView>(R.id.wifiRowSsid).text = ap.ssid
-            val flag = when {
-                ap.coChannelWithActive -> " · CO‑CH"
-                ap.overlapWithActive -> " · OVERLAP"
-                else -> ""
-            }
-            row.findViewById<TextView>(R.id.wifiRowMeta).text = String.format(
-                Locale.US,
-                "ch %d · %s · %s%s",
-                ap.channel,
-                ap.band,
-                ap.bssid,
-                flag
-            )
-            val rssiView = row.findViewById<TextView>(R.id.wifiRowRssi)
-            rssiView.text = String.format(Locale.US, "%d", ap.rssiDbm)
-            if (ap.overlapWithActive) {
-                rssiView.setTextColor(getColor(R.color.accent_yellow))
-            }
-            scanList.addView(row)
-        }
+        scanAdapter.submitList(WifiScanAdapter.sortForDisplay(results))
     }
 }

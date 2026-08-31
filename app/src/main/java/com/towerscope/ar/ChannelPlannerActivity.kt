@@ -14,6 +14,7 @@ import com.towerscope.ar.network.ChannelPlanner
 import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.network.WifiMonitor
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.ToolScaffold
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -38,17 +39,18 @@ class ChannelPlannerActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_channel_planner)
         SystemBars.apply(findViewById(R.id.channelPlannerRoot))
+        ToolScaffold.bind(
+            activity = this,
+            titleRes = R.string.home_job_channel_plan,
+            subtitleRes = R.string.home_job_channel_plan_sub,
+            onShare = { share() }
+        )
         monitor = WifiMonitor(this)
 
         statusView = findViewById(R.id.channelPlannerStatus)
         resultView = findViewById(R.id.channelPlannerResult)
 
         findViewById<MaterialButton>(R.id.channelPlannerScanButton).setOnClickListener { ensureScan() }
-        findViewById<MaterialButton>(R.id.toolShareButton).setOnClickListener { share() }
-        findViewById<MaterialButton>(R.id.toolBackButton).setOnClickListener {
-            scanJob?.cancel()
-            finish()
-        }
     }
 
     override fun onStop() {

@@ -9,6 +9,7 @@ import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.ConnectionSnapshotCollector
 import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.ToolScaffold
 import kotlinx.coroutines.launch
 
 class ConnectionSnapshotActivity : AppCompatActivity() {
@@ -22,13 +23,17 @@ class ConnectionSnapshotActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_connection_snapshot)
         SystemBars.apply(findViewById(R.id.connectionRoot))
+        ToolScaffold.bind(
+            activity = this,
+            titleRes = R.string.home_job_connection,
+            subtitleRes = R.string.home_job_connection_sub,
+            onShare = { share() }
+        )
 
         detailView = findViewById(R.id.connectionDetail)
         statusView = findViewById(R.id.connectionStatus)
 
         findViewById<MaterialButton>(R.id.connectionRefreshButton).setOnClickListener { refresh() }
-        findViewById<MaterialButton>(R.id.toolShareButton).setOnClickListener { share() }
-        findViewById<MaterialButton>(R.id.toolBackButton).setOnClickListener { finish() }
         refresh()
     }
 

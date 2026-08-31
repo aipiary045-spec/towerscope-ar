@@ -13,14 +13,17 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.MultiPingSnapshot
+import com.towerscope.ar.network.NetworkSession
 import com.towerscope.ar.network.PingHistory
 import com.towerscope.ar.network.PingHostStats
-import com.towerscope.ar.network.NetworkSession
 import com.towerscope.ar.network.PingMonitor
 import com.towerscope.ar.network.TestResultExport
+import com.towerscope.ar.ui.PingHostStatsAdapter
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.ToolScaffold
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
@@ -35,7 +38,7 @@ class PingMonitorActivity : AppCompatActivity() {
     private lateinit var recentLabel: TextView
     private lateinit var recentScroll: HorizontalScrollView
     private lateinit var recentRow: LinearLayout
-    private lateinit var hostStatsList: LinearLayout
+    private lateinit var hostStatsAdapter: PingHostStatsAdapter
     private lateinit var logView: TextView
     private lateinit var toggleButton: MaterialButton
     private var job: Job? = null
@@ -50,6 +53,12 @@ class PingMonitorActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_ping_monitor)
         SystemBars.apply(findViewById(R.id.pingRoot))
+        ToolScaffold.bind(
+            activity = this,
+            titleRes = R.string.home_job_ping,
+            subtitleRes = R.string.home_job_ping_sub,
+            onShare = { share() }
+        )
 
         hostInput = findViewById(R.id.pingHostInput)
         durationGroup = findViewById(R.id.pingDurationGroup)
@@ -57,9 +66,15 @@ class PingMonitorActivity : AppCompatActivity() {
         recentLabel = findViewById(R.id.pingRecentLabel)
         recentScroll = findViewById(R.id.pingRecentScroll)
         recentRow = findViewById(R.id.pingRecentRow)
-        hostStatsList = findViewById(R.id.pingHostStatsList)
         logView = findViewById(R.id.pingLogView)
         toggleButton = findViewById(R.id.pingToggleButton)
+
+        hostStatsAdapter = PingHostStatsAdapter()
+        findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.pingHostStatsList).apply {
+            layoutManager = LinearLayoutManager(this@PingMonitorActivity)
+            adapter = hostStatsAdapter
+            itemAnimator = null
+        }
 
         hostInput.setText(
             PingHistory.lastInput(this) ?: "1.1.1.1, 8.8.8.8"
@@ -68,11 +83,6 @@ class PingMonitorActivity : AppCompatActivity() {
 
         toggleButton.setOnClickListener {
             if (job?.isActive == true) stopPing(showSummary = true) else startPing()
-        }
-        findViewById<MaterialButton>(R.id.pingShareButton).setOnClickListener { share() }
-        findViewById<MaterialButton>(R.id.pingBackButton).setOnClickListener {
-            stopPing(showSummary = false)
-            finish()
         }
     }
 
@@ -253,7 +263,7 @@ class PingMonitorActivity : AppCompatActivity() {
             while (logLines.size > 80) logLines.removeLast()
             logView.text = logLines.joinToString("\n")
         }
-        renderHostRows(snapshot.hosts)
+        hostStatsAdapter.submitList(snapshot.hosts)
         val elapsed = (System.currentTimeMillis() - startedAtMs) / 1000.0
         val alive = snapshot.hosts.count { it.received > 0 }
         statusLabel.text = if (durationSec() != null) {
@@ -266,30 +276,6 @@ class PingMonitorActivity : AppCompatActivity() {
             )
         } else {
             "Live · ${snapshot.hosts.size} targets · $alive responding"
-        }
-    }
-
-    private fun renderHostRows(hosts: List<PingHostStats>) {
-        hostStatsList.removeAllViews()
-        val inflater = LayoutInflater.from(this)
-        hosts.forEach { host ->
-            val row = inflater.inflate(R.layout.item_ping_host_row, hostStatsList, false)
-            row.findViewById<TextView>(R.id.pingRowHost).text = host.displayTarget
-            val last = row.findViewById<TextView>(R.id.pingRowLast)
-            last.text = host.lastMs?.let { String.format(Locale.US, "%.0f ms", it) } ?: "timeout"
-            last.setTextColor(
-                getColor(if (host.lastSuccess) R.color.accent_teal else R.color.chip_poor)
-            )
-            row.findViewById<TextView>(R.id.pingRowStats).text = String.format(
-                Locale.US,
-                "%s · Sent %d · Recv %d · Loss %.0f%% · avg %s",
-                host.method,
-                host.sent,
-                host.received,
-                host.lossPercent,
-                formatMs(host.avgMs)
-            )
-            hostStatsList.addView(row)
         }
     }
 
