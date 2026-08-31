@@ -22,6 +22,7 @@ import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.ui.LatencyGraphView
 import com.towerscope.ar.ui.SpeedGaugeView
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.ToolScaffold
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -74,6 +75,16 @@ class SpeedTestActivity : AppCompatActivity() {
         bufferbloatResult = findViewById(R.id.speedBufferbloatResult)
         bufferbloatStatus = findViewById(R.id.speedBufferbloatStatus)
         runButton = findViewById(R.id.speedRunButton)
+        ToolScaffold.bind(
+            activity = this,
+            titleRes = R.string.home_job_speed,
+            subtitleRes = R.string.home_job_speed_sub,
+            onShare = { share() },
+            onBack = {
+                runningJob?.cancel()
+                finish()
+            }
+        )
 
         buildServerPicker()
         includeBufferbloat.setOnCheckedChangeListener { _, checked ->
@@ -82,11 +93,6 @@ class SpeedTestActivity : AppCompatActivity() {
         bufferbloatSection.isVisible = includeBufferbloat.isChecked
 
         runButton.setOnClickListener { runTest() }
-        findViewById<MaterialButton>(R.id.toolShareButton).setOnClickListener { share() }
-        findViewById<MaterialButton>(R.id.toolBackButton).setOnClickListener {
-            runningJob?.cancel()
-            finish()
-        }
     }
 
     override fun onDestroy() {

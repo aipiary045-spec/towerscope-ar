@@ -23,23 +23,7 @@
             android:orientation="vertical"
             android:paddingBottom="12dp">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:text="@string/home_job_lan_scan"
-                android:textColor="@color/text_primary"
-                android:textSize="@dimen/screen_title"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:fontFamily="@font/source_sans3_regular"
-                android:text="@string/home_job_lan_scan_sub"
-                android:textColor="@color/text_muted"
-                android:textSize="14sp" />
+            <include layout="@layout/include_tool_scaffold_header" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -214,13 +198,14 @@
                 android:textSize="11sp"
                 android:visibility="gone" />
 
-            <LinearLayout
+            <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/lanResultsList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:orientation="vertical"
-                android:minHeight="80dp" />
+                android:minHeight="80dp"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
         </LinearLayout>
     </ScrollView>
 

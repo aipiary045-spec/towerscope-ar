@@ -23,6 +23,7 @@ import com.towerscope.ar.network.SignalWalkWeakSpot
 import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.network.WifiMonitor
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.ToolScaffold
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
@@ -60,13 +61,18 @@ class SignalWalkActivity : AppCompatActivity() {
         statusView = findViewById(R.id.signalWalkStatus)
         resultView = findViewById(R.id.signalWalkResult)
         toggleButton = findViewById(R.id.signalWalkToggleButton)
+        ToolScaffold.bind(
+            activity = this,
+            titleRes = R.string.home_job_signal_walk,
+            subtitleRes = R.string.home_job_signal_walk_sub,
+            onShare = { share() },
+            onBack = {
+                stopRecording()
+                finish()
+            }
+        )
 
         toggleButton.setOnClickListener { toggleRecording() }
-        findViewById<MaterialButton>(R.id.toolShareButton).setOnClickListener { share() }
-        findViewById<MaterialButton>(R.id.toolBackButton).setOnClickListener {
-            stopRecording()
-            finish()
-        }
 
         requestLocationIfNeeded()
     }

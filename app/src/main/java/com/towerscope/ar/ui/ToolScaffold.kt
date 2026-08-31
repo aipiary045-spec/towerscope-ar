@@ -14,7 +14,8 @@ object ToolScaffold {
         activity: AppCompatActivity,
         titleRes: Int,
         subtitleRes: Int? = null,
-        onShare: (() -> Unit)? = null
+        onShare: (() -> Unit)? = null,
+        onBack: (() -> Unit)? = null
     ) {
         activity.findViewById<TextView>(R.id.toolTitle)?.setText(titleRes)
         subtitleRes?.let { res ->
@@ -24,7 +25,7 @@ object ToolScaffold {
             }
         }
         activity.findViewById<MaterialButton>(R.id.toolBackButton)?.setOnClickListener {
-            activity.finish()
+            if (onBack != null) onBack() else activity.finish()
         }
         activity.findViewById<MaterialButton>(R.id.toolShareButton)?.apply {
             if (onShare != null) {

@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.View
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -25,6 +24,7 @@ import com.towerscope.ar.data.Tower
 import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.SiteBrowserAdapter
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.ToolScaffold
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.GeoUtils
@@ -94,6 +94,11 @@ class SiteBrowserActivity : AppCompatActivity() {
         recycler.adapter = adapter
         recycler.setHasFixedSize(true)
         recycler.itemAnimator = null
+        ToolScaffold.bind(
+            activity = this,
+            titleRes = R.string.site_browser_title,
+            subtitleRes = R.string.site_browser_sub
+        )
 
         searchField.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
@@ -103,9 +108,6 @@ class SiteBrowserActivity : AppCompatActivity() {
             }
         })
 
-        findViewById<View>(R.id.toolBackButton).setOnClickListener { finish() }
-        findViewById<View>(R.id.toolShareButton).isEnabled = false
-        findViewById<View>(R.id.toolShareButton).alpha = 0.4f
         findViewById<MaterialButton>(R.id.siteBrowserImportButton).setOnClickListener {
             startActivity(Intent(this, DataMenuActivity::class.java))
         }
