@@ -23,6 +23,7 @@ import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.ToolScaffold
 import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
+import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.LinkEstimate
 import com.towerscope.ar.viewmodel.LocationMode
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
@@ -364,14 +365,28 @@ class LosProfilesActivity : AppCompatActivity() {
 
     private fun maybeStartScan(force: Boolean = false) {
         val state = viewModel.uiState.value
-        if (!force && (startedScan || state.losRangeLoading || state.losRangeRows.isNotEmpty())) return
+        if (!force && state.losRangeLoading) return
+        if (!force && startedScan && state.losRangeRows.isNotEmpty()) return
         if (state.positioningLocation() == null) {
             status.text = when (state.locationMode) {
                 LocationMode.CUSTOM -> "Set a custom location on the Locate map"
                 LocationMode.CURRENT_GPS -> "Waiting for GPS fix"
             }
+            startedScan = false
             return
         }
+        val canScan = state.towersInRangeForLos().isNotEmpty() ||
+            (priorityTowerId != null && state.towerById(priorityTowerId!!) != null)
+        if (!canScan) {
+            status.text = when {
+                state.towers.isEmpty() -> "Import sites to rank LOS"
+                else -> state.losRangeStatus
+                    ?: "No sites in range (${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())})"
+            }
+            startedScan = false
+            return
+        }
+        if (!force && startedScan) return
         startedScan = true
         viewModel.refreshLosRangeProfiles(priorityTowerId)
     }

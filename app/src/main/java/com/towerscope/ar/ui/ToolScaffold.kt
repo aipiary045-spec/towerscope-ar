@@ -25,8 +25,9 @@ object ToolScaffold {
             }
         }
         val actions = activity.findViewById<View>(R.id.toolActionsBar)
-        val shareButton = actions?.findViewById<MaterialButton>(R.id.toolShareButton)
-            ?: activity.findViewById(R.id.toolShareButton)
+        val shareButton: MaterialButton? =
+            actions?.findViewById(R.id.toolShareButton)
+                ?: activity.findViewById<View>(R.id.toolShareButton) as? MaterialButton
         if (onShare != null && shareButton != null) {
             actions?.visibility = View.VISIBLE
             shareButton.visibility = View.VISIBLE
