@@ -38,7 +38,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/source_sans3_semibold"
-            android:text="Hub"
+            android:text="@string/home_hub_network"
             android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -49,7 +49,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:fontFamily="@font/source_sans3_regular"
-            android:text="Subtitle"
+            android:text="@string/home_hub_network_sub"
             android:textColor="@color/text_muted"
             android:textSize="12sp" />
     </LinearLayout>

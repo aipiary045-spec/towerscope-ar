@@ -94,10 +94,12 @@ class HomeFragment : Fragment(R.layout.activity_home) {
             startActivity(Intent(requireContext(), NetworkDiagnoseActivity::class.java))
         }
 
-        view.findViewById<View>(R.id.homeNetworkHubButton).setOnClickListener {
+        bindHubLink(view, R.id.homeNetworkHubButton, R.drawable.ic_wifi_signal, R.color.accent_teal,
+            R.string.home_hub_network, R.string.home_hub_network_sub) {
             (activity as? MainHostActivity)?.showTab(com.towerscope.ar.ui.BottomNavTab.NETWORK)
         }
-        view.findViewById<View>(R.id.homeInstallHubButton).setOnClickListener {
+        bindHubLink(view, R.id.homeInstallHubButton, R.drawable.ic_compass_rose, R.color.accent_yellow,
+            R.string.home_hub_install, R.string.home_hub_install_sub) {
             (activity as? MainHostActivity)?.showTab(com.towerscope.ar.ui.BottomNavTab.INSTALL)
         }
 
@@ -201,6 +203,25 @@ class HomeFragment : Fragment(R.layout.activity_home) {
             }
             else -> getString(R.string.home_gps_waiting)
         }
+    }
+
+    private fun bindHubLink(
+        root: View,
+        rowId: Int,
+        icon: Int,
+        iconTint: Int,
+        title: Int,
+        subtitle: Int,
+        onClick: () -> Unit
+    ) {
+        val row = root.findViewById<View>(rowId)
+        row.findViewById<ImageView>(R.id.homeHubIcon).apply {
+            setImageResource(icon)
+            setColorFilter(ContextCompat.getColor(requireContext(), iconTint))
+        }
+        row.findViewById<TextView>(R.id.homeHubTitle).setText(title)
+        row.findViewById<TextView>(R.id.homeHubSubtitle).setText(subtitle)
+        row.setOnClickListener { onClick() }
     }
 
     private fun bindQuickAction(
