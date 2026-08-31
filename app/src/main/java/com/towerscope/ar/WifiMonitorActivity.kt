@@ -13,7 +13,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.network.ChannelPlanner
 import com.towerscope.ar.network.InterferenceLevel
+import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.network.WifiMonitor
 import com.towerscope.ar.network.WifiScanAp
 import com.towerscope.ar.ui.SystemBars
@@ -39,11 +41,14 @@ class WifiMonitorActivity : AppCompatActivity() {
     private lateinit var overlapSummary: TextView
     private lateinit var interferenceLevel: TextView
     private lateinit var interferenceHints: TextView
+    private lateinit var plannerStatus: TextView
+    private lateinit var plannerResult: TextView
     private lateinit var scanStatus: TextView
     private lateinit var scanAdapter: WifiScanAdapter
     private lateinit var scanButton: MaterialButton
     private var scanJob: Job? = null
     private var latestScan: List<WifiScanAp> = emptyList()
+    private var lastPlannerReport = ""
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -66,7 +71,8 @@ class WifiMonitorActivity : AppCompatActivity() {
         ToolScaffold.bind(
             activity = this,
             titleRes = R.string.home_job_wifi,
-            subtitleRes = R.string.home_job_wifi_sub
+            subtitleRes = R.string.home_job_wifi_sub,
+            onShare = { share() }
         )
         monitor = WifiMonitor(this)
 
@@ -78,6 +84,8 @@ class WifiMonitorActivity : AppCompatActivity() {
         overlapSummary = findViewById(R.id.wifiOverlapSummary)
         interferenceLevel = findViewById(R.id.wifiInterferenceLevel)
         interferenceHints = findViewById(R.id.wifiInterferenceHints)
+        plannerStatus = findViewById(R.id.wifiPlannerStatus)
+        plannerResult = findViewById(R.id.wifiPlannerResult)
         scanStatus = findViewById(R.id.wifiScanStatus)
         scanButton = findViewById(R.id.wifiScanButton)
 
@@ -182,6 +190,43 @@ class WifiMonitorActivity : AppCompatActivity() {
             )
         )
         interferenceHints.text = analysis.interferenceHints.joinToString("\n")
+        updateChannelPlanner(annotated)
+    }
+
+    private fun updateChannelPlanner(scan: List<WifiScanAp>) {
+        if (scan.isEmpty()) {
+            plannerStatus.setText(R.string.wifi_planner_waiting)
+            plannerResult.text = "—"
+            lastPlannerReport = ""
+            return
+        }
+        val report = ChannelPlanner.analyze(scan)
+        lastPlannerReport = ChannelPlanner.formatReport(report)
+        plannerResult.text = lastPlannerReport
+        val best = report.best5 ?: report.best24 ?: report.best6
+        plannerStatus.text = best?.let {
+            "Best: ch ${it.channel} (${it.band})"
+        } ?: getString(R.string.wifi_planner_waiting)
+    }
+
+    private fun share() {
+        if (lastPlannerReport.isBlank()) return
+        val link = monitor.currentLink()
+        val header = buildString {
+            append("Connected: ")
+            append(ssidLabel.text)
+            append("  ·  ")
+            append(rssiLabel.text)
+            if (link.channel != null) {
+                append("  ·  ch ")
+                append(link.channel)
+            }
+        }
+        TestResultExport.shareText(
+            this,
+            "Wi‑Fi survey",
+            "$header\n\n$lastPlannerReport"
+        )
     }
 
     private fun ensureScanPermissionAndStart() {

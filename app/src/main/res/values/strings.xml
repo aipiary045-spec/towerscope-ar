@@ -43,8 +43,9 @@
     <string name="home_job_locate_sub">Choose location · pin or GPS</string>
     <string name="home_job_los">Line of sight</string>
     <string name="home_job_los_sub">Clearance · terrain profile</string>
-    <string name="home_job_wifi">Wi‑Fi signal</string>
-    <string name="home_job_wifi_sub">Live channel · overlap · RF hints</string>
+    <string name="home_job_wifi">Wi‑Fi survey</string>
+    <string name="home_job_wifi_sub">Live signal · channel planner · overlap · RF hints</string>
+    <string name="wifi_planner_waiting">Scan nearby APs for channel recommendations</string>
     <string name="home_job_speed">Speed test</string>
     <string name="home_job_speed_sub">Download · upload · latency · bufferbloat</string>
     <string name="speed_run_test">Run test</string>

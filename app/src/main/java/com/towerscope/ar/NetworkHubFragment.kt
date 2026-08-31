@@ -34,10 +34,6 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
             R.string.home_job_wifi, R.string.home_job_wifi_sub) {
             startActivity(Intent(requireContext(), WifiMonitorActivity::class.java))
         }
-        bindTile(view, R.id.hubChannelRow, R.drawable.ic_layers, R.color.accent_yellow,
-            R.string.home_job_channel_plan, R.string.home_job_channel_plan_sub) {
-            startActivity(Intent(requireContext(), ChannelPlannerActivity::class.java))
-        }
         bindTile(view, R.id.hubWalkRow, R.drawable.ic_person, R.color.accent_teal,
             R.string.home_job_signal_walk, R.string.home_job_signal_walk_sub) {
             startActivity(Intent(requireContext(), SignalWalkActivity::class.java))
