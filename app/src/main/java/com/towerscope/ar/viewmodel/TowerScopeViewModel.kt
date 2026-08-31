@@ -122,6 +122,8 @@ data class TowerUiState(
     val sourceName: String? = null,
     /** Epoch ms when tower data was last imported / saved. 0 = unknown. */
     val towersUpdatedAtMs: Long = 0L,
+    /** Incremented after import so Locate map can fit bounds to new sites. */
+    val mapFitSitesRequestId: Long = 0L,
     val statusMessage: String? = null,
     val errorMessage: String? = null,
     val isLoadingFile: Boolean = false
@@ -556,6 +558,39 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         )
         prefs.edit().putFloat(KEY_MAX_DISTANCE, clamped).apply()
         _uiState.update { it.copy(maxDistanceMeters = clamped) }
+    }
+
+    /** One-tap field defaults: imperial, dark, max range, 5.8 GHz link. */
+    fun applyFieldPreset() {
+        val theme = HudTheme.DARK
+        prefs.edit()
+            .putString(KEY_HUD_THEME, theme.name)
+            .putString(KEY_DISTANCE_UNITS, DistanceUnitSystem.IMPERIAL.name)
+            .putString(KEY_COORD_FORMAT, CoordinateFormat.DECIMAL.name)
+            .putFloat(KEY_MAX_DISTANCE, TowerUiState.MAX_DISTANCE_METERS)
+            .putFloat(KEY_FREQUENCY_GHZ, TowerUiState.DEFAULT_FREQUENCY_GHZ)
+            .putFloat(KEY_CPE_ANTENNA_AGL, TowerUiState.DEFAULT_CPE_ANTENNA_AGL_METERS)
+            .apply()
+        AppTheme.apply(theme)
+        DisplayUnits.apply(DistanceUnitSystem.IMPERIAL, CoordinateFormat.DECIMAL)
+        _uiState.update {
+            it.copy(
+                hudTheme = theme,
+                distanceUnitSystem = DistanceUnitSystem.IMPERIAL,
+                coordinateFormat = CoordinateFormat.DECIMAL,
+                maxDistanceMeters = TowerUiState.MAX_DISTANCE_METERS,
+                frequencyGhz = TowerUiState.DEFAULT_FREQUENCY_GHZ,
+                cpeAntennaAglMeters = TowerUiState.DEFAULT_CPE_ANTENNA_AGL_METERS,
+                statusMessage = "Field preset applied"
+            )
+        }
+    }
+
+    fun consumeMapFitSitesRequest(): Long {
+        val id = _uiState.value.mapFitSitesRequestId
+        if (id == 0L) return 0L
+        _uiState.update { it.copy(mapFitSitesRequestId = 0L) }
+        return id
     }
 
     fun setSearchQuery(query: String) {
@@ -1252,6 +1287,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                             selectedTowerId = null,
                             sourceName = name,
                             towersUpdatedAtMs = fileStore.lastUpdatedEpochMs(),
+                            mapFitSitesRequestId = System.currentTimeMillis(),
                             statusMessage = "Loaded ${towers.size} sites from $name (saved)",
                             isLoadingFile = false
                         )

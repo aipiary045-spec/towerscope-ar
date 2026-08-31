@@ -183,7 +183,14 @@ class LosProfilesActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
         })
 
-        findViewById<MaterialButton>(R.id.losRangeHomeButton).setOnClickListener { finish() }
+        findViewById<MaterialButton>(R.id.losRangeHomeButton).setOnClickListener {
+            startActivity(MainHostActivity.intent(this, com.towerscope.ar.ui.BottomNavTab.HOME))
+            finish()
+        }
+        findViewById<MaterialButton>(R.id.losRangeCancelButton).setOnClickListener {
+            viewModel.clearLosRangeProfiles()
+            startedScan = false
+        }
         findViewById<MaterialButton>(R.id.losRangeRefreshButton).setOnClickListener {
             startedScan = false
             maybeStartScan(force = true)
@@ -195,6 +202,7 @@ class LosProfilesActivity : AppCompatActivity() {
                     locationSourceChip.render(state, this@LosProfilesActivity)
                     subtitle.text = "Heat map button / tap row · long-press details"
                     status.text = state.losRangeStatus.orEmpty()
+                    findViewById<MaterialButton>(R.id.losRangeCancelButton).isVisible = state.losRangeLoading
                     linkSettingsSummary.text = String.format(
                         Locale.US,
                         "%.1f GHz · CPE %.0f m · Tx %.0f · AP %.0f · CPE %.0f dBi",

@@ -39,6 +39,14 @@
             android:textSize="12sp"
             android:visibility="gone" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/settingsFieldPresetButton"
+            style="@style/Widget.TowerScope.Button.Primary"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="14dp"
+            android:text="@string/settings_field_preset" />
+
         <!-- Appearance -->
         <LinearLayout
             android:layout_width="match_parent"

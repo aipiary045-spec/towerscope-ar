@@ -13,6 +13,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.towerscope.ar.network.BufferbloatRating
 import com.towerscope.ar.network.BufferbloatTest
+import com.towerscope.ar.network.NetworkSession
 import com.towerscope.ar.network.SpeedPhase
 import com.towerscope.ar.network.SpeedProgress
 import com.towerscope.ar.network.SpeedTestClient
@@ -208,6 +209,14 @@ class SpeedTestActivity : AppCompatActivity() {
                     "Done · ${result.serverLabel} · ${parts.joinToString(" · ")}"
                 }
                 lastReport = formatSpeedReport(result)
+                if (result.downloadMbps.isFinite() || result.uploadMbps.isFinite()) {
+                    NetworkSession.recordSpeedTest(
+                        this@SpeedTestActivity,
+                        result.downloadMbps,
+                        result.uploadMbps,
+                        result.latencyMs
+                    )
+                }
 
                 if (withBufferbloat) {
                     runBufferbloatCheck()

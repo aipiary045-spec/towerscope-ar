@@ -20,7 +20,7 @@
         android:theme="@style/Theme.TowerScopeAR">
 
         <activity
-            android:name=".HomeActivity"
+            android:name=".MainHostActivity"
             android:exported="true"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TowerScopeAR">
@@ -29,6 +29,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".HomeActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
             android:name=".NetworkHubActivity"

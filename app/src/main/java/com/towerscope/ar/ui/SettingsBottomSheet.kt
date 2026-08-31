@@ -152,6 +152,11 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
             startActivity(Intent(requireContext(), DataMenuActivity::class.java))
             dismiss()
         }
+        view.findViewById<MaterialButton>(R.id.settingsFieldPresetButton).setOnClickListener {
+            viewModel.applyFieldPreset()
+            status.text = getString(R.string.settings_field_preset)
+            status.isVisible = true
+        }
         themeButton.setOnClickListener {
             viewModel.cycleHudTheme()
             dismissAllowingStateLoss()

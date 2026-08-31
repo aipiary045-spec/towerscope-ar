@@ -50,6 +50,18 @@
                 android:textSize="14sp" />
 
             <TextView
+                android:id="@+id/networkHubResumeLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_metric_tile"
+                android:fontFamily="@font/source_sans3_regular"
+                android:padding="10dp"
+                android:textColor="@color/text_muted"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"

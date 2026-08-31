@@ -17,6 +17,7 @@ import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.MultiPingSnapshot
 import com.towerscope.ar.network.PingHistory
 import com.towerscope.ar.network.PingHostStats
+import com.towerscope.ar.network.NetworkSession
 import com.towerscope.ar.network.PingMonitor
 import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.ui.SystemBars
@@ -144,6 +145,11 @@ class PingMonitorActivity : AppCompatActivity() {
         if (showSummary && lastSnapshot != null) {
             val elapsed = (System.currentTimeMillis() - startedAtMs) / 1000.0
             lastReport = formatReport(lastSnapshot!!.hosts, elapsed)
+            NetworkSession.recordPing(
+                this,
+                hostInput.text?.toString().orEmpty(),
+                lastReport.lines().drop(2).take(2).joinToString(" · ")
+            )
             statusLabel.text = "Finished · ${String.format(Locale.US, "%.0fs", elapsed)}"
             logLines.addFirst("——— Summary ———")
             logLines.addFirst(lastReport)

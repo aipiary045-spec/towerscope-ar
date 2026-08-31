@@ -101,6 +101,8 @@
 
     <string name="tool_share_results">Share</string>
     <string name="tool_back">Back</string>
+    <string name="settings_field_preset">Apply field defaults</string>
+    <string name="los_cancel_ranking">Cancel</string>
     <string name="tool_run">Run test</string>
     <string name="tool_stop">Stop</string>
     <string name="tool_refresh">Refresh</string>

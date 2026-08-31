@@ -160,6 +160,16 @@
                     android:text="@string/home_gps_waiting"
                     android:textColor="@color/text_dim"
                     android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/homeNetworkStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/source_sans3_regular"
+                    android:textColor="@color/text_muted"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <!-- Import CTA when no sites -->

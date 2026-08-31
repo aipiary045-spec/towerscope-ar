@@ -65,6 +65,7 @@ class MapActivity : AppCompatActivity() {
     private val sectorPolygons = mutableListOf<Polygon>()
     private var lastChipSignature: String? = null
     private var hasFittedOnce = false
+    private var lastMapFitRequestId = 0L
     private var lastSectorTowerId: String? = null
     private var lastActiveSector: CardinalSector? = null
     private var lastSectorRadiusMeters: Double = -1.0
@@ -327,6 +328,14 @@ class MapActivity : AppCompatActivity() {
         locationSourceChip.render(state, this)
         renderMapOverlays(state)
         snapToCustomLocationIfNeeded(state)
+
+        if (state.mapFitSitesRequestId != 0L &&
+            state.mapFitSitesRequestId != lastMapFitRequestId &&
+            state.towers.isNotEmpty()
+        ) {
+            lastMapFitRequestId = state.mapFitSitesRequestId
+            fitAllSites(animated = true)
+        }
 
         if (!hasFittedOnce && state.userLocation != null && focus != null) {
             fitToYouAndFocus(animated = false)
@@ -647,6 +656,26 @@ class MapActivity : AppCompatActivity() {
         } else {
             existing.setPoints(points)
         }
+    }
+
+    private fun fitAllSites(animated: Boolean = true) {
+        val state = viewModel.uiState.value
+        val points = state.towers.map { GeoPoint(it.latitude, it.longitude) }
+        if (points.isEmpty()) return
+        if (points.size == 1) {
+            mapView.controller.animateTo(points.first())
+            mapView.controller.setZoom(13.0)
+        } else {
+            val box = BoundingBox.fromGeoPoints(points)
+            mapView.post {
+                mapView.zoomToBoundingBox(
+                    box.increaseByScale(1.25f),
+                    animated,
+                    (64 * resources.displayMetrics.density).toInt()
+                )
+            }
+        }
+        hasFittedOnce = true
     }
 
     private fun fitToYouAndFocus(animated: Boolean = true) {

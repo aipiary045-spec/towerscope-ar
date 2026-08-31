@@ -156,13 +156,18 @@ class CompassRadarView @JvmOverloads constructor(
     private var towerBitmapTeal: Bitmap? = null
     private var towerBitmapYellow: Bitmap? = null
     private var frameLoopActive = false
+    private var lastDrawNanos = 0L
+    private val minDrawIntervalNanos = 50_000_000L // ~20 fps cap
 
     private val choreographer = Choreographer.getInstance()
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
             if (!frameLoopActive || !isAttachedToWindow) return
             stepHeadingTowardTarget()
-            invalidate()
+            if (frameTimeNanos - lastDrawNanos >= minDrawIntervalNanos) {
+                lastDrawNanos = frameTimeNanos
+                invalidate()
+            }
             choreographer.postFrameCallback(this)
         }
     }

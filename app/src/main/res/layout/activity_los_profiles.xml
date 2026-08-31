@@ -238,12 +238,30 @@
         android:paddingTop="10dp"
         android:paddingBottom="12dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/losRangeRefreshButton"
-            style="@style/Widget.TowerScope.Button.Ghost"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:text="Refresh" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/losRangeCancelButton"
+                style="@style/Widget.TowerScope.Button.Ghost"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:text="@string/los_cancel_ranking"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/losRangeRefreshButton"
+                style="@style/Widget.TowerScope.Button.Ghost"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="Refresh" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/losRangeHomeButton"
