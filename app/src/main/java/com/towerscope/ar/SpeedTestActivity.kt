@@ -79,11 +79,7 @@ class SpeedTestActivity : AppCompatActivity() {
             activity = this,
             titleRes = R.string.home_job_speed,
             subtitleRes = R.string.home_job_speed_sub,
-            onShare = { share() },
-            onBack = {
-                runningJob?.cancel()
-                finish()
-            }
+            onShare = { share() }
         )
 
         buildServerPicker()

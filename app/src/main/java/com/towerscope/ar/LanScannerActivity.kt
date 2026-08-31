@@ -87,11 +87,7 @@ class LanScannerActivity : AppCompatActivity() {
             activity = this,
             titleRes = R.string.home_job_lan_scan,
             subtitleRes = R.string.home_job_lan_scan_sub,
-            onShare = { share() },
-            onBack = {
-                scanJob?.cancel()
-                finish()
-            }
+            onShare = { share() }
         )
 
         presetSpinner.adapter = ArrayAdapter(

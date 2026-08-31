@@ -1,12 +1,13 @@
 package com.towerscope.ar.ui
 
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.R
 
 /**
- * Shared title + back chrome for field tool screens.
+ * Shared title chrome for field tool screens. Share actions only — use system back to exit.
  */
 object ToolScaffold {
 
@@ -14,31 +15,25 @@ object ToolScaffold {
         activity: AppCompatActivity,
         titleRes: Int,
         subtitleRes: Int? = null,
-        onShare: (() -> Unit)? = null,
-        onBack: (() -> Unit)? = null
+        onShare: (() -> Unit)? = null
     ) {
         activity.findViewById<TextView>(R.id.toolTitle)?.setText(titleRes)
         subtitleRes?.let { res ->
             activity.findViewById<TextView>(R.id.toolSubtitle)?.apply {
                 setText(res)
-                visibility = android.view.View.VISIBLE
+                visibility = View.VISIBLE
             }
         }
-        val actions = activity.findViewById<android.view.View>(R.id.toolActionsBar)
-        val backButton = actions?.findViewById<MaterialButton>(R.id.toolBackButton)
-            ?: activity.findViewById(R.id.toolBackButton)
+        val actions = activity.findViewById<View>(R.id.toolActionsBar)
         val shareButton = actions?.findViewById<MaterialButton>(R.id.toolShareButton)
             ?: activity.findViewById(R.id.toolShareButton)
-        backButton?.setOnClickListener {
-            if (onBack != null) onBack() else activity.finish()
-        }
-        shareButton?.apply {
-            if (onShare != null) {
-                visibility = android.view.View.VISIBLE
-                setOnClickListener { onShare() }
-            } else {
-                visibility = android.view.View.GONE
-            }
+        if (onShare != null && shareButton != null) {
+            actions?.visibility = View.VISIBLE
+            shareButton.visibility = View.VISIBLE
+            shareButton.setOnClickListener { onShare() }
+        } else {
+            actions?.visibility = View.GONE
+            shareButton?.visibility = View.GONE
         }
     }
 }

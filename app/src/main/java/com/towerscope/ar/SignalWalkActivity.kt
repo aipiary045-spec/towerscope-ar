@@ -65,11 +65,7 @@ class SignalWalkActivity : AppCompatActivity() {
             activity = this,
             titleRes = R.string.home_job_signal_walk,
             subtitleRes = R.string.home_job_signal_walk_sub,
-            onShare = { share() },
-            onBack = {
-                stopRecording()
-                finish()
-            }
+            onShare = { share() }
         )
 
         toggleButton.setOnClickListener { toggleRecording() }

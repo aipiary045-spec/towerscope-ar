@@ -8,18 +8,7 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/toolShareButton"
         style="@style/Widget.TowerScope.Button.Ghost"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="52dp"
-        android:layout_marginEnd="6dp"
-        android:layout_weight="1"
         android:text="@string/tool_share_results" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/toolBackButton"
-        style="@style/Widget.TowerScope.Button.Ghost"
-        android:layout_width="0dp"
-        android:layout_height="52dp"
-        android:layout_marginStart="6dp"
-        android:layout_weight="1"
-        android:text="@string/tool_back" />
 </LinearLayout>

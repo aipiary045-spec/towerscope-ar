@@ -57,11 +57,7 @@ class NetworkDiagnoseActivity : AppCompatActivity() {
         ToolScaffold.bind(
             activity = this,
             titleRes = R.string.home_job_diagnose,
-            subtitleRes = R.string.home_job_diagnose_sub,
-            onBack = {
-                job?.cancel()
-                finish()
-            }
+            subtitleRes = R.string.home_job_diagnose_sub
         )
 
         runButton.setOnClickListener { startDiagnose() }
