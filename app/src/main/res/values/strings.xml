@@ -104,6 +104,7 @@
     <string name="settings_field_preset">Apply field defaults</string>
     <string name="los_check_title">Check LOS</string>
     <string name="los_check_subtitle">Rank APs by Fresnel clearance and estimated signal</string>
+    <string name="los_cancel_ranking">Cancel</string>
     <string name="tool_run">Run test</string>
     <string name="tool_stop">Stop</string>
     <string name="tool_refresh">Refresh</string>
