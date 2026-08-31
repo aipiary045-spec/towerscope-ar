@@ -29,8 +29,6 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
     private val viewModel: TowerScopeViewModel by activityViewModels()
 
     private lateinit var sitesSummary: TextView
-    private lateinit var focusTitle: TextView
-    private lateinit var focusMeta: TextView
     private lateinit var nearestList: TextView
     private lateinit var losSummary: TextView
     private lateinit var locationSourceChip: LocationSourceChip
@@ -51,8 +49,6 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
         super.onViewCreated(view, savedInstanceState)
 
         sitesSummary = view.findViewById(R.id.installDashboardSitesSummary)
-        focusTitle = view.findViewById(R.id.installDashboardFocusTitle)
-        focusMeta = view.findViewById(R.id.installDashboardFocusMeta)
         nearestList = view.findViewById(R.id.installDashboardNearestList)
         losSummary = view.findViewById(R.id.installDashboardLosSummary)
 
@@ -146,27 +142,6 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
         sitesSummary.text = when {
             towerCount == 0 -> getString(R.string.install_dashboard_no_sites)
             else -> getString(R.string.install_dashboard_sites_summary, towerCount, inRange)
-        }
-
-        val focus = state.focusTower()
-        if (focus == null) {
-            focusTitle.text = when {
-                towerCount == 0 -> getString(R.string.install_dashboard_focus_none)
-                state.positioningLocation() == null -> getString(R.string.install_dashboard_focus_waiting)
-                inRange == 0 -> getString(R.string.install_dashboard_focus_out_of_range)
-                else -> getString(R.string.install_dashboard_focus_none)
-            }
-            focusMeta.text = ""
-        } else {
-            focusTitle.text = focus.name
-            val distance = state.distanceTo(focus)
-            val bearing = state.bearingTo(focus)
-            focusMeta.text = when {
-                distance != null && bearing != null ->
-                    "${GeoUtils.formatDistance(distance)}  ·  Az ${GeoUtils.formatAzimuthPadded(bearing)}"
-                distance != null -> GeoUtils.formatDistance(distance)
-                else -> ""
-            }
         }
 
         val nearest = state.nearestMatches(limit = 3)

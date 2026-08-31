@@ -59,38 +59,6 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:letterSpacing="0.1"
-                android:text="@string/install_dashboard_focus_label"
-                android:textAllCaps="true"
-                android:textColor="@color/text_muted"
-                android:textSize="11sp" />
-
-            <TextView
-                android:id="@+id/installDashboardFocusTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_metric_tile"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:padding="14dp"
-                android:textColor="@color/text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/installDashboardFocusMeta"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:fontFamily="@font/source_sans3_regular"
-                android:textColor="@color/accent_teal"
-                android:textSize="14sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:fontFamily="@font/source_sans3_semibold"
                 android:letterSpacing="0.1"

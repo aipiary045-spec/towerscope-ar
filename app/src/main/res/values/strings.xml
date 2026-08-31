@@ -155,10 +155,6 @@
     <string name="install_dashboard_hub_sub">Pin · nearest AP · LOS pick</string>
     <string name="install_dashboard_no_sites">No sites loaded — import KML/KMZ to start</string>
     <string name="install_dashboard_sites_summary">%1$d sites loaded · %2$d in range</string>
-    <string name="install_dashboard_focus_label">Focus site</string>
-    <string name="install_dashboard_focus_none">No focus site selected</string>
-    <string name="install_dashboard_focus_waiting">Waiting for GPS or custom pin</string>
-    <string name="install_dashboard_focus_out_of_range">No AP in saved range</string>
     <string name="install_dashboard_nearest_label">Nearest in range</string>
     <string name="install_dashboard_nearest_empty">Import sites to see nearest APs</string>
     <string name="install_dashboard_nearest_waiting">Waiting for position…</string>
