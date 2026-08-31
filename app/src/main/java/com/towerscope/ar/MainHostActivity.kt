@@ -33,6 +33,11 @@ class MainHostActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        BottomNav.bindHost(this, currentTab())
+    }
+
     fun showTab(tab: BottomNavTab, animate: Boolean = true) {
         val tag = tab.name
         val current = supportFragmentManager.findFragmentById(R.id.mainHostContainer)

@@ -24,10 +24,15 @@ object ToolScaffold {
                 visibility = android.view.View.VISIBLE
             }
         }
-        activity.findViewById<MaterialButton>(R.id.toolBackButton)?.setOnClickListener {
+        val actions = activity.findViewById<android.view.View>(R.id.toolActionsBar)
+        val backButton = actions?.findViewById<MaterialButton>(R.id.toolBackButton)
+            ?: activity.findViewById(R.id.toolBackButton)
+        val shareButton = actions?.findViewById<MaterialButton>(R.id.toolShareButton)
+            ?: activity.findViewById(R.id.toolShareButton)
+        backButton?.setOnClickListener {
             if (onBack != null) onBack() else activity.finish()
         }
-        activity.findViewById<MaterialButton>(R.id.toolShareButton)?.apply {
+        shareButton?.apply {
             if (onShare != null) {
                 visibility = android.view.View.VISIBLE
                 setOnClickListener { onShare() }

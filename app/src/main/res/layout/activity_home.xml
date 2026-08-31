@@ -291,12 +291,4 @@
                 android:layout_marginTop="10dp" />
         </LinearLayout>
     </ScrollView>
-
-    <FrameLayout
-        android:id="@+id/homeBottomNav"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <include layout="@layout/include_bottom_nav" />
-    </FrameLayout>
 </LinearLayout>

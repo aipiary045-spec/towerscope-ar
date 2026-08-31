@@ -61,7 +61,7 @@ object BottomNav {
     }
 
     fun bindHost(activity: MainHostActivity, selected: BottomNavTab) {
-        val root = activity.findViewById<android.view.View>(R.id.bottomNavBar) ?: return
+        val root = activity.findViewById<android.view.View>(R.id.mainHostBottomNav) ?: return
         val active = ContextCompat.getColor(activity, R.color.accent_teal)
         val idle = ContextCompat.getColor(activity, R.color.text_dim)
 

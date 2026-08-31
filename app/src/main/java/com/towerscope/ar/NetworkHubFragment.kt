@@ -14,7 +14,6 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        view.findViewById<View>(R.id.networkBottomNav)?.isVisible = false
 
         val resumeLabel = view.findViewById<TextView>(R.id.networkHubResumeLabel)
         val ctx = requireContext()

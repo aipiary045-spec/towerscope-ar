@@ -49,7 +49,6 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        view.findViewById<View>(R.id.installBottomNav)?.isVisible = false
 
         sitesSummary = view.findViewById(R.id.installDashboardSitesSummary)
         focusTitle = view.findViewById(R.id.installDashboardFocusTitle)

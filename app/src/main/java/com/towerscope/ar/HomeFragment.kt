@@ -49,7 +49,6 @@ class HomeFragment : Fragment(R.layout.activity_home) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        view.findViewById<View>(R.id.homeBottomNav)?.isVisible = false
         networkStatus = view.findViewById(R.id.homeNetworkStatus)
 
         sitesCount = view.findViewById(R.id.homeSitesCount)
