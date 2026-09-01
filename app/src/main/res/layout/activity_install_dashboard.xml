@@ -6,7 +6,8 @@
     android:background="@drawable/bg_topo_screen"
     android:orientation="vertical"
     android:paddingHorizontal="@dimen/screen_padding"
-    android:paddingTop="12dp">
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp">
 
     <TextView
         android:layout_width="match_parent"
@@ -20,7 +21,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="4dp"
         android:fontFamily="@font/source_sans3_regular"
         android:text="@string/install_dashboard_sub"
         android:textColor="@color/text_muted"
@@ -31,7 +32,33 @@
         layout="@layout/include_location_source_chip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="10dp" />
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <include
+                android:id="@+id/installTabOverview"
+                layout="@layout/item_wfm_tab"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <include
+                android:id="@+id/installTabTools"
+                layout="@layout/item_wfm_tab"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <ScrollView
         android:layout_width="match_parent"
@@ -40,134 +67,138 @@
         android:layout_weight="1"
         android:clipToPadding="false">
 
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="8dp">
-
-            <TextView
-                android:id="@+id/installDashboardSitesSummary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_wfm_group_card"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:padding="14dp"
-                android:textColor="@color/accent_teal"
-                android:textSize="15sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:letterSpacing="0.1"
-                android:text="@string/install_dashboard_nearest_label"
-                android:textAllCaps="true"
-                android:textColor="@color/text_muted"
-                android:textSize="11sp" />
-
-            <TextView
-                android:id="@+id/installDashboardNearestList"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_wfm_group_card"
-                android:fontFamily="monospace"
-                android:lineSpacingExtra="4dp"
-                android:padding="14dp"
-                android:textColor="@color/text_primary"
-                android:textIsSelectable="true"
-                android:textSize="12sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:letterSpacing="0.1"
-                android:text="@string/install_dashboard_los_label"
-                android:textAllCaps="true"
-                android:textColor="@color/text_muted"
-                android:textSize="11sp" />
-
-            <TextView
-                android:id="@+id/installDashboardLosSummary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_wfm_group_card"
-                android:fontFamily="@font/source_sans3_regular"
-                android:lineSpacingExtra="3dp"
-                android:padding="14dp"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp" />
+            android:layout_height="wrap_content">
 
             <LinearLayout
+                android:id="@+id/installPanelOverview"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="horizontal">
+                android:orientation="vertical"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:id="@+id/installDashboardSitesSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_field_card"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:padding="16dp"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="@string/install_dashboard_nearest_label"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp" />
+
+                <TextView
+                    android:id="@+id/installDashboardNearestList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_wfm_group_card"
+                    android:fontFamily="@font/source_sans3_regular"
+                    android:lineSpacingExtra="4dp"
+                    android:padding="14dp"
+                    android:textColor="@color/text_primary"
+                    android:textIsSelectable="true"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="@string/install_dashboard_los_label"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp" />
+
+                <TextView
+                    android:id="@+id/installDashboardLosSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_wfm_group_card"
+                    android:fontFamily="@font/source_sans3_regular"
+                    android:lineSpacingExtra="3dp"
+                    android:padding="14dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/installPanelTools"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="8dp"
+                android:visibility="gone">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/installDashboardCompassButton"
                     style="@style/Widget.TowerScope.Button.Primary"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="52dp"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
                     android:text="@string/home_job_aim" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/installDashboardLocateButton"
-                    style="@style/Widget.TowerScope.Button.Ghost"
-                    android:layout_width="0dp"
-                    android:layout_height="52dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1"
-                    android:text="@string/home_job_locate" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_wfm_group_card"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/installToolLocate"
+                        layout="@layout/item_hub_tool_row_inline" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="66dp"
+                        android:background="@color/divider_subtle" />
+
+                    <include
+                        android:id="@+id/installToolLos"
+                        layout="@layout/item_hub_tool_row_inline" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="66dp"
+                        android:background="@color/divider_subtle" />
+
+                    <include
+                        android:id="@+id/installToolRefreshLos"
+                        layout="@layout/item_hub_tool_row_inline" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="66dp"
+                        android:background="@color/divider_subtle" />
+
+                    <include
+                        android:id="@+id/installToolSiteBrowser"
+                        layout="@layout/item_hub_tool_row_inline" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="66dp"
+                        android:background="@color/divider_subtle" />
+
+                    <include
+                        android:id="@+id/installToolImport"
+                        layout="@layout/item_hub_tool_row_inline" />
+                </LinearLayout>
             </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/installDashboardLosButton"
-                style="@style/Widget.TowerScope.Button.Ghost"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="8dp"
-                android:text="@string/home_job_los" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/installDashboardRefreshLosButton"
-                style="@style/Widget.TowerScope.Button.Ghost"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="8dp"
-                android:text="@string/install_dashboard_refresh_los" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/installDashboardSiteBrowserButton"
-                    style="@style/Widget.TowerScope.Button.Ghost"
-                    android:layout_width="0dp"
-                    android:layout_height="52dp"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
-                    android:text="@string/site_browser_title" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/installDashboardImportButton"
-                    style="@style/Widget.TowerScope.Button.Ghost"
-                    android:layout_width="0dp"
-                    android:layout_height="52dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1"
-                    android:text="@string/install_dashboard_import" />
-            </LinearLayout>
-        </LinearLayout>
+        </FrameLayout>
     </ScrollView>
 </LinearLayout>

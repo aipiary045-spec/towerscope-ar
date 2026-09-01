@@ -9,29 +9,36 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.towerscope.ar.network.ConnectionSnapshotCollector
 import com.towerscope.ar.network.NetworkSession
+import com.towerscope.ar.ui.NetworkTopologyBinder
+import com.towerscope.ar.ui.WfmSegmentTabs
 import kotlinx.coroutines.launch
 
 class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
 
+    private var connectionStatus: TextView? = null
+    private var connectionDetail: TextView? = null
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        connectionStatus = view.findViewById(R.id.hubConnectionLiveStatus)
+        connectionDetail = view.findViewById(R.id.hubConnectionLiveDetail)
+
+        view.findViewById<View>(R.id.hubTabConnection).findViewById<TextView>(R.id.wfmTabLabel)
+            .setText(R.string.hub_section_connection)
+        view.findViewById<View>(R.id.hubTabWifi).findViewById<TextView>(R.id.wfmTabLabel)
+            .setText(R.string.hub_tab_wifi_short)
+        view.findViewById<View>(R.id.hubTabLocal).findViewById<TextView>(R.id.wfmTabLabel)
+            .setText(R.string.hub_tab_local_short)
+        view.findViewById<View>(R.id.hubTabInternet).findViewById<TextView>(R.id.wfmTabLabel)
+            .setText(R.string.hub_section_internet)
+
+        WfmSegmentTabs.bindNetworkHub(view)
 
         val resumeLabel = view.findViewById<TextView>(R.id.networkHubResumeLabel)
-        val ctx = requireContext()
-        val resume = listOfNotNull(
-            NetworkSession.speedSummary(ctx)?.let { "Speed: $it" },
-            NetworkSession.pingSummary(ctx)?.let { "Ping: $it" }
-        ).joinToString("\n")
-        resumeLabel?.apply {
-            isVisible = resume.isNotBlank()
-            text = resume
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            val snapshot = com.towerscope.ar.network.ConnectionSnapshotCollector.collect(ctx, fetchPublicIp = false)
-            com.towerscope.ar.ui.NetworkTopologyBinder.bind(view, snapshot)
-        }
+        refreshResume(resumeLabel)
+        refreshTopology(view)
 
         bindTile(view, R.id.hubConnectionRow, R.drawable.ic_my_location, R.color.accent_teal,
             R.string.home_job_connection, R.string.home_job_connection_sub) {
@@ -64,6 +71,52 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
         bindTile(view, R.id.hubDiagnoseRow, R.drawable.ic_network_diagnose, R.color.accent_yellow,
             R.string.home_job_diagnose, R.string.home_job_diagnose_sub) {
             startActivity(Intent(requireContext(), NetworkDiagnoseActivity::class.java))
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        view?.let { root ->
+            refreshResume(root.findViewById(R.id.networkHubResumeLabel))
+            refreshTopology(root)
+        }
+    }
+
+    private fun refreshResume(label: TextView?) {
+        val ctx = context ?: return
+        val resume = listOfNotNull(
+            NetworkSession.speedSummary(ctx)?.let { "Speed: $it" },
+            NetworkSession.pingSummary(ctx)?.let { "Ping: $it" }
+        ).joinToString("\n")
+        label?.apply {
+            isVisible = resume.isNotBlank()
+            text = resume
+        }
+    }
+
+    private fun refreshTopology(root: View) {
+        val ctx = context ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val snapshot = ConnectionSnapshotCollector.collect(ctx, fetchPublicIp = false)
+            NetworkTopologyBinder.bind(root, snapshot)
+            connectionStatus?.text = when {
+                snapshot.isValidated -> "Connected · ${snapshot.linkType}"
+                snapshot.isConnected -> "Limited · ${snapshot.linkType}"
+                else -> "Not connected"
+            }
+            connectionDetail?.text = buildString {
+                snapshot.localIpv4?.let { append("Device $it") }
+                snapshot.gatewayIpv4?.let {
+                    if (isNotEmpty()) append("\n")
+                    append("Gateway $it")
+                }
+                snapshot.wifiSsid?.let {
+                    if (isNotEmpty()) append("\n")
+                    append("Wi‑Fi $it")
+                }
+                snapshot.wifiRssiDbm?.let { append(" · $it dBm") }
+                if (isEmpty()) append("Open Connection snapshot for full details")
+            }
         }
     }
 

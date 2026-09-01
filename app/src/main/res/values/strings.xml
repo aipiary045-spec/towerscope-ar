@@ -132,6 +132,10 @@
     <string name="hub_section_wifi_survey">Wi‑Fi survey</string>
     <string name="hub_section_local">Local network</string>
     <string name="hub_section_internet">Internet</string>
+    <string name="hub_tab_wifi_short">Wi‑Fi</string>
+    <string name="hub_tab_local_short">Local</string>
+    <string name="install_tab_overview">Overview</string>
+    <string name="install_tab_tools">Tools</string>
 
     <string name="home_job_connection">My connection</string>
     <string name="home_job_connection_sub">Link · gateway · DNS · public IP</string>

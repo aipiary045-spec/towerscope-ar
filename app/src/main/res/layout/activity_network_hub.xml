@@ -4,181 +4,254 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_topo_screen"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/screen_padding"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:text="@string/home_hub_network"
+        android:textColor="@color/text_primary"
+        android:textSize="28sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:fontFamily="@font/source_sans3_regular"
+        android:text="@string/home_hub_network_sub"
+        android:textColor="@color/text_muted"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/networkHubResumeLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_metric_tile"
+        android:fontFamily="@font/source_sans3_regular"
+        android:padding="12dp"
+        android:textColor="@color/accent_teal"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <include
+        layout="@layout/include_wifi_topology"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" />
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/networkHubTabStrip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <include
+                android:id="@+id/hubTabConnection"
+                layout="@layout/item_wfm_tab"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <include
+                android:id="@+id/hubTabWifi"
+                layout="@layout/item_wfm_tab"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp" />
+
+            <include
+                android:id="@+id/hubTabLocal"
+                layout="@layout/item_wfm_tab"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp" />
+
+            <include
+                android:id="@+id/hubTabInternet"
+                layout="@layout/item_wfm_tab"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:layout_weight="1"
         android:clipToPadding="false"
         android:fillViewport="true">
 
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="@dimen/screen_padding"
-            android:paddingTop="12dp"
-            android:paddingBottom="24dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:text="@string/home_hub_network"
-                android:textColor="@color/text_primary"
-                android:textSize="28sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:fontFamily="@font/source_sans3_regular"
-                android:text="@string/home_hub_network_sub"
-                android:textColor="@color/text_muted"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/networkHubResumeLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_metric_tile"
-                android:fontFamily="@font/source_sans3_regular"
-                android:padding="12dp"
-                android:textColor="@color/accent_teal"
-                android:textSize="12sp"
-                android:visibility="gone" />
-
-            <include
-                layout="@layout/include_wifi_topology"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:text="@string/hub_section_connection"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp" />
+            android:layout_height="wrap_content">
 
             <LinearLayout
+                android:id="@+id/hubPanelConnection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_wfm_group_card"
                 android:orientation="vertical">
 
-                <include
-                    android:id="@+id/hubConnectionRow"
-                    layout="@layout/item_hub_tool_row_inline" />
-            </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_field_card"
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:text="@string/hub_section_wifi_survey"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:letterSpacing="0.08"
+                        android:text="LIVE STATUS"
+                        android:textAllCaps="true"
+                        android:textColor="@color/text_dim"
+                        android:textSize="10sp" />
+
+                    <TextView
+                        android:id="@+id/hubConnectionLiveStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="Checking…"
+                        android:textColor="@color/accent_teal"
+                        android:textSize="18sp" />
+
+                    <TextView
+                        android:id="@+id/hubConnectionLiveDetail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/source_sans3_regular"
+                        android:lineSpacingExtra="3dp"
+                        android:text="—"
+                        android:textColor="@color/text_muted"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_wfm_group_card"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/hubConnectionRow"
+                        layout="@layout/item_hub_tool_row_inline" />
+                </LinearLayout>
+            </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/hubPanelWifi"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_wfm_group_card"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                <include
-                    android:id="@+id/hubWifiRow"
-                    layout="@layout/item_hub_tool_row_inline" />
-
-                <View
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="66dp"
-                    android:background="@color/divider_subtle" />
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_wfm_group_card"
+                    android:orientation="vertical">
 
-                <include
-                    android:id="@+id/hubWalkRow"
-                    layout="@layout/item_hub_tool_row_inline" />
+                    <include
+                        android:id="@+id/hubWifiRow"
+                        layout="@layout/item_hub_tool_row_inline" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="66dp"
+                        android:background="@color/divider_subtle" />
+
+                    <include
+                        android:id="@+id/hubWalkRow"
+                        layout="@layout/item_hub_tool_row_inline" />
+                </LinearLayout>
             </LinearLayout>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:text="@string/hub_section_local"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp" />
 
             <LinearLayout
+                android:id="@+id/hubPanelLocal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_wfm_group_card"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                <include
-                    android:id="@+id/hubLanRow"
-                    layout="@layout/item_hub_tool_row_inline" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_wfm_group_card"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/hubLanRow"
+                        layout="@layout/item_hub_tool_row_inline" />
+                </LinearLayout>
             </LinearLayout>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:text="@string/hub_section_internet"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp" />
 
             <LinearLayout
+                android:id="@+id/hubPanelInternet"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_wfm_group_card"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                <include
-                    android:id="@+id/hubSpeedRow"
-                    layout="@layout/item_hub_tool_row_inline" />
-
-                <View
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="66dp"
-                    android:background="@color/divider_subtle" />
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_wfm_group_card"
+                    android:orientation="vertical">
 
-                <include
-                    android:id="@+id/hubPingRow"
-                    layout="@layout/item_hub_tool_row_inline" />
+                    <include
+                        android:id="@+id/hubSpeedRow"
+                        layout="@layout/item_hub_tool_row_inline" />
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="66dp"
-                    android:background="@color/divider_subtle" />
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="66dp"
+                        android:background="@color/divider_subtle" />
 
-                <include
-                    android:id="@+id/hubDiagnoseRow"
-                    layout="@layout/item_hub_tool_row_inline" />
+                    <include
+                        android:id="@+id/hubPingRow"
+                        layout="@layout/item_hub_tool_row_inline" />
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="66dp"
-                    android:background="@color/divider_subtle" />
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="66dp"
+                        android:background="@color/divider_subtle" />
 
-                <include
-                    android:id="@+id/hubTraceRow"
-                    layout="@layout/item_hub_tool_row_inline" />
+                    <include
+                        android:id="@+id/hubDiagnoseRow"
+                        layout="@layout/item_hub_tool_row_inline" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="66dp"
+                        android:background="@color/divider_subtle" />
+
+                    <include
+                        android:id="@+id/hubTraceRow"
+                        layout="@layout/item_hub_tool_row_inline" />
+                </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
+        </FrameLayout>
     </ScrollView>
 </LinearLayout>

@@ -5,16 +5,17 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.towerscope.ar.ui.LocationSourceChip
+import com.towerscope.ar.ui.WfmSegmentTabs
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.LinkEstimate
@@ -59,23 +60,34 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
             onModeChanged = { maybeStartLosScan(force = true) }
         )
 
+        view.findViewById<View>(R.id.installTabOverview).findViewById<TextView>(R.id.wfmTabLabel)
+            .setText(R.string.install_tab_overview)
+        view.findViewById<View>(R.id.installTabTools).findViewById<TextView>(R.id.wfmTabLabel)
+            .setText(R.string.install_tab_tools)
+        WfmSegmentTabs.bindInstallHub(view)
+
         view.findViewById<View>(R.id.installDashboardCompassButton).setOnClickListener {
             startActivity(Intent(requireContext(), MainActivity::class.java))
         }
-        view.findViewById<View>(R.id.installDashboardLocateButton).setOnClickListener {
+        bindToolRow(view, R.id.installToolLocate, R.drawable.ic_satellite_map, R.color.accent_teal,
+            R.string.home_job_locate, R.string.home_job_locate_sub) {
             startActivity(Intent(requireContext(), MapActivity::class.java))
         }
-        view.findViewById<View>(R.id.installDashboardLosButton).setOnClickListener {
+        bindToolRow(view, R.id.installToolLos, R.drawable.ic_terrain_profile, R.color.accent_teal,
+            R.string.home_job_los, R.string.home_job_los_sub) {
             startActivity(Intent(requireContext(), LosProfilesActivity::class.java))
         }
-        view.findViewById<View>(R.id.installDashboardRefreshLosButton).setOnClickListener {
+        bindToolRow(view, R.id.installToolRefreshLos, R.drawable.ic_terrain_profile, R.color.accent_yellow,
+            R.string.install_dashboard_refresh_los, R.string.install_dashboard_los_label) {
             startedLosScan = false
             maybeStartLosScan(force = true)
         }
-        view.findViewById<View>(R.id.installDashboardSiteBrowserButton).setOnClickListener {
+        bindToolRow(view, R.id.installToolSiteBrowser, R.drawable.ic_compass_rose, R.color.accent_teal,
+            R.string.site_browser_title, R.string.site_browser_sub) {
             startActivity(Intent(requireContext(), SiteBrowserActivity::class.java))
         }
-        view.findViewById<View>(R.id.installDashboardImportButton).setOnClickListener {
+        bindToolRow(view, R.id.installToolImport, R.drawable.ic_install_pin, R.color.accent_yellow,
+            R.string.install_dashboard_import, R.string.home_import_hint) {
             startActivity(Intent(requireContext(), DataMenuActivity::class.java))
         }
 
@@ -104,6 +116,25 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
     override fun onPause() {
         viewModel.stopLocationUpdates()
         super.onPause()
+    }
+
+    private fun bindToolRow(
+        root: View,
+        rowId: Int,
+        icon: Int,
+        iconTint: Int,
+        title: Int,
+        subtitle: Int,
+        onClick: () -> Unit
+    ) {
+        val row = root.findViewById<View>(rowId)
+        row.findViewById<ImageView>(R.id.hubToolIcon).apply {
+            setImageResource(icon)
+            setColorFilter(ContextCompat.getColor(requireContext(), iconTint))
+        }
+        row.findViewById<TextView>(R.id.hubToolTitle).setText(title)
+        row.findViewById<TextView>(R.id.hubToolSubtitle).setText(subtitle)
+        row.setOnClickListener { onClick() }
     }
 
     private fun ensureLocationPermission() {
