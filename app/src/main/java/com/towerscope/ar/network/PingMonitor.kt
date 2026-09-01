@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
@@ -15,7 +16,6 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.coroutineContext
 import kotlin.math.max
 
 data class PingSample(
@@ -142,7 +142,7 @@ object PingMonitor {
         var sent = 0
         var received = 0
         var seq = 0
-        while (coroutineContext.isActive) {
+        while (isActive) {
             seq += 1
             sent += 1
             val sample = probe(effective, timeoutMs)
@@ -254,6 +254,25 @@ object PingMonitor {
             }
         }
     }.flowOn(Dispatchers.IO)
+
+    data class PingOnceResult(
+        val host: String,
+        val latencyMs: Double?,
+        val method: String,
+        val success: Boolean
+    )
+
+    suspend fun pingOnce(raw: String, timeoutMs: Int = 2_000): PingOnceResult =
+        withContext(Dispatchers.IO) {
+            val target = parseTarget(raw) ?: PingTarget("1.1.1.1")
+            val sample = probe(target, timeoutMs)
+            PingOnceResult(
+                host = target.display,
+                latencyMs = sample?.latencyMs,
+                method = sample?.method ?: methodLabel(target),
+                success = sample != null
+            )
+        }
 
     private fun methodLabel(target: PingTarget): String =
         if (target.tcpPort != null) "tcp/${target.tcpPort}" else "icmp"

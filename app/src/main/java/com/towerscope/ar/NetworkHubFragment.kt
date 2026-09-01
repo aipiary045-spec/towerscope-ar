@@ -8,22 +8,31 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import com.towerscope.ar.network.ConnectionSnapshotCollector
+import androidx.lifecycle.repeatOnLifecycle
 import com.towerscope.ar.network.NetworkSession
-import com.towerscope.ar.ui.NetworkTopologyBinder
+import com.towerscope.ar.network.WifiMonitor
+import com.towerscope.ar.ui.NetworkHubPreviews
 import com.towerscope.ar.ui.WfmSegmentTabs
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
 
-    private var connectionStatus: TextView? = null
-    private var connectionDetail: TextView? = null
+    private lateinit var connectionPreview: NetworkHubPreviews.PreviewViews
+    private lateinit var wifiPreview: NetworkHubPreviews.PreviewViews
+    private lateinit var localPreview: NetworkHubPreviews.PreviewViews
+    private lateinit var internetPreview: NetworkHubPreviews.PreviewViews
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        connectionStatus = view.findViewById(R.id.hubConnectionLiveStatus)
-        connectionDetail = view.findViewById(R.id.hubConnectionLiveDetail)
+
+        connectionPreview = NetworkHubPreviews.views(view, R.id.hubConnectionPreview)
+        wifiPreview = NetworkHubPreviews.views(view, R.id.hubWifiPreview)
+        localPreview = NetworkHubPreviews.views(view, R.id.hubLocalPreview)
+        internetPreview = NetworkHubPreviews.views(view, R.id.hubInternetPreview)
 
         view.findViewById<View>(R.id.hubTabConnection).findViewById<TextView>(R.id.wfmTabLabel)
             .setText(R.string.hub_section_connection)
@@ -36,9 +45,7 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
 
         WfmSegmentTabs.bindNetworkHub(view)
 
-        val resumeLabel = view.findViewById<TextView>(R.id.networkHubResumeLabel)
-        refreshResume(resumeLabel)
-        refreshTopology(view)
+        refreshResume(view.findViewById(R.id.networkHubResumeLabel))
 
         bindTile(view, R.id.hubConnectionRow, R.drawable.ic_my_location, R.color.accent_teal,
             R.string.home_job_connection, R.string.home_job_connection_sub) {
@@ -72,13 +79,25 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
             R.string.home_job_diagnose, R.string.home_job_diagnose_sub) {
             startActivity(Intent(requireContext(), NetworkDiagnoseActivity::class.java))
         }
-    }
 
-    override fun onResume() {
-        super.onResume()
-        view?.let { root ->
-            refreshResume(root.findViewById(R.id.networkHubResumeLabel))
-            refreshTopology(root)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                val wifiMonitor = WifiMonitor(requireContext())
+                while (isActive) {
+                    val ctx = context ?: break
+                    NetworkHubPreviews.refresh(
+                        root = view,
+                        context = ctx,
+                        wifiMonitor = wifiMonitor,
+                        connection = connectionPreview,
+                        wifi = wifiPreview,
+                        local = localPreview,
+                        internet = internetPreview
+                    )
+                    refreshResume(view.findViewById(R.id.networkHubResumeLabel))
+                    delay(4_000L)
+                }
+            }
         }
     }
 
@@ -91,32 +110,6 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
         label?.apply {
             isVisible = resume.isNotBlank()
             text = resume
-        }
-    }
-
-    private fun refreshTopology(root: View) {
-        val ctx = context ?: return
-        viewLifecycleOwner.lifecycleScope.launch {
-            val snapshot = ConnectionSnapshotCollector.collect(ctx, fetchPublicIp = false)
-            NetworkTopologyBinder.bind(root, snapshot)
-            connectionStatus?.text = when {
-                snapshot.isValidated -> "Connected · ${snapshot.linkType}"
-                snapshot.isConnected -> "Limited · ${snapshot.linkType}"
-                else -> "Not connected"
-            }
-            connectionDetail?.text = buildString {
-                snapshot.localIpv4?.let { append("Device $it") }
-                snapshot.gatewayIpv4?.let {
-                    if (isNotEmpty()) append("\n")
-                    append("Gateway $it")
-                }
-                snapshot.wifiSsid?.let {
-                    if (isNotEmpty()) append("\n")
-                    append("Wi‑Fi $it")
-                }
-                snapshot.wifiRssiDbm?.let { append(" · $it dBm") }
-                if (isEmpty()) append("Open Connection snapshot for full details")
-            }
         }
     }
 

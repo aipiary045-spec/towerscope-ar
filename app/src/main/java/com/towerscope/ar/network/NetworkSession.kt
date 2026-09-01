@@ -55,6 +55,22 @@ object NetworkSession {
         return if (summary.isNullOrBlank()) hosts else "$hosts · $summary"
     }
 
+    data class SpeedSnapshot(
+        val downloadMbps: Float,
+        val uploadMbps: Float,
+        val latencyMs: Float
+    )
+
+    fun lastSpeedSnapshot(context: Context): SpeedSnapshot? {
+        val p = prefs(context)
+        if (!p.contains(KEY_SPEED_AT)) return null
+        return SpeedSnapshot(
+            downloadMbps = p.getFloat(KEY_SPEED_DOWN, 0f),
+            uploadMbps = p.getFloat(KEY_SPEED_UP, 0f),
+            latencyMs = p.getFloat(KEY_SPEED_LATENCY, 0f)
+        )
+    }
+
     private const val KEY_SPEED_AT = "speed_at"
     private const val KEY_SPEED_DOWN = "speed_down"
     private const val KEY_SPEED_UP = "speed_up"

@@ -136,6 +136,23 @@
     <string name="hub_tab_local_short">Local</string>
     <string name="install_tab_overview">Overview</string>
     <string name="install_tab_tools">Tools</string>
+    <string name="hub_preview_connection_label">Live connection</string>
+    <string name="hub_preview_wifi_label">Wi‑Fi signal</string>
+    <string name="hub_preview_local_label">Local network</string>
+    <string name="hub_preview_internet_label">Internet reachability</string>
+    <string name="hub_preview_online">Online</string>
+    <string name="hub_preview_limited">Limited</string>
+    <string name="hub_preview_offline">Offline</string>
+    <string name="hub_preview_device_ip">Device %1$s</string>
+    <string name="hub_preview_gateway_ip">Gateway %1$s</string>
+    <string name="hub_preview_connection_empty">No link details available</string>
+    <string name="hub_preview_wifi_off">Not connected</string>
+    <string name="hub_preview_local_hosts">%1$d addressable hosts on subnet</string>
+    <string name="hub_preview_local_hint">Open LAN scanner to discover devices</string>
+    <string name="hub_preview_local_unavailable">Not on a local IPv4 subnet</string>
+    <string name="hub_preview_ping_failed">Unreachable</string>
+    <string name="hub_preview_ping_to">Ping to %1$s</string>
+    <string name="hub_preview_speed_none">No speed test yet — run one from the tools below</string>
 
     <string name="home_job_connection">My connection</string>
     <string name="home_job_connection_sub">Link · gateway · DNS · public IP</string>
