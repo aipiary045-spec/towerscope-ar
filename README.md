@@ -52,8 +52,10 @@ Older builds stay under dated `sideload-*` release tags if you need to roll back
 
 Installation LOS profiles prefer a small elevation API (USGS LiDAR first-return, 3DEP DEM fallback) and fall back to on-device 3DEP DEM if the API is unreachable.
 
-1. Deploy [`elevation-api/`](elevation-api/README.md)
-2. Add to `local.properties` (not committed):
+Release builds default to `https://towerscope-elevation.fly.dev`. Override in `local.properties` (not committed) for a custom host or local server — see `local.properties.example`.
+
+1. Deploy [`elevation-api/`](elevation-api/README.md) (or use the shared Fly.io host above)
+2. Optional override in `local.properties`:
 
 ```
 LOS_ELEVATION_API_BASE_URL=https://your-elevation-host

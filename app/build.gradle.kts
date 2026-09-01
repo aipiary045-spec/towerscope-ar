@@ -12,8 +12,13 @@ val localProperties = Properties().apply {
         FileInputStream(file).use { load(it) }
     }
 }
+/** Public Fly.io deployment; override in local.properties for a custom host. */
+val defaultLosElevationApiBaseUrl = "https://towerscope-elevation.fly.dev"
 val losElevationApiBaseUrl: String =
-    localProperties.getProperty("LOS_ELEVATION_API_BASE_URL") ?: ""
+    localProperties.getProperty("LOS_ELEVATION_API_BASE_URL")
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: defaultLosElevationApiBaseUrl
 
 android {
     namespace = "com.towerscope.ar"
