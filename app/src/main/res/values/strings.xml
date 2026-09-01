@@ -9,7 +9,7 @@
     <string name="home_hero_value">Network + Install</string>
     <string name="home_hero_badge">Live tools</string>
     <string name="home_hub_network">Network</string>
-    <string name="home_hub_network_sub">Wi‑Fi · speed · ping · path</string>
+    <string name="home_hub_network_sub">Connection · Wi‑Fi survey · speed · path</string>
     <string name="home_hub_install">Install</string>
     <string name="home_hub_install_sub">Dashboard · sites · compass · LOS</string>
     <string name="home_section_status">Field status</string>
@@ -117,8 +117,6 @@
 
     <string name="home_job_connection">My connection</string>
     <string name="home_job_connection_sub">Link · gateway · DNS · public IP</string>
-    <string name="home_job_channel_plan">Channel planner</string>
-    <string name="home_job_channel_plan_sub">Pick the cleanest Wi‑Fi channel</string>
     <string name="home_job_signal_walk">Signal walk</string>
     <string name="home_job_signal_walk_sub">Log RSSI while you walk</string>
     <string name="signal_walk_weak_title">Weak signal spot</string>
