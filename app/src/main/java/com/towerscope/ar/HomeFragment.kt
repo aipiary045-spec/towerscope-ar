@@ -16,15 +16,16 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
-import com.towerscope.ar.network.ConnectionSnapshotCollector
-import com.towerscope.ar.network.NetworkSession
+import com.towerscope.ar.network.WifiMonitor
+import com.towerscope.ar.ui.HomeLiveMetrics
 import com.towerscope.ar.ui.LocationSourceChip
-import com.towerscope.ar.ui.NetworkTopologyBinder
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.UnitFormat
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment(R.layout.activity_home) {
@@ -39,7 +40,9 @@ class HomeFragment : Fragment(R.layout.activity_home) {
     private lateinit var gpsStatus: TextView
     private lateinit var importButton: MaterialButton
     private lateinit var compassButton: MaterialButton
-    private var networkStatus: TextView? = null
+    private lateinit var wifiMetric: HomeLiveMetrics.MetricViews
+    private lateinit var internetMetric: HomeLiveMetrics.MetricViews
+    private lateinit var speedMetric: HomeLiveMetrics.MetricViews
     private var networkTopology: View? = null
 
     private val permissionLauncher = registerForActivityResult(
@@ -54,8 +57,10 @@ class HomeFragment : Fragment(R.layout.activity_home) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        networkStatus = view.findViewById(R.id.homeNetworkStatus)
         networkTopology = view.findViewById(R.id.homeNetworkTopology)
+        wifiMetric = HomeLiveMetrics.views(view, R.id.homeMetricWifi)
+        internetMetric = HomeLiveMetrics.views(view, R.id.homeMetricInternet)
+        speedMetric = HomeLiveMetrics.views(view, R.id.homeMetricSpeed)
 
         sitesCount = view.findViewById(R.id.homeSitesCount)
         inRangeCount = view.findViewById(R.id.homeInRangeCount)
@@ -125,6 +130,24 @@ class HomeFragment : Fragment(R.layout.activity_home) {
             }
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                val wifiMonitor = WifiMonitor(requireContext())
+                while (isActive) {
+                    val topo = networkTopology ?: break
+                    HomeLiveMetrics.refresh(
+                        context = requireContext(),
+                        wifiMonitor = wifiMonitor,
+                        topologyRoot = topo,
+                        wifi = wifiMetric,
+                        internet = internetMetric,
+                        speed = speedMetric
+                    )
+                    delay(4_000L)
+                }
+            }
+        }
+
         ensureLocationPermission()
     }
 
@@ -133,32 +156,11 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         if (hasLocationPermission()) {
             viewModel.startLocationUpdates(includeHeading = false)
         }
-        renderNetworkSession()
-        refreshNetworkTopology()
     }
 
     override fun onPause() {
         viewModel.stopLocationUpdates()
         super.onPause()
-    }
-
-    private fun refreshNetworkTopology() {
-        val topo = networkTopology ?: return
-        viewLifecycleOwner.lifecycleScope.launch {
-            val snapshot = ConnectionSnapshotCollector.collect(requireContext(), fetchPublicIp = false)
-            NetworkTopologyBinder.bind(topo, snapshot)
-        }
-    }
-
-    private fun renderNetworkSession() {
-        val ctx = context ?: return
-        val speed = NetworkSession.speedSummary(ctx)
-        val ping = NetworkSession.pingSummary(ctx)
-        val label = listOfNotNull(speed, ping).joinToString("  ·  ")
-        networkStatus?.apply {
-            isVisible = label.isNotBlank()
-            text = label
-        }
     }
 
     private fun renderDashboard(state: TowerUiState) {

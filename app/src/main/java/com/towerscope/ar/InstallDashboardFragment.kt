@@ -14,12 +14,12 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.towerscope.ar.ui.InstallHubPreviews
 import com.towerscope.ar.ui.LocationSourceChip
+import com.towerscope.ar.ui.NetworkHubPreviews
 import com.towerscope.ar.ui.WfmSegmentTabs
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.GeoUtils
-import com.towerscope.ar.util.LinkEstimate
-import com.towerscope.ar.viewmodel.LocationMode
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -31,7 +31,7 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
 
     private lateinit var sitesSummary: TextView
     private lateinit var nearestList: TextView
-    private lateinit var losSummary: TextView
+    private lateinit var losPreview: NetworkHubPreviews.PreviewViews
     private lateinit var locationSourceChip: LocationSourceChip
     private var startedLosScan = false
 
@@ -51,7 +51,7 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
 
         sitesSummary = view.findViewById(R.id.installDashboardSitesSummary)
         nearestList = view.findViewById(R.id.installDashboardNearestList)
-        losSummary = view.findViewById(R.id.installDashboardLosSummary)
+        losPreview = NetworkHubPreviews.views(view, R.id.installDashboardLosPreview)
 
         locationSourceChip = LocationSourceChip(
             chip = view.findViewById(R.id.installDashboardLocationChip),
@@ -189,55 +189,6 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
             }
         }
 
-        losSummary.text = formatLosSummary(state)
-    }
-
-    private fun formatLosSummary(state: TowerUiState): String {
-        when {
-            state.towers.isEmpty() -> return getString(R.string.install_dashboard_los_no_sites)
-            state.positioningLocation() == null -> {
-                return when (state.locationMode) {
-                    LocationMode.CUSTOM -> getString(R.string.install_dashboard_los_need_pin)
-                    LocationMode.CURRENT_GPS -> getString(R.string.install_dashboard_los_need_gps)
-                }
-            }
-            state.losRangeLoading -> return state.losRangeStatus ?: getString(R.string.install_dashboard_los_loading)
-            state.losRangeRows.isEmpty() -> return state.losRangeStatus
-                ?: getString(R.string.install_dashboard_los_none_in_range)
-        }
-
-        val best = state.bestLosCandidate()
-        if (best == null) {
-            val failed = state.losRangeRows.count { it.error != null }
-            return if (failed > 0) {
-                getString(R.string.install_dashboard_los_failed, failed)
-            } else {
-                getString(R.string.install_dashboard_los_loading)
-            }
-        }
-
-        val clutter = state.clutterHeightMeters.toDouble()
-        val freq = state.frequencyGhz.toDouble()
-        val geometric = best.profile?.minClearanceMeters(clutter)
-        val fresnel = best.profile?.minFresnelClearanceMeters(clutter, freq)
-        val dbm = LinkEstimate.estimatedReceiveLevelDbm(
-            distanceMeters = best.distanceMeters,
-            frequencyGhz = freq,
-            txPowerDbm = state.txPowerDbm.toDouble(),
-            apGainDbi = state.apAntennaGainDbi.toDouble(),
-            cpeGainDbi = state.cpeAntennaGainDbi.toDouble(),
-            geometricClearanceMeters = geometric,
-            fresnelClearanceMeters = fresnel
-        )
-        val bearing = state.bearingTo(best.tower)
-        val az = bearing?.let { GeoUtils.formatAzimuthPadded(it) } ?: "—"
-        return getString(
-            R.string.install_dashboard_los_best,
-            best.tower.name,
-            GeoUtils.formatDistance(best.distanceMeters),
-            az,
-            LinkEstimate.formatReceiveLevel(dbm),
-            LinkEstimate.signalQuality(dbm).label
-        )
+        InstallHubPreviews.bindLos(requireContext(), state, losPreview)
     }
 }

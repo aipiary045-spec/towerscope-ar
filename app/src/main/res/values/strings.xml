@@ -153,6 +153,12 @@
     <string name="hub_preview_ping_failed">Unreachable</string>
     <string name="hub_preview_ping_to">Ping to %1$s</string>
     <string name="hub_preview_speed_none">No speed test yet — run one from the tools below</string>
+    <string name="home_metric_wifi">Wi‑Fi</string>
+    <string name="home_metric_internet">Internet</string>
+    <string name="home_metric_speed">Speed</string>
+    <string name="hub_preview_interference_label">Interference %1$s</string>
+    <string name="install_preview_los_label">Best LOS candidate</string>
+    <string name="install_preview_los_hint">Tap Check LOS for full terrain profiles</string>
 
     <string name="home_job_connection">My connection</string>
     <string name="home_job_connection_sub">Link · gateway · DNS · public IP</string>

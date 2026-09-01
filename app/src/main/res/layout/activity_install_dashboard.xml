@@ -110,26 +110,12 @@
                     android:textIsSelectable="true"
                     android:textSize="13sp" />
 
-                <TextView
+                <include
+                    android:id="@+id/installDashboardLosPreview"
+                    layout="@layout/include_hub_live_preview"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:fontFamily="@font/source_sans3_semibold"
-                    android:text="@string/install_dashboard_los_label"
-                    android:textColor="@color/text_primary"
-                    android:textSize="17sp" />
-
-                <TextView
-                    android:id="@+id/installDashboardLosSummary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_wfm_group_card"
-                    android:fontFamily="@font/source_sans3_regular"
-                    android:lineSpacingExtra="3dp"
-                    android:padding="14dp"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp" />
+                    android:layout_marginTop="16dp" />
             </LinearLayout>
 
             <LinearLayout

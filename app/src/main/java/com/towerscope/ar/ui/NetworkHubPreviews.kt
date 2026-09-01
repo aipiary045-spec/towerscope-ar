@@ -8,10 +8,12 @@ import androidx.core.view.isVisible
 import com.towerscope.ar.R
 import com.towerscope.ar.network.ConnectionSnapshot
 import com.towerscope.ar.network.ConnectionSnapshotCollector
+import com.towerscope.ar.network.InterferenceLevel
 import com.towerscope.ar.network.NetworkSession
 import com.towerscope.ar.network.PingMonitor
 import com.towerscope.ar.network.SubnetInfo
 import com.towerscope.ar.network.SubnetScanner
+import com.towerscope.ar.network.WifiChannelAnalysis
 import com.towerscope.ar.network.WifiLinkStatus
 import com.towerscope.ar.network.WifiMonitor
 import kotlinx.coroutines.Dispatchers
@@ -51,7 +53,13 @@ object NetworkHubPreviews {
     }
     NetworkTopologyBinder.bind(root, snapshot)
     bindConnection(context, snapshot, connection)
-    bindWifi(context, wifiMonitor.currentLink(), wifi)
+    val link = wifiMonitor.currentLink()
+    wifiMonitor.startScan()
+    val analysis = wifiMonitor.analyzeChannels(
+      link,
+      wifiMonitor.annotateScan(link, wifiMonitor.latestScanResults())
+    )
+    bindWifi(context, link, analysis, wifi)
     bindLocal(context, snapshot, SubnetScanner.localSubnet(context), local)
     val ping = withContext(Dispatchers.IO) { PingMonitor.pingOnce("1.1.1.1") }
     bindInternet(context, ping, NetworkSession.lastSpeedSnapshot(context), internet)
@@ -90,7 +98,12 @@ object NetworkHubPreviews {
     }
   }
 
-  private fun bindWifi(context: Context, link: WifiLinkStatus, views: PreviewViews) {
+  private fun bindWifi(
+    context: Context,
+    link: WifiLinkStatus,
+    analysis: WifiChannelAnalysis,
+    views: PreviewViews
+  ) {
     views.label.setText(R.string.hub_preview_wifi_label)
     val rssi = link.rssiDbm
     val monitor = WifiMonitor(context)
@@ -113,10 +126,25 @@ object NetworkHubPreviews {
       )
     )
     views.meta.isVisible = true
-    views.meta.text = monitor.signalQualityLabel(rssi)
-    views.meta.setTextColor(views.hero.currentTextColor)
+    views.meta.text = context.getString(
+      R.string.hub_preview_interference_label,
+      WifiMonitor.interferenceLabel(analysis.interferenceLevel)
+    )
+    views.meta.setTextColor(
+      ContextCompat.getColor(
+        context,
+        when (analysis.interferenceLevel) {
+          InterferenceLevel.LOW -> R.color.status_clear
+          InterferenceLevel.MODERATE -> R.color.status_warn
+          InterferenceLevel.HIGH -> R.color.chip_poor
+          InterferenceLevel.UNKNOWN -> R.color.text_muted
+        }
+      )
+    )
     views.detail.text = buildString {
+      append(monitor.signalQualityLabel(rssi))
       val ssid = link.ssid ?: if (link.connected) "Hidden SSID" else "Not on Wi‑Fi"
+      append('\n')
       append(ssid)
       link.channel?.let { ch ->
         append('\n')
@@ -132,6 +160,10 @@ object NetworkHubPreviews {
       link.linkSpeedMbps?.let { speed ->
         append('\n')
         append(String.format(Locale.US, "Link %d Mbps", speed))
+      }
+      if (analysis.interferenceHints.isNotEmpty()) {
+        append('\n')
+        append(analysis.interferenceHints.first())
       }
     }
   }
