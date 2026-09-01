@@ -230,14 +230,6 @@
                 android:text="@string/home_import_sites"
                 android:visibility="gone" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/homeConnectionButton"
-                style="@style/Widget.TowerScope.Button.Ghost"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="8dp"
-                android:text="@string/home_job_connection" />
-
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -276,36 +268,6 @@
 
                 <include
                     android:id="@+id/homeQuickLos"
-                    layout="@layout/item_home_quick_action_inline" />
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="66dp"
-                    android:background="@color/divider_subtle" />
-
-                <include
-                    android:id="@+id/homeQuickWifi"
-                    layout="@layout/item_home_quick_action_inline" />
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="66dp"
-                    android:background="@color/divider_subtle" />
-
-                <include
-                    android:id="@+id/homeQuickSpeed"
-                    layout="@layout/item_home_quick_action_inline" />
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="66dp"
-                    android:background="@color/divider_subtle" />
-
-                <include
-                    android:id="@+id/homeQuickDiagnose"
                     layout="@layout/item_home_quick_action_inline" />
             </LinearLayout>
 

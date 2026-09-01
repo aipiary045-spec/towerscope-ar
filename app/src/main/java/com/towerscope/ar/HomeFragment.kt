@@ -85,9 +85,6 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         compassButton.setOnClickListener {
             startActivity(Intent(requireContext(), MainActivity::class.java))
         }
-        view.findViewById<MaterialButton>(R.id.homeConnectionButton).setOnClickListener {
-            startActivity(Intent(requireContext(), ConnectionSnapshotActivity::class.java))
-        }
 
         bindQuickAction(view, R.id.homeQuickCompass, R.drawable.ic_compass_rose, R.color.accent_yellow,
             R.string.home_job_aim, R.string.home_job_aim_sub) {
@@ -100,18 +97,6 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         bindQuickAction(view, R.id.homeQuickLos, R.drawable.ic_terrain_profile, R.color.accent_teal,
             R.string.home_job_los, R.string.home_job_los_sub) {
             startActivity(Intent(requireContext(), LosProfilesActivity::class.java))
-        }
-        bindQuickAction(view, R.id.homeQuickWifi, R.drawable.ic_wifi_signal, R.color.accent_yellow,
-            R.string.home_job_wifi, R.string.home_job_wifi_sub) {
-            startActivity(Intent(requireContext(), WifiMonitorActivity::class.java))
-        }
-        bindQuickAction(view, R.id.homeQuickSpeed, R.drawable.ic_speed_test, R.color.accent_yellow,
-            R.string.home_job_speed, R.string.home_job_speed_sub) {
-            startActivity(Intent(requireContext(), SpeedTestActivity::class.java))
-        }
-        bindQuickAction(view, R.id.homeQuickDiagnose, R.drawable.ic_network_diagnose, R.color.accent_teal,
-            R.string.home_job_diagnose, R.string.home_job_diagnose_sub) {
-            startActivity(Intent(requireContext(), NetworkDiagnoseActivity::class.java))
         }
 
         bindHubLink(view, R.id.homeNetworkHubButton, R.drawable.ic_wifi_signal, R.color.accent_teal,
