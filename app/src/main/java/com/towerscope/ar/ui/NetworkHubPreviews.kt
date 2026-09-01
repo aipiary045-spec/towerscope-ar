@@ -285,7 +285,7 @@ object NetworkHubPreviews {
         views.hero.setTextColor(ContextCompat.getColor(context, R.color.status_clear))
         views.meta.text = context.getString(R.string.hub_internet_speed_quick)
       }
-      live.cachedSpeed != null -> {
+      live.cachedSpeed != null && !NetworkSession.isLastSpeedQuick(context) -> {
         views.hero.text = String.format(Locale.US, "%.0f Mbps", live.cachedSpeed.downloadMbps)
         views.hero.setTextColor(ContextCompat.getColor(context, R.color.status_clear))
         views.meta.text = formatSpeedAge(context, live.speedAgeMs, live.cachedSpeed)
@@ -305,7 +305,7 @@ object NetworkHubPreviews {
         R.string.hub_internet_speed_detail_quick,
         live.quickSpeedMbps
       )
-      live.cachedSpeed != null -> {
+      live.cachedSpeed != null && !NetworkSession.isLastSpeedQuick(context) -> {
         val age = formatSpeedAge(context, live.speedAgeMs, live.cachedSpeed)
         String.format(
           Locale.US,

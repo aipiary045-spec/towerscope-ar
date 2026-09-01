@@ -71,6 +71,8 @@ object SpeedTestClient {
     private const val READ_TIMEOUT_MS = 45_000
     private const val MIN_DOWNLOAD_MS = 9_000L
     private const val MIN_UPLOAD_MS = 7_000L
+    /** Hub quick check: same parallel streams as full test, shorter sustained window. */
+    private const val QUICK_MIN_DOWNLOAD_MS = 4_500L
     private const val PARALLEL_STREAMS = 4
     private const val USER_AGENT =
         "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
@@ -124,35 +126,20 @@ object SpeedTestClient {
     fun serverById(id: String): SpeedTestServer? =
         servers.firstOrNull { it.id == id }
 
-    /** Lightweight download sample for hub previews (~2 MB, single stream). */
+    /** Sustained parallel download sample for hub previews (~5 s, 4 streams). */
     suspend fun runQuick(): QuickSpeedResult = withContext(Dispatchers.IO) {
         val server = servers.first { it.id == "cloudflare" }
         val latency = probeLatencyMs(server.latencyUrl) ?: Double.NaN
-        val targetBytes = 2_000_000L
-        val url = server.downloadUrl(targetBytes)
-        var downloaded = 0L
-        val start = System.nanoTime()
-        openGet(url, refererFor(url)).use { connection ->
-            if (connection.responseCode !in 200..399) {
-                error("HTTP ${connection.responseCode}")
-            }
-            connection.inputStream.use { input ->
-                val buf = ByteArray(64 * 1024)
-                while (downloaded < targetBytes) {
-                    coroutineContext.ensureActive()
-                    val read = input.read(buf)
-                    if (read <= 0) break
-                    downloaded += read
-                }
-            }
-        }
-        val elapsedSec = (System.nanoTime() - start) / 1_000_000_000.0
-        val mbps = if (elapsedSec > 0 && downloaded > 0) {
-            (downloaded * 8.0) / elapsedSec / 1_000_000.0
-        } else {
-            Double.NaN
-        }
-        QuickSpeedResult(downloadMbps = mbps, latencyMs = latency)
+        val (downloadMbps, _) = measureParallelThroughput(
+            phase = SpeedPhase.DOWNLOAD,
+            server = server,
+            minDurationMs = QUICK_MIN_DOWNLOAD_MS,
+            onProgress = {}
+        )
+        QuickSpeedResult(
+            downloadMbps = downloadMbps,
+            latencyMs = latency
+        )
     }
 
     suspend fun run(

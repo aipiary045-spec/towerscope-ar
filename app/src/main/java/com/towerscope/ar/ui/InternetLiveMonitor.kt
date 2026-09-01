@@ -25,6 +25,7 @@ class InternetLiveMonitor(
         val sampleCount: Int,
         val quickSpeedRunning: Boolean,
         val quickSpeedMbps: Double?,
+        val quickSpeedAtMs: Long?,
         val cachedSpeed: NetworkSession.SpeedSnapshot?,
         val speedAgeMs: Long?
     )
@@ -69,11 +70,6 @@ class InternetLiveMonitor(
                         val quick = SpeedTestClient.runQuick()
                         if (quick.downloadMbps.isFinite() && quick.downloadMbps > 0) {
                             lastQuickSpeedMbps = quick.downloadMbps
-                            NetworkSession.recordQuickSpeed(
-                                context,
-                                quick.downloadMbps,
-                                quick.latencyMs
-                            )
                         }
                     } finally {
                         quickSpeedRunning = false
@@ -96,6 +92,7 @@ class InternetLiveMonitor(
             sampleCount = stats.sampleCount,
             quickSpeedRunning = quickSpeedRunning,
             quickSpeedMbps = lastQuickSpeedMbps,
+            quickSpeedAtMs = lastQuickSpeedAt.takeIf { it > 0L },
             cachedSpeed = NetworkSession.lastSpeedSnapshot(context),
             speedAgeMs = NetworkSession.speedSnapshotAgeMs(context)
         )
