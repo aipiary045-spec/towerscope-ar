@@ -1,7 +1,9 @@
 package com.towerscope.ar.data
 
+import com.towerscope.ar.BuildConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -55,6 +57,13 @@ class LosElevationApiClientTest {
 }
 
 class LosProfileServiceTest {
+
+    @Test
+    fun defaultApiClient_isConfiguredForReleaseBuilds() {
+        assertTrue(BuildConfig.LOS_ELEVATION_API_BASE_URL.isNotBlank())
+        val client = LosProfileService.defaultApiClient()
+        assertNotNull(client)
+    }
 
     @Test
     fun fillMissingInterpolatesForwardAndBack() {
