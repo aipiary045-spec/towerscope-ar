@@ -6,284 +6,291 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_topo_screen">
 
-    <FrameLayout
-        android:id="@+id/compassViewport"
+    <LinearLayout
+        android:id="@+id/aimColumn"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="168dp"
-        android:layout_marginBottom="118dp"
-        android:layout_marginHorizontal="12dp">
-
-        <com.towerscope.ar.ui.CompassRadarView
-            android:id="@+id/compassRadar"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:contentDescription="@string/compass_radar_hint" />
-    </FrameLayout>
-
-    <LinearLayout
-        android:id="@+id/topChrome"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top"
         android:orientation="vertical">
 
         <LinearLayout
-            android:id="@+id/topBar"
+            android:id="@+id/topChrome"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="12dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_field_card"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="10dp">
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/topBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_field_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="10dp">
+
+                <TextView
+                    android:id="@+id/appTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:maxLines="1"
+                    android:text="@string/hud_title"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/gpsChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_hud_chip"
+                    android:paddingHorizontal="9dp"
+                    android:paddingVertical="6dp"
+                    android:text="GPS · —"
+                    android:textColor="@color/chip_text_on_dark"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/compassChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_hud_chip"
+                    android:paddingHorizontal="9dp"
+                    android:paddingVertical="6dp"
+                    android:text="Compass · —"
+                    android:textColor="@color/chip_text_on_dark"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="8dp"
+                android:paddingHorizontal="2dp"
+                android:scrollbars="none">
+
+                <include
+                    android:id="@+id/locationSourceChip"
+                    layout="@layout/include_location_source_chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </HorizontalScrollView>
 
             <TextView
-                android:id="@+id/appTitle"
-                android:layout_width="0dp"
+                android:id="@+id/trackingWarning"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ellipsize="end"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:maxLines="1"
-                android:text="@string/hud_title"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="6dp"
+                android:fontFamily="@font/source_sans3_regular"
+                android:paddingHorizontal="4dp"
+                android:text="Compass needs calibration"
+                android:textColor="@color/chip_poor"
+                android:textSize="11sp"
+                android:visibility="gone" />
 
-            <TextView
-                android:id="@+id/gpsChip"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/compassStrip"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"
-                android:background="@drawable/bg_hud_chip"
-                android:paddingHorizontal="9dp"
-                android:paddingVertical="6dp"
-                android:text="GPS · —"
-                android:textColor="@color/chip_text_on_dark"
-                android:textSize="11sp" />
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_field_card"
+                android:orientation="vertical"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="12dp">
 
-            <TextView
-                android:id="@+id/compassChip"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_hud_chip"
-                android:paddingHorizontal="9dp"
-                android:paddingVertical="6dp"
-                android:text="Compass · —"
-                android:textColor="@color/chip_text_on_dark"
-                android:textSize="11sp" />
+                <TextView
+                    android:id="@+id/headingLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.02"
+                    android:text="HEADING  —"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/focusTowerLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:maxLines="1"
+                    android:text="No tower in range"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/aimFocusHud"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1.2"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/aimTurnLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/source_sans3_semibold"
+                            android:text="—"
+                            android:textColor="@color/accent_yellow"
+                            android:textSize="26sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/aimDistanceLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/source_sans3_semibold"
+                            android:gravity="end"
+                            android:text="—"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/aimSignalLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="monospace"
+                            android:gravity="end"
+                            android:text="Est.  —"
+                            android:textColor="@color/accent_teal"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
 
-        <HorizontalScrollView
+        <FrameLayout
+            android:id="@+id/compassViewport"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:layout_marginHorizontal="12dp"
             android:layout_marginTop="8dp"
-            android:paddingHorizontal="2dp"
-            android:scrollbars="none">
+            android:layout_marginBottom="8dp"
+            android:layout_weight="1">
 
-            <include
-                android:id="@+id/locationSourceChip"
-                layout="@layout/include_location_source_chip"
+            <com.towerscope.ar.ui.CompassRadarView
+                android:id="@+id/compassRadar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/compass_radar_hint" />
+
+            <LinearLayout
+                android:id="@+id/compassFabColumn"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-        </HorizontalScrollView>
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="4dp"
+                android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/trackingWarning"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="12dp"
-            android:layout_marginTop="6dp"
-            android:fontFamily="@font/source_sans3_regular"
-            android:paddingHorizontal="4dp"
-            android:text="Compass needs calibration"
-            android:textColor="@color/chip_poor"
-            android:textSize="11sp"
-            android:visibility="gone" />
+                <ImageButton
+                    android:id="@+id/calibrateButton"
+                    android:layout_width="@dimen/fab_size"
+                    android:layout_height="@dimen/fab_size"
+                    android:background="@drawable/bg_settings_fab"
+                    android:contentDescription="Improve compass accuracy"
+                    android:elevation="8dp"
+                    android:padding="14dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_compass_rose"
+                    android:tint="@color/accent_yellow" />
+
+                <ImageButton
+                    android:id="@+id/settingsButton"
+                    android:layout_width="@dimen/fab_size"
+                    android:layout_height="@dimen/fab_size"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_settings_fab"
+                    android:contentDescription="Settings"
+                    android:elevation="8dp"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_settings_cog"
+                    android:tint="@color/accent_teal" />
+            </LinearLayout>
+        </FrameLayout>
 
         <LinearLayout
-            android:id="@+id/compassStrip"
+            android:id="@+id/bottomPanel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="12dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginBottom="10dp"
             android:background="@drawable/bg_field_card"
             android:orientation="vertical"
             android:paddingHorizontal="14dp"
             android:paddingVertical="12dp">
 
             <TextView
-                android:id="@+id/headingLabel"
+                android:id="@+id/visibleCount"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:letterSpacing="0.02"
-                android:text="HEADING  —"
-                android:textColor="@color/accent_teal"
-                android:textSize="17sp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:contentDescription="Adjust visible range"
+                android:focusable="true"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:gravity="center_vertical"
+                android:minHeight="36dp"
+                android:text="Visible 0 / 0"
+                android:textColor="@color/text_primary"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/focusTowerLabel"
+                android:id="@+id/nearestHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:ellipsize="end"
+                android:layout_marginTop="8dp"
                 android:fontFamily="@font/source_sans3_semibold"
-                android:maxLines="1"
-                android:text="No tower in range"
+                android:text="Nearby"
                 android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textSize="13sp" />
 
-            <LinearLayout
-                android:id="@+id/aimFocusHud"
+            <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone">
+                android:layout_marginTop="4dp"
+                android:scrollbars="none">
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:id="@+id/towerChips"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1.2"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/aimTurnLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:text="—"
-                        android:textColor="@color/accent_yellow"
-                        android:textSize="26sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="end"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/aimDistanceLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:gravity="end"
-                        android:text="—"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/aimSignalLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:fontFamily="monospace"
-                        android:gravity="end"
-                        android:text="Est.  —"
-                        android:textColor="@color/accent_teal"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </LinearLayout>
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
         </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/bottomPanel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_marginHorizontal="12dp"
-        android:layout_marginBottom="10dp"
-        android:background="@drawable/bg_field_card"
-        android:orientation="vertical"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="12dp">
-
-        <TextView
-            android:id="@+id/visibleCount"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/selectableItemBackground"
-            android:clickable="true"
-            android:contentDescription="Adjust visible range"
-            android:focusable="true"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:minHeight="36dp"
-            android:gravity="center_vertical"
-            android:text="Visible 0 / 0"
-            android:textColor="@color/text_primary"
-            android:textSize="11sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/nearestHeader"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:text="Nearby"
-            android:textColor="@color/text_primary"
-            android:textSize="13sp" />
-
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:scrollbars="none">
-
-            <LinearLayout
-                android:id="@+id/towerChips"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-        </HorizontalScrollView>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="128dp"
-        android:orientation="vertical">
-
-        <ImageButton
-            android:id="@+id/calibrateButton"
-            android:layout_width="@dimen/fab_size"
-            android:layout_height="@dimen/fab_size"
-            android:background="@drawable/bg_settings_fab"
-            android:contentDescription="Improve compass accuracy"
-            android:elevation="8dp"
-            android:padding="14dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/ic_compass_rose"
-            android:tint="@color/accent_yellow" />
-
-        <ImageButton
-            android:id="@+id/settingsButton"
-            android:layout_width="@dimen/fab_size"
-            android:layout_height="@dimen/fab_size"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/bg_settings_fab"
-            android:contentDescription="Settings"
-            android:elevation="8dp"
-            android:padding="15dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/ic_settings_cog"
-            android:tint="@color/accent_teal" />
     </LinearLayout>
 
     <FrameLayout

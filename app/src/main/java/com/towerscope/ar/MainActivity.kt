@@ -165,8 +165,6 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(bottomPanel) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.updatePadding(bottom = bottomPanelBasePadding + bars.bottom)
-            val fabClearance = (170 * resources.displayMetrics.density).toInt()
-            compassViewport.setPadding(0, 0, 0, bars.bottom + fabClearance / 4)
             insets
         }
         ViewCompat.requestApplyInsets(findViewById(R.id.root))
