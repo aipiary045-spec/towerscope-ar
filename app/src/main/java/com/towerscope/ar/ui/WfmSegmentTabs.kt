@@ -60,7 +60,7 @@ object WfmSegmentTabs {
                 val on = isSelected(tab, value)
                 root.findViewById<View>(panelId).isVisible = on
                 root.findViewById<View>(tabId).findViewById<View>(R.id.wfmTabPill).isVisible = on
-                root.findViewById<TextView>(tabId).findViewById<TextView>(R.id.wfmTabLabel).apply {
+                root.findViewById<View>(tabId).findViewById<TextView>(R.id.wfmTabLabel).apply {
                     setTextColor(if (on) activeColor else idleColor)
                     typeface = if (on) semibold else regular
                 }
