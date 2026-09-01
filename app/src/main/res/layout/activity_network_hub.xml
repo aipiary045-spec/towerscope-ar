@@ -27,18 +27,6 @@
         android:textColor="@color/text_muted"
         android:textSize="14sp" />
 
-    <TextView
-        android:id="@+id/networkHubResumeLabel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:background="@drawable/bg_field_card"
-        android:fontFamily="@font/source_sans3_regular"
-        android:padding="12dp"
-        android:textColor="@color/accent_teal"
-        android:textSize="12sp"
-        android:visibility="gone" />
-
     <include
         layout="@layout/include_wifi_topology"
         android:layout_width="match_parent"

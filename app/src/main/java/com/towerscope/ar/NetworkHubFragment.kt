@@ -6,14 +6,12 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.button.MaterialButton
-import com.towerscope.ar.network.NetworkSession
 import com.towerscope.ar.network.WifiMonitor
 import com.towerscope.ar.ui.HomeLiveMetrics
 import com.towerscope.ar.ui.InternetLiveMonitor
@@ -60,8 +58,6 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
         WfmSegmentTabs.bindNetworkHub(view) { tab ->
             activeTab = tab
         }
-
-        refreshResume(view.findViewById(R.id.networkHubResumeLabel))
 
         val swipeRefresh = view.findViewById<SwipeRefreshLayout>(R.id.networkHubSwipeRefresh)
         SwipeRefreshHelper.bind(swipeRefresh, viewLifecycleOwner.lifecycleScope) {
@@ -154,20 +150,6 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
                 null
             }
         )
-        refreshResume(hubRoot.findViewById(R.id.networkHubResumeLabel))
-    }
-
-    private fun refreshResume(label: TextView?) {
-        val ctx = context ?: return
-        val resume = listOfNotNull(
-            NetworkSession.speedSummary(ctx)?.let { getString(R.string.hub_resume_speed, it) },
-            NetworkSession.livePingSummary(ctx)?.let { getString(R.string.hub_resume_ping, it) },
-            NetworkSession.pingSummary(ctx)?.let { getString(R.string.hub_resume_ping, it) }
-        ).joinToString("\n")
-        label?.apply {
-            isVisible = resume.isNotBlank()
-            text = resume
-        }
     }
 
     private fun bindTile(
