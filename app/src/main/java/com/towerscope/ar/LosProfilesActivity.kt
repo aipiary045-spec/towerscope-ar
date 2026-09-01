@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.towerscope.ar.ui.LosRangeRowAdapter
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.ToolScaffold
+import com.towerscope.ar.ui.ToolTopology
 import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.GeoUtils
@@ -83,6 +84,7 @@ class LosProfilesActivity : AppCompatActivity() {
             root = findViewById(R.id.losRoot),
             alsoBottom = findViewById(R.id.losFooter)
         )
+        ToolTopology.bindWhenResumed(this, findViewById(R.id.losRoot))
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
         priorityTowerId = TowerIntents.towerIdFrom(intent)?.also { viewModel.selectTower(it) }
         ToolScaffold.bind(
@@ -110,6 +112,7 @@ class LosProfilesActivity : AppCompatActivity() {
             layoutManager = LinearLayoutManager(this@LosProfilesActivity)
             adapter = rowAdapter
             itemAnimator = null
+            isNestedScrollingEnabled = false
         }
         frequencyLabel = findViewById(R.id.losFrequencyLabel)
         frequencySlider = findViewById(R.id.losFrequencySlider)

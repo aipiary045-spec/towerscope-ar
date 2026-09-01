@@ -15,236 +15,266 @@
         android:id="@+id/losRangeSubtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="4dp"
         android:fontFamily="@font/source_sans3_regular"
         android:text="Rank APs by estimated signal"
         android:textColor="@color/text_muted"
         android:textSize="14sp" />
 
-    <include
-        android:id="@+id/losLocationChip"
-        layout="@layout/include_location_source_chip"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp" />
-
-    <LinearLayout
-        android:id="@+id/losLinkSettings"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:background="@drawable/bg_metric_card"
-        android:orientation="vertical"
-        android:paddingHorizontal="14dp"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp">
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="false">
 
         <LinearLayout
-            android:id="@+id/losLinkSettingsHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?attr/selectableItemBackground"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingVertical="4dp">
+            android:orientation="vertical"
+            android:paddingBottom="8dp">
+
+            <include layout="@layout/include_wifi_topology" />
+
+            <include
+                android:id="@+id/losLocationChip"
+                layout="@layout/include_location_source_chip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" />
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:id="@+id/losLinkSettings"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_wfm_group_card"
+                android:orientation="vertical"
+                android:paddingHorizontal="14dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
+
+                <LinearLayout
+                    android:id="@+id/losLinkSettingsHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingVertical="4dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/source_sans3_semibold"
+                            android:text="Link settings"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/losLinkSettingsSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:ellipsize="end"
+                            android:fontFamily="@font/source_sans3_regular"
+                            android:maxLines="2"
+                            android:text="5.8 GHz · CPE 4 m · Tx 20 · AP 20 · CPE 20 dBi"
+                            android:textColor="@color/text_muted"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/losLinkSettingsToggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:paddingStart="10dp"
+                        android:text="Edit"
+                        android:textColor="@color/accent_yellow"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/losLinkSettingsExpanded"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/losFrequencyLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="FREQ  5.8 GHz"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+
+                    <SeekBar
+                        android:id="@+id/losFrequencySlider"
+                        android:layout_width="match_parent"
+                        android:layout_height="28dp"
+                        android:max="6"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:progress="3" />
+
+                    <TextView
+                        android:id="@+id/losCpeHeightLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="CPE height  4 m"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+
+                    <SeekBar
+                        android:id="@+id/losCpeHeightSlider"
+                        android:layout_width="match_parent"
+                        android:layout_height="28dp"
+                        android:max="29"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:progress="3" />
+
+                    <TextView
+                        android:id="@+id/losTxPowerLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="TX POWER  20 dBm"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+
+                    <SeekBar
+                        android:id="@+id/losTxPowerSlider"
+                        android:layout_width="match_parent"
+                        android:layout_height="28dp"
+                        android:max="30"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:progress="20" />
+
+                    <TextView
+                        android:id="@+id/losApGainLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="AP GAIN  20 dBi"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+
+                    <SeekBar
+                        android:id="@+id/losApGainSlider"
+                        android:layout_width="match_parent"
+                        android:layout_height="28dp"
+                        android:max="40"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:progress="20" />
+
+                    <TextView
+                        android:id="@+id/losCpeGainLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="CPE GAIN  20 dBi"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+
+                    <SeekBar
+                        android:id="@+id/losCpeGainSlider"
+                        android:layout_width="match_parent"
+                        android:layout_height="28dp"
+                        android:max="40"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:progress="20" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_field_card"
+                android:orientation="vertical"
+                android:padding="14dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/source_sans3_semibold"
-                    android:letterSpacing="0.06"
-                    android:text="LINK SETTINGS"
-                    android:textColor="@color/text_muted"
+                    android:letterSpacing="0.08"
+                    android:text="SCAN"
+                    android:textAllCaps="true"
+                    android:textColor="@color/text_dim"
                     android:textSize="10sp" />
 
                 <TextView
-                    android:id="@+id/losLinkSettingsSummary"
+                    android:id="@+id/losRangeStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:ellipsize="end"
-                    android:fontFamily="@font/source_sans3_regular"
-                    android:maxLines="2"
-                    android:text="5.8 GHz · CPE 4 m · Tx 20 · AP 20 · CPE 20 dBi"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="@font/source_sans3_semibold"
                     android:textColor="@color/accent_teal"
-                    android:textSize="12sp" />
+                    android:textSize="15sp" />
             </LinearLayout>
 
             <TextView
-                android:id="@+id/losLinkSettingsToggle"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:fontFamily="@font/source_sans3_semibold"
-                android:paddingStart="10dp"
-                android:text="Edit"
-                android:textColor="@color/accent_yellow"
-                android:textSize="13sp" />
+                android:text="Ranked sites"
+                android:textColor="@color/text_primary"
+                android:textSize="17sp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/losRangeList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
         </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/losLinkSettingsExpanded"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="6dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/losFrequencyLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:text="FREQ  5.8 GHz"
-                android:textColor="@color/accent_teal"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <SeekBar
-                android:id="@+id/losFrequencySlider"
-                android:layout_width="match_parent"
-                android:layout_height="28dp"
-                android:max="6"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:progress="3" />
-
-            <TextView
-                android:id="@+id/losCpeHeightLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:fontFamily="monospace"
-                android:text="CPE height  4 m"
-                android:textColor="@color/accent_teal"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <SeekBar
-                android:id="@+id/losCpeHeightSlider"
-                android:layout_width="match_parent"
-                android:layout_height="28dp"
-                android:max="29"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:progress="3" />
-
-            <TextView
-                android:id="@+id/losTxPowerLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:fontFamily="monospace"
-                android:text="TX POWER  20 dBm"
-                android:textColor="@color/accent_teal"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <SeekBar
-                android:id="@+id/losTxPowerSlider"
-                android:layout_width="match_parent"
-                android:layout_height="28dp"
-                android:max="30"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:progress="20" />
-
-            <TextView
-                android:id="@+id/losApGainLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:fontFamily="monospace"
-                android:text="AP GAIN  20 dBi"
-                android:textColor="@color/accent_teal"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <SeekBar
-                android:id="@+id/losApGainSlider"
-                android:layout_width="match_parent"
-                android:layout_height="28dp"
-                android:max="40"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:progress="20" />
-
-            <TextView
-                android:id="@+id/losCpeGainLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:fontFamily="monospace"
-                android:text="CPE GAIN  20 dBi"
-                android:textColor="@color/accent_teal"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <SeekBar
-                android:id="@+id/losCpeGainSlider"
-                android:layout_width="match_parent"
-                android:layout_height="28dp"
-                android:max="40"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:progress="20" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/losRangeStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:fontFamily="@font/source_sans3_regular"
-        android:textColor="@color/accent_teal"
-        android:textSize="12sp" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/losRangeList"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="14dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingBottom="8dp"
-        android:scrollbars="none" />
+    </ScrollView>
 
     <LinearLayout
         android:id="@+id/losFooter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingTop="10dp"
+        android:paddingTop="8dp"
         android:paddingBottom="12dp">
 
-        <LinearLayout
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/losRangeRefreshButton"
+            style="@style/Widget.TowerScope.Button.Primary"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_height="52dp"
+            android:text="Refresh ranking" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/losRangeCancelButton"
-                style="@style/Widget.TowerScope.Button.Ghost"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="6dp"
-                android:layout_weight="1"
-                android:text="@string/los_cancel_ranking"
-                android:visibility="gone" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/losRangeRefreshButton"
-                style="@style/Widget.TowerScope.Button.Ghost"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_weight="1"
-                android:text="Refresh" />
-        </LinearLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/losRangeCancelButton"
+            style="@style/Widget.TowerScope.Button.Ghost"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/los_cancel_ranking"
+            android:visibility="gone" />
     </LinearLayout>
 </LinearLayout>

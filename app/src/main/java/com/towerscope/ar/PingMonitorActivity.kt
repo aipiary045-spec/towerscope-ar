@@ -24,6 +24,7 @@ import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.ui.PingHostStatsAdapter
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.ToolScaffold
+import com.towerscope.ar.ui.ToolTopology
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
@@ -53,6 +54,7 @@ class PingMonitorActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_ping_monitor)
         SystemBars.apply(findViewById(R.id.pingRoot))
+        ToolTopology.bindWhenResumed(this, findViewById(R.id.pingRoot))
         ToolScaffold.bind(
             activity = this,
             titleRes = R.string.home_job_ping,

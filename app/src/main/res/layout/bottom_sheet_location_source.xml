@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_hud_panel"
+    android:background="@drawable/bg_topo_screen"
     android:orientation="vertical"
     android:paddingHorizontal="16dp"
     android:paddingTop="8dp"
@@ -12,7 +12,7 @@
         android:layout_width="40dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:background="@drawable/bg_location_chip" />
+        android:background="@drawable/bg_sheet_handle" />
 
     <TextView
         android:layout_width="match_parent"
@@ -21,23 +21,31 @@
         android:fontFamily="@font/source_sans3_semibold"
         android:text="@string/location_sheet_title"
         android:textColor="@color/text_primary"
-        android:textSize="16sp"
+        android:textSize="22sp"
         android:textStyle="bold" />
 
-    <include
-        android:id="@+id/sheetLocationMode"
-        layout="@layout/include_location_mode_toggle"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp" />
+        android:layout_marginTop="14dp"
+        android:background="@drawable/bg_wfm_group_card"
+        android:orientation="vertical"
+        android:padding="14dp">
 
-    <include
-        android:id="@+id/sheetCoordinateEntry"
-        layout="@layout/include_coordinate_entry"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:visibility="gone" />
+        <include
+            android:id="@+id/sheetLocationMode"
+            layout="@layout/include_location_mode_toggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <include
+            android:id="@+id/sheetCoordinateEntry"
+            layout="@layout/include_coordinate_entry"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:visibility="gone" />
+    </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"

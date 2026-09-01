@@ -27,6 +27,7 @@ import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.ui.LanScanResultAdapter
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.ToolScaffold
+import com.towerscope.ar.ui.ToolTopology
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -59,6 +60,7 @@ class LanScannerActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_lan_scanner)
         SystemBars.apply(findViewById(R.id.lanScannerRoot))
+        ToolTopology.bindWhenResumed(this, findViewById(R.id.lanScannerRoot))
 
         infoLabel = findViewById(R.id.lanInfoLabel)
         statusLabel = findViewById(R.id.lanStatus)
