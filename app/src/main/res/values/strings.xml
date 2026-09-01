@@ -161,7 +161,8 @@
     <string name="home_metric_speed">Speed</string>
     <string name="hub_preview_interference_label">Interference %1$s</string>
     <string name="install_preview_los_label">Best LOS candidate</string>
-    <string name="install_preview_los_hint">Tap Check LOS for full terrain profiles</string>
+    <string name="install_preview_los_hint">Tap the profile or Check LOS for all sites</string>
+    <string name="install_dashboard_los_chart_content_desc">Elevation profile for best LOS candidate</string>
     <string name="hub_internet_metric_ping">Live ping</string>
     <string name="hub_internet_metric_speed">Quick speed</string>
     <string name="hub_internet_ping_meta">σ %1$.0f ms · %2$.0f%% loss · %3$d probes</string>

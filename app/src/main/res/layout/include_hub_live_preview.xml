@@ -46,4 +46,13 @@
         android:text="—"
         android:textColor="@color/text_muted"
         android:textSize="13sp" />
+
+    <com.towerscope.ar.ui.LosProfileChartView
+        android:id="@+id/hubPreviewChart"
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
+        android:layout_marginTop="10dp"
+        android:background="@color/bg_mid"
+        android:contentDescription="@string/install_dashboard_los_chart_content_desc"
+        android:visibility="gone" />
 </LinearLayout>

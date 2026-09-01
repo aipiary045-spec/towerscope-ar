@@ -27,7 +27,8 @@ object NetworkHubPreviews {
     val label: TextView,
     val hero: TextView,
     val meta: TextView,
-    val detail: TextView
+    val detail: TextView,
+    val chart: LosProfileChartView? = null
   )
 
   fun views(root: View, previewId: Int): PreviewViews {
@@ -36,7 +37,8 @@ object NetworkHubPreviews {
       label = card.findViewById(R.id.hubPreviewLabel),
       hero = card.findViewById(R.id.hubPreviewHero),
       meta = card.findViewById(R.id.hubPreviewMeta),
-      detail = card.findViewById(R.id.hubPreviewDetail)
+      detail = card.findViewById(R.id.hubPreviewDetail),
+      chart = card.findViewById(R.id.hubPreviewChart)
     )
   }
 

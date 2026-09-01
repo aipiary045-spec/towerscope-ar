@@ -75,6 +75,13 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
             refreshInstallDashboard()
         }
 
+        view.findViewById<View>(R.id.installDashboardLosPreview).setOnClickListener {
+            startActivity(Intent(requireContext(), LosProfilesActivity::class.java))
+        }
+        losPreview.chart?.setOnClickListener {
+            startActivity(Intent(requireContext(), LosProfilesActivity::class.java))
+        }
+
         view.findViewById<View>(R.id.installDashboardCompassButton).setOnClickListener {
             startActivity(Intent(requireContext(), MainActivity::class.java))
         }
