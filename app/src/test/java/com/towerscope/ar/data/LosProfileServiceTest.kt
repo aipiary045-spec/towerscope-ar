@@ -21,9 +21,19 @@ class DemElevationServiceTest {
             ]}
         """.trimIndent()
         val values = service.parseIdentifyValues(json, 3)
+        assertEquals(3, values.size)
         assertEquals(308.358, values[0]!!, 0.001)
         assertEquals(318.267, values[1]!!, 0.001)
         assertEquals(310.816, values[2]!!, 0.001)
+    }
+
+    @Test
+    fun parsesNoDataAsNull() {
+        val json = """{"results":[{"objectId":0,"value":"NoData"},{"objectId":1,"value":305.0}]}"""
+        val values = service.parseIdentifyValues(json, 2)
+        assertEquals(2, values.size)
+        assertEquals(null, values[0])
+        assertEquals(305.0, values[1]!!, 0.001)
     }
 }
 
@@ -75,6 +85,24 @@ class LosProfileServiceTest {
         assertEquals(10.0, filled[3], 0.001)
         assertEquals(40.0, filled[4], 0.001)
         assertEquals(40.0, filled[5], 0.001)
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun rejectDegenerateTerrain_failsWhenGapsCollapseToFlatLine() {
+        val service = LosProfileService(apiClient = null)
+        service.rejectDegenerateTerrain(
+            filled = listOf(300.0, 300.0, 300.0),
+            raw = listOf(300.0, null, null)
+        )
+    }
+
+    @Test
+    fun rejectDegenerateTerrain_allowsCompleteData() {
+        val service = LosProfileService(apiClient = null)
+        service.rejectDegenerateTerrain(
+            filled = listOf(300.0, 310.0, 320.0),
+            raw = listOf(300.0, 310.0, 320.0)
+        )
     }
 
     @Test

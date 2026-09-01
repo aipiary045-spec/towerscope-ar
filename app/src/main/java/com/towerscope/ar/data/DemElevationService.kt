@@ -72,14 +72,14 @@ class DemElevationService(
 
     internal fun parseIdentifyValues(jsonBody: String, expected: Int): List<Double?> {
         val values = ArrayList<Double?>(expected)
-        val regex = Regex(""""value"\s*:\s*"?(?<num>[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)"?""")
-        // Prefer results array entries; skip top-level if present by scanning all matches
-        // after the first "results".
+        val regex = Regex(
+            """"value"\s*:\s*(?:"NoData"|"?(?<num>[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)"?)"""
+        )
         val resultsIdx = jsonBody.indexOf("\"results\"")
         val searchIn = if (resultsIdx >= 0) jsonBody.substring(resultsIdx) else jsonBody
         for (match in regex.findAll(searchIn)) {
-            val raw = match.groups["num"]?.value ?: continue
-            values.add(raw.toDoubleOrNull()?.takeIf { it.isFinite() })
+            val raw = match.groups["num"]?.value
+            values.add(raw?.toDoubleOrNull()?.takeIf { it.isFinite() })
             if (values.size >= expected) break
         }
         while (values.size < expected) values.add(null)

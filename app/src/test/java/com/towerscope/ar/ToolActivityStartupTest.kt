@@ -28,8 +28,6 @@ class ToolActivityStartupTest {
         )
     }
 
-    @Test fun losProfiles_starts() = assertStarts(LosProfilesActivity::class.java)
-
     @Test fun map_starts() = assertStarts(MapActivity::class.java)
 
     @Test fun wifiMonitor_starts() = assertStarts(WifiMonitorActivity::class.java)
@@ -43,6 +41,8 @@ class ToolActivityStartupTest {
     @Test fun pingMonitor_starts() = assertStarts(PingMonitorActivity::class.java)
 
     @Test fun siteBrowser_starts() = assertStarts(SiteBrowserActivity::class.java)
+
+    @Test fun losProfiles_starts() = assertStarts(LosProfilesActivity::class.java)
 
     @Test fun compass_starts() = assertStarts(MainActivity::class.java)
 

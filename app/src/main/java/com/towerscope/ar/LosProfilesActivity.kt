@@ -112,7 +112,6 @@ class LosProfilesActivity : AppCompatActivity() {
             layoutManager = LinearLayoutManager(this@LosProfilesActivity)
             adapter = rowAdapter
             itemAnimator = null
-            isNestedScrollingEnabled = false
         }
         frequencyLabel = findViewById(R.id.losFrequencyLabel)
         frequencySlider = findViewById(R.id.losFrequencySlider)

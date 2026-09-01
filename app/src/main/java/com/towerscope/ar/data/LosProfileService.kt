@@ -122,6 +122,7 @@ class LosProfileService(
             error("Elevation unavailable (configure LOS_ELEVATION_API_BASE_URL or check network)")
         }
         val filled = fillMissingElevations(elevations)
+        rejectDegenerateTerrain(filled, elevations)
         val samples = points.mapIndexed { index, point ->
             val distance = if (sampleCount <= 1) {
                 0.0
@@ -154,6 +155,14 @@ class LosProfileService(
             towerTipElevationMeters = towerTip,
             lidarCoverageFraction = 0.0
         )
+    }
+
+    /** Reject profiles where gap-filling collapsed terrain to a flat line. */
+    internal fun rejectDegenerateTerrain(filled: List<Double>, raw: List<Double?>) {
+        if (filled.isEmpty() || !raw.any { it == null }) return
+        if (filled.distinct().size <= 1) {
+            error("Elevation data incomplete along path")
+        }
     }
 
     /** Forward/back fill across null elevation failures. */
