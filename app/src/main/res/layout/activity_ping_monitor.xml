@@ -8,23 +8,53 @@
     android:paddingHorizontal="@dimen/screen_padding"
     android:paddingTop="18dp">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/source_sans3_semibold"
-        android:text="@string/home_job_ping"
-        android:textColor="@color/text_primary"
-        android:textSize="@dimen/screen_title"
-        android:textStyle="bold" />
+    <include layout="@layout/include_tool_scaffold_header" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:letterSpacing="0.1"
+        android:text="DURATION"
+        android:textColor="@color/text_dim"
+        android:textSize="11sp" />
+
+    <RadioGroup
+        android:id="@+id/pingDurationGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:fontFamily="@font/source_sans3_regular"
-        android:text="ICMP echo · add :port for TCP (e.g. 192.168.1.1:80)"
-        android:textColor="@color/text_muted"
-        android:textSize="14sp" />
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/pingDurationLive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Live" />
+
+        <RadioButton
+            android:id="@+id/pingDuration1m"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="1 min" />
+
+        <RadioButton
+            android:id="@+id/pingDuration2m"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="2 min" />
+
+        <RadioButton
+            android:id="@+id/pingDuration5m"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="5 min" />
+    </RadioGroup>
 
     <TextView
         android:layout_width="match_parent"
@@ -115,11 +145,12 @@
             android:orientation="vertical"
             android:paddingBottom="8dp">
 
-            <LinearLayout
+            <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/pingHostStatsList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -147,19 +178,26 @@
         </LinearLayout>
     </ScrollView>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/pingToggleButton"
-        style="@style/Widget.TowerScope.Button.Primary"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="Start ping" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/pingBackButton"
-        style="@style/Widget.TowerScope.Button.Ghost"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/item_gap"
         android:layout_marginBottom="14dp"
-        android:text="Back" />
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/pingToggleButton"
+            style="@style/Widget.TowerScope.Button.Primary"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:text="@string/ping_start" />
+    </LinearLayout>
+
+    <include
+        layout="@layout/include_tool_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="14dp" />
 </LinearLayout>

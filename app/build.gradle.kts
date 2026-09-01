@@ -12,8 +12,13 @@ val localProperties = Properties().apply {
         FileInputStream(file).use { load(it) }
     }
 }
+/** Public Fly.io deployment; override in local.properties for a custom host. */
+val defaultLosElevationApiBaseUrl = "https://towerscope-elevation.fly.dev"
 val losElevationApiBaseUrl: String =
-    localProperties.getProperty("LOS_ELEVATION_API_BASE_URL") ?: ""
+    localProperties.getProperty("LOS_ELEVATION_API_BASE_URL")
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: defaultLosElevationApiBaseUrl
 
 android {
     namespace = "com.towerscope.ar"
@@ -39,7 +44,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             // Sideloadable release APK for field devices (replace with your keystore for Play).
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
@@ -71,6 +77,10 @@ android {
 
     // Ensure packaged .so ELF segments use 16 KB page alignment when AGP can.
     experimentalProperties["android.nativeLibraryAlignmentPageSize"] = "16k"
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 kotlin {
@@ -88,6 +98,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("androidx.fragment:fragment-ktx:1.8.6")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
 
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.android.gms:play-services-base:18.5.0")
@@ -96,4 +107,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core:1.6.1")
 }

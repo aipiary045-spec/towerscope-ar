@@ -15,31 +15,15 @@
         android:paddingTop="18dp"
         android:paddingBottom="28dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:text="@string/home_job_diagnose"
-            android:textColor="@color/text_primary"
-            android:textSize="@dimen/screen_title"
-            android:textStyle="bold" />
+    <include layout="@layout/include_tool_scaffold_header" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:fontFamily="@font/source_sans3_regular"
-            android:text="@string/home_job_diagnose_sub"
-            android:textColor="@color/text_muted"
-            android:textSize="14sp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:letterSpacing="0.1"
-            android:text="TARGET"
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:letterSpacing="0.1"
+        android:text="TARGET"
             android:textColor="@color/text_dim"
             android:textSize="11sp" />
 
@@ -119,22 +103,18 @@
             android:textColor="@color/text_dim"
             android:textSize="11sp" />
 
-        <LinearLayout
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/diagnoseLayersContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:orientation="vertical"
-            android:showDividers="middle"
-            android:divider="@android:color/transparent"
-            android:dividerPadding="0dp" />
+            android:nestedScrollingEnabled="false"
+            android:overScrollMode="never" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/diagnoseBackButton"
-            style="@style/Widget.TowerScope.Button.Ghost"
+        <include
+            layout="@layout/include_tool_actions"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginTop="24dp"
-            android:text="Back" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" />
     </LinearLayout>
 </ScrollView>

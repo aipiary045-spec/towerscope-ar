@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.TraceRoute
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.ToolScaffold
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
@@ -30,6 +31,12 @@ class TraceRouteActivity : AppCompatActivity() {
         setContentView(R.layout.activity_traceroute)
         SystemBars.apply(findViewById(R.id.traceRoot))
 
+        ToolScaffold.bind(
+            activity = this,
+            titleRes = R.string.home_job_traceroute,
+            subtitleRes = R.string.home_job_traceroute_sub
+        )
+
         targetInput = findViewById(R.id.traceTargetInput)
         statusLabel = findViewById(R.id.traceStatus)
         hopView = findViewById(R.id.traceHopView)
@@ -38,10 +45,6 @@ class TraceRouteActivity : AppCompatActivity() {
 
         toggleButton.setOnClickListener {
             if (job?.isActive == true) stopTrace() else startTrace()
-        }
-        findViewById<MaterialButton>(R.id.traceBackButton).setOnClickListener {
-            stopTrace()
-            finish()
         }
     }
 

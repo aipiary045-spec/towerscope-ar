@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/portScannerRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_topo_screen"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/screen_padding"
+    android:paddingTop="18dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:text="@string/home_job_port_scan"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/screen_title"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:fontFamily="@font/source_sans3_regular"
+        android:text="@string/home_job_port_scan_sub"
+        android:textColor="@color/text_muted"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:letterSpacing="0.1"
+        android:text="@string/port_scan_host_label"
+        android:textColor="@color/text_dim"
+        android:textSize="11sp" />
+
+    <EditText
+        android:id="@+id/portScannerHostInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_hud_input"
+        android:fontFamily="monospace"
+        android:hint="@string/port_scan_host_hint"
+        android:inputType="textUri"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:letterSpacing="0.1"
+        android:text="@string/port_scan_preset_label"
+        android:textColor="@color/text_dim"
+        android:textSize="11sp" />
+
+    <Spinner
+        android:id="@+id/portScannerPresetSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_hud_input"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:letterSpacing="0.1"
+        android:text="EXTRA PORTS (optional)"
+        android:textColor="@color/text_dim"
+        android:textSize="11sp" />
+
+    <EditText
+        android:id="@+id/portScannerExtraInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_hud_input"
+        android:fontFamily="monospace"
+        android:hint="9100, 554 or 8000-8010"
+        android:inputType="text"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/portScannerStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:text="Ready"
+        android:textColor="@color/accent_teal"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/portScannerOpenHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:letterSpacing="0.1"
+        android:text="OPEN PORTS"
+        android:textColor="@color/text_dim"
+        android:textSize="11sp"
+        android:visibility="gone" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="6dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:id="@+id/portScannerOpenList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/portScannerRunButton"
+        style="@style/Widget.TowerScope.Button.Primary"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="@string/tool_run" />
+
+    <include
+        layout="@layout/include_tool_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/item_gap"
+        android:layout_marginBottom="14dp" />
+</LinearLayout>

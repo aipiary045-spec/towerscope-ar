@@ -64,23 +64,31 @@
             android:textColor="@color/accent_teal"
             android:textSize="13sp" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:fontFamily="@font/source_sans3_regular"
-            android:text="Long-press map to pin install · pin FAB = GPS"
-            android:textColor="@color/text_dim"
-            android:textSize="12sp" />
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/mapRangeToggle"
-            style="@style/Widget.TowerScope.Button.Ghost"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_marginTop="10dp"
-            android:text="@string/map_range_nearby"
-            android:textSize="13sp" />
+            <include
+                android:id="@+id/mapLocationChip"
+                layout="@layout/include_location_source_chip"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/mapRangeToggle"
+                style="@style/Widget.TowerScope.Button.Ghost"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="12dp"
+                android:text="@string/map_range_nearby"
+                android:textSize="12sp" />
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
@@ -127,18 +135,6 @@
             android:scaleType="centerInside"
             android:src="@drawable/ic_install_pin"
             android:tint="@color/accent_yellow" />
-
-        <ImageButton
-            android:id="@+id/mapBasemapButton"
-            android:layout_width="@dimen/fab_size"
-            android:layout_height="@dimen/fab_size"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/bg_settings_fab"
-            android:contentDescription="Switch satellite basemap"
-            android:padding="14dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/ic_layers"
-            android:tint="@color/text_primary" />
     </LinearLayout>
 
     <LinearLayout
@@ -183,20 +179,10 @@
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/mapHomeButton"
-                style="@style/Widget.TowerScope.Button.Ghost"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:text="Home" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/mapDetailsButton"
                 style="@style/Widget.TowerScope.Button.Primary"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:layout_weight="1"
                 android:text="Tower details" />
         </LinearLayout>
     </LinearLayout>

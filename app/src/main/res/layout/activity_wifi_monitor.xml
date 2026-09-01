@@ -8,24 +8,7 @@
     android:paddingHorizontal="@dimen/screen_padding"
     android:paddingTop="18dp">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/source_sans3_semibold"
-        android:letterSpacing="0.01"
-        android:text="@string/home_job_wifi"
-        android:textColor="@color/text_primary"
-        android:textSize="@dimen/screen_title"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:fontFamily="@font/source_sans3_regular"
-        android:text="Live channel · overlap · interference hints"
-        android:textColor="@color/text_muted"
-        android:textSize="14sp" />
+    <include layout="@layout/include_tool_scaffold_header" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -171,6 +154,47 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_metric_card"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding_lg">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:letterSpacing="0.12"
+                    android:text="CHANNEL PLANNER"
+                    android:textColor="@color/text_dim"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/wifiPlannerStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="@string/wifi_planner_waiting"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/wifiPlannerResult"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_metric_tile"
+                    android:fontFamily="monospace"
+                    android:padding="12dp"
+                    android:text="—"
+                    android:textColor="@color/text_primary"
+                    android:textIsSelectable="true"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/section_gap"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
@@ -206,20 +230,19 @@
                 android:textColor="@color/text_muted"
                 android:textSize="12sp" />
 
-            <LinearLayout
+            <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/wifiScanList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/item_gap"
-                android:orientation="vertical" />
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
         </LinearLayout>
     </ScrollView>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/wifiBackButton"
-        style="@style/Widget.TowerScope.Button.Ghost"
+    <include
+        layout="@layout/include_tool_actions"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:layout_marginBottom="14dp"
-        android:text="Back" />
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="14dp" />
 </LinearLayout>

@@ -7,21 +7,30 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.checkbox.MaterialCheckBox
+import com.towerscope.ar.network.BufferbloatRating
+import com.towerscope.ar.network.BufferbloatTest
+import com.towerscope.ar.network.NetworkSession
 import com.towerscope.ar.network.SpeedPhase
 import com.towerscope.ar.network.SpeedProgress
 import com.towerscope.ar.network.SpeedTestClient
+import com.towerscope.ar.network.SpeedTestResult
+import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.ui.LatencyGraphView
 import com.towerscope.ar.ui.SpeedGaugeView
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.ToolScaffold
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 /**
- * Multi-server download / upload / latency / jitter field check.
+ * Multi-server download / upload / latency / jitter, with optional bufferbloat check.
  */
 class SpeedTestActivity : AppCompatActivity() {
 
@@ -34,11 +43,17 @@ class SpeedTestActivity : AppCompatActivity() {
     private lateinit var serverRow: LinearLayout
     private lateinit var gauge: SpeedGaugeView
     private lateinit var graph: LatencyGraphView
+    private lateinit var includeBufferbloat: MaterialCheckBox
+    private lateinit var bufferbloatSection: LinearLayout
+    private lateinit var bufferbloatStatus: TextView
+    private lateinit var bufferbloatResult: TextView
     private lateinit var runButton: MaterialButton
     private var runningJob: Job? = null
     private var bestDownloadMbps: Double = Double.NaN
     private var selectedServerId: String = SpeedTestClient.AUTO_SERVER_ID
     private val serverButtons = linkedMapOf<String, MaterialButton>()
+    private var lastReport = ""
+    private var speedResult: SpeedTestResult? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,14 +70,25 @@ class SpeedTestActivity : AppCompatActivity() {
         serverRow = findViewById(R.id.speedServerRow)
         gauge = findViewById(R.id.speedGauge)
         graph = findViewById(R.id.speedGraph)
+        includeBufferbloat = findViewById(R.id.speedIncludeBufferbloat)
+        bufferbloatSection = findViewById(R.id.speedBufferbloatSection)
+        bufferbloatResult = findViewById(R.id.speedBufferbloatResult)
+        bufferbloatStatus = findViewById(R.id.speedBufferbloatStatus)
         runButton = findViewById(R.id.speedRunButton)
+        ToolScaffold.bind(
+            activity = this,
+            titleRes = R.string.home_job_speed,
+            subtitleRes = R.string.home_job_speed_sub,
+            onShare = { share() }
+        )
 
         buildServerPicker()
-        runButton.setOnClickListener { runTest() }
-        findViewById<MaterialButton>(R.id.speedBackButton).setOnClickListener {
-            runningJob?.cancel()
-            finish()
+        includeBufferbloat.setOnCheckedChangeListener { _, checked ->
+            bufferbloatSection.isVisible = checked
         }
+        bufferbloatSection.isVisible = includeBufferbloat.isChecked
+
+        runButton.setOnClickListener { runTest() }
     }
 
     override fun onDestroy() {
@@ -127,12 +153,12 @@ class SpeedTestActivity : AppCompatActivity() {
     private fun runTest() {
         if (runningJob?.isActive == true) {
             runningJob?.cancel()
-            runButton.text = "Run speed test"
+            runButton.text = getString(R.string.speed_run_test)
             statusLabel.text = "Stopped"
-            setServerPickerEnabled(true)
+            setControlsEnabled(true)
             return
         }
-        runButton.text = "Stop"
+        runButton.text = getString(R.string.tool_stop)
         downloadLabel.text = "…"
         uploadLabel.text = "…"
         latencyLabel.text = "…"
@@ -141,9 +167,13 @@ class SpeedTestActivity : AppCompatActivity() {
         gauge.reset()
         graph.clear()
         bestDownloadMbps = Double.NaN
-        setServerPickerEnabled(false)
+        lastReport = ""
+        speedResult = null
+        resetBufferbloatUi()
+        setControlsEnabled(false)
 
         val serverId = selectedServerId
+        val withBufferbloat = includeBufferbloat.isChecked
         runningJob = lifecycleScope.launch {
             try {
                 val result = SpeedTestClient.run(serverId) { progress ->
@@ -151,6 +181,7 @@ class SpeedTestActivity : AppCompatActivity() {
                         applyProgress(progress)
                     }
                 }
+                speedResult = result
                 latencyLabel.text = SpeedTestClient.formatLatency(result.latencyMs)
                 jitterLabel.text = SpeedTestClient.formatJitter(result.jitterMs)
                 downloadLabel.text = SpeedTestClient.formatMbps(result.downloadMbps)
@@ -174,8 +205,23 @@ class SpeedTestActivity : AppCompatActivity() {
                 }
                 statusLabel.text = if (parts.isEmpty()) {
                     "No usable results — check mobile data / Wi‑Fi"
+                } else if (withBufferbloat) {
+                    "Speed done · ${result.serverLabel} · checking bufferbloat…"
                 } else {
                     "Done · ${result.serverLabel} · ${parts.joinToString(" · ")}"
+                }
+                lastReport = formatSpeedReport(result)
+                if (result.downloadMbps.isFinite() || result.uploadMbps.isFinite()) {
+                    NetworkSession.recordSpeedTest(
+                        this@SpeedTestActivity,
+                        result.downloadMbps,
+                        result.uploadMbps,
+                        result.latencyMs
+                    )
+                }
+
+                if (withBufferbloat) {
+                    runBufferbloatCheck()
                 }
             } catch (e: Exception) {
                 val detail = e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName
@@ -191,15 +237,87 @@ class SpeedTestActivity : AppCompatActivity() {
                 if (latencyLabel.text == "…") latencyLabel.text = "—"
                 if (jitterLabel.text == "…") jitterLabel.text = "—"
             } finally {
-                runButton.text = "Run speed test"
+                runButton.text = getString(R.string.speed_run_test)
                 runningJob = null
-                setServerPickerEnabled(true)
+                setControlsEnabled(true)
             }
         }
     }
 
-    private fun setServerPickerEnabled(enabled: Boolean) {
+    private suspend fun runBufferbloatCheck() {
+        val result = BufferbloatTest.runOnce("1.1.1.1") { progress ->
+            withContext(Dispatchers.Main) {
+                bufferbloatStatus.text = progress.phase
+                progress.spikeMs?.let { spike ->
+                    bufferbloatResult.text = buildString {
+                        progress.idleAvgMs?.let {
+                            append(String.format(Locale.US, "Idle avg %.0f ms", it))
+                        }
+                        progress.loadedAvgMs?.let {
+                            if (isNotEmpty()) append("  ·  ")
+                            append(String.format(Locale.US, "loaded avg %.0f ms", it))
+                        }
+                        append(String.format(Locale.US, "  ·  +%.0f ms", spike))
+                    }
+                }
+            }
+        }
+        val color = when (result.rating) {
+            BufferbloatRating.GOOD -> R.color.status_clear
+            BufferbloatRating.FAIR -> R.color.accent_yellow
+            BufferbloatRating.POOR -> R.color.status_blocked
+        }
+        bufferbloatStatus.setTextColor(getColor(color))
+        bufferbloatStatus.text = BufferbloatTest.ratingLabel(result.rating)
+        bufferbloatResult.text = BufferbloatTest.formatResult(result)
+        lastReport = buildString {
+            append(lastReport)
+            append("\n\n")
+            append(BufferbloatTest.formatResult(result))
+        }.trim()
+        speedResult?.let { speed ->
+            val parts = buildList {
+                if (speed.latencyMs.isFinite()) add("latency")
+                if (speed.jitterMs.isFinite()) add("jitter")
+                if (speed.downloadMbps.isFinite()) add("down")
+                if (speed.uploadMbps.isFinite()) add("up")
+                add("bufferbloat")
+            }
+            statusLabel.text = "Done · ${speed.serverLabel} · ${parts.joinToString(" · ")}"
+        }
+    }
+
+    private fun resetBufferbloatUi() {
+        bufferbloatStatus.setTextColor(getColor(R.color.text_muted))
+        bufferbloatStatus.text = getString(R.string.speed_bufferbloat_waiting)
+        bufferbloatResult.text = getString(R.string.speed_bufferbloat_hint)
+    }
+
+    private fun formatSpeedReport(result: SpeedTestResult): String = buildString {
+        appendLine("Speed test · ${result.serverLabel}")
+        if (result.latencyMs.isFinite()) {
+            appendLine("Latency: ${SpeedTestClient.formatLatency(result.latencyMs)}")
+        }
+        if (result.jitterMs.isFinite()) {
+            appendLine("Jitter: ${SpeedTestClient.formatJitter(result.jitterMs)}")
+        }
+        if (result.downloadMbps.isFinite()) {
+            appendLine("Download: ${SpeedTestClient.formatMbps(result.downloadMbps)}")
+        }
+        if (result.uploadMbps.isFinite()) {
+            appendLine("Upload: ${SpeedTestClient.formatMbps(result.uploadMbps)}")
+        }
+    }.trim()
+
+    private fun share() {
+        if (lastReport.isNotBlank()) {
+            TestResultExport.shareText(this, "Speed test", lastReport)
+        }
+    }
+
+    private fun setControlsEnabled(enabled: Boolean) {
         serverButtons.values.forEach { it.isEnabled = enabled }
+        includeBufferbloat.isEnabled = enabled
     }
 
     private fun applyProgress(progress: SpeedProgress) {

@@ -39,6 +39,14 @@
             android:textSize="12sp"
             android:visibility="gone" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/settingsFieldPresetButton"
+            style="@style/Widget.TowerScope.Button.Primary"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="14dp"
+            android:text="@string/settings_field_preset" />
+
         <!-- Appearance -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -425,7 +433,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Move the phone in a figure-8 away from metal to improve sensor accuracy."
+                    android:text="Figure-8 away from metal, then calibrate with the sun or focus tower on the compass screen."
                     android:textColor="@color/text_muted"
                     android:textSize="11sp" />
 

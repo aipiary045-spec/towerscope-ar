@@ -1,0 +1,7 @@
+# Copy to local.properties (gitignored) and adjust paths for your machine.
+sdk.dir=/path/to/Android/sdk
+
+# Optional: override the default LOS elevation API (LiDAR + DEM).
+# Release builds default to https://towerscope-elevation.fly.dev when unset.
+# LOS_ELEVATION_API_BASE_URL=https://towerscope-elevation.fly.dev
+# LOS_ELEVATION_API_BASE_URL=http://10.0.2.2:8080

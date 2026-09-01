@@ -7,7 +7,8 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.towerscope.ar.HomeActivity
-import com.towerscope.ar.InstallationHubActivity
+import com.towerscope.ar.InstallDashboardActivity
+import com.towerscope.ar.MainHostActivity
 import com.towerscope.ar.NetworkHubActivity
 import com.towerscope.ar.R
 
@@ -48,8 +49,41 @@ object BottomNav {
             go(activity, NetworkHubActivity::class.java, clearHomeStack = activity is HomeActivity)
         }
         root.findViewById<android.view.View>(R.id.navInstall).setOnClickListener {
-            if (activity is InstallationHubActivity) return@setOnClickListener
-            go(activity, InstallationHubActivity::class.java, clearHomeStack = activity is HomeActivity)
+            if (activity is InstallDashboardActivity) return@setOnClickListener
+            go(activity, InstallDashboardActivity::class.java, clearHomeStack = activity is HomeActivity)
+        }
+        root.findViewById<android.view.View>(R.id.navSettings).setOnClickListener {
+            if (activity.supportFragmentManager.findFragmentByTag(SettingsBottomSheet.TAG) == null) {
+                SettingsBottomSheet.newInstance()
+                    .show(activity.supportFragmentManager, SettingsBottomSheet.TAG)
+            }
+        }
+    }
+
+    fun bindHost(activity: MainHostActivity, selected: BottomNavTab) {
+        val root = activity.findViewById<android.view.View>(R.id.mainHostBottomNav) ?: return
+        val active = ContextCompat.getColor(activity, R.color.accent_teal)
+        val idle = ContextCompat.getColor(activity, R.color.text_dim)
+
+        fun style(tab: BottomNavTab, iconId: Int, labelId: Int) {
+            val on = tab == selected
+            root.findViewById<ImageView>(iconId).setColorFilter(if (on) active else idle)
+            root.findViewById<TextView>(labelId).setTextColor(if (on) active else idle)
+        }
+
+        style(BottomNavTab.HOME, R.id.navHomeIcon, R.id.navHomeLabel)
+        style(BottomNavTab.NETWORK, R.id.navNetworkIcon, R.id.navNetworkLabel)
+        style(BottomNavTab.INSTALL, R.id.navInstallIcon, R.id.navInstallLabel)
+        style(BottomNavTab.SETTINGS, R.id.navSettingsIcon, R.id.navSettingsLabel)
+
+        root.findViewById<android.view.View>(R.id.navHome).setOnClickListener {
+            if (selected != BottomNavTab.HOME) activity.showTab(BottomNavTab.HOME)
+        }
+        root.findViewById<android.view.View>(R.id.navNetwork).setOnClickListener {
+            if (selected != BottomNavTab.NETWORK) activity.showTab(BottomNavTab.NETWORK)
+        }
+        root.findViewById<android.view.View>(R.id.navInstall).setOnClickListener {
+            if (selected != BottomNavTab.INSTALL) activity.showTab(BottomNavTab.INSTALL)
         }
         root.findViewById<android.view.View>(R.id.navSettings).setOnClickListener {
             if (activity.supportFragmentManager.findFragmentByTag(SettingsBottomSheet.TAG) == null) {
@@ -60,6 +94,15 @@ object BottomNav {
     }
 
     private fun go(activity: Activity, clazz: Class<*>, clearHomeStack: Boolean) {
+        if (activity is MainHostActivity) {
+            val tab = when (clazz) {
+                NetworkHubActivity::class.java -> BottomNavTab.NETWORK
+                InstallDashboardActivity::class.java -> BottomNavTab.INSTALL
+                else -> BottomNavTab.HOME
+            }
+            activity.showTab(tab)
+            return
+        }
         val intent = Intent(activity, clazz)
         activity.startActivity(intent)
         if (!clearHomeStack && activity !is HomeActivity) {

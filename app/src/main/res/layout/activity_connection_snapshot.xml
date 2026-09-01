@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/connectionRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_topo_screen"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/screen_padding"
+    android:paddingTop="18dp">
+
+    <include layout="@layout/include_tool_scaffold_header" />
+
+    <TextView
+        android:id="@+id/connectionStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:fontFamily="@font/source_sans3_semibold"
+        android:textColor="@color/accent_teal"
+        android:textSize="15sp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/connectionDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_metric_tile"
+            android:fontFamily="monospace"
+            android:lineSpacingExtra="3dp"
+            android:padding="14dp"
+            android:text="—"
+            android:textColor="@color/text_primary"
+            android:textIsSelectable="true"
+            android:textSize="12sp" />
+    </ScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/connectionRefreshButton"
+        style="@style/Widget.TowerScope.Button.Primary"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="@string/tool_refresh" />
+
+    <include
+        layout="@layout/include_tool_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/item_gap"
+        android:layout_marginBottom="14dp" />
+</LinearLayout>

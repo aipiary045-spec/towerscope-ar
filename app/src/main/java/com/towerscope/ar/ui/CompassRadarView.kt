@@ -16,9 +16,9 @@ import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
+import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.View
-import android.view.animation.DecelerateInterpolator
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import com.towerscope.ar.R
@@ -42,8 +42,8 @@ class CompassRadarView @JvmOverloads constructor(
     data class TowerMarker(
         val towerId: String,
         val name: String,
-        /** Degrees clockwise from device heading (0 = ahead / up on disc). */
-        val relativeBearingDegrees: Double,
+        /** True bearing from install position to the site. */
+        val bearingDegrees: Double,
         val distanceMeters: Double
     )
 
@@ -66,6 +66,7 @@ class CompassRadarView @JvmOverloads constructor(
 
     private var targetHeadingDegrees: Double? = null
     private var displayedHeadingDegrees: Double? = null
+    private var rotationRateDps: Double = 0.0
     private var maxDistanceMeters: Float = 2000f
     private var markers: List<TowerMarker> = emptyList()
     private var focusTowerId: String? = null
@@ -154,7 +155,22 @@ class CompassRadarView @JvmOverloads constructor(
 
     private var towerBitmapTeal: Bitmap? = null
     private var towerBitmapYellow: Bitmap? = null
-    private var headingAnimator: ValueAnimator? = null
+    private var frameLoopActive = false
+    private var lastDrawNanos = 0L
+    private val minDrawIntervalNanos = 50_000_000L // ~20 fps cap
+
+    private val choreographer = Choreographer.getInstance()
+    private val frameCallback = object : Choreographer.FrameCallback {
+        override fun doFrame(frameTimeNanos: Long) {
+            if (!frameLoopActive || !isAttachedToWindow) return
+            stepHeadingTowardTarget()
+            if (frameTimeNanos - lastDrawNanos >= minDrawIntervalNanos) {
+                lastDrawNanos = frameTimeNanos
+                invalidate()
+            }
+            choreographer.postFrameCallback(this)
+        }
+    }
 
     init {
         val drawable = ContextCompat.getDrawable(context, R.drawable.ic_tower_lattice)
@@ -176,6 +192,7 @@ class CompassRadarView @JvmOverloads constructor(
         markers: List<TowerMarker>,
         focusTowerId: String?,
         focusLine: String,
+        rotationRateDps: Double,
         accentColor: Int,
         secondaryColor: Int,
         textColor: Int,
@@ -184,6 +201,7 @@ class CompassRadarView @JvmOverloads constructor(
         this.maxDistanceMeters = maxDistanceMeters.coerceAtLeast(1f)
         this.markers = markers
         this.focusTowerId = focusTowerId
+        this.rotationRateDps = rotationRateDps.coerceAtLeast(0.0)
         this.accentColor = accentColor
         this.secondaryColor = secondaryColor
         this.textColor = textColor
@@ -200,41 +218,44 @@ class CompassRadarView @JvmOverloads constructor(
             towerBitmapYellow = tintedBitmap(d, accentColor, w, h)
         }
 
-        animateHeadingTo(headingDegrees)
+        targetHeadingDegrees = headingDegrees
+        if (headingDegrees != null && displayedHeadingDegrees == null) {
+            displayedHeadingDegrees = headingDegrees
+        }
+        if (headingDegrees != null) {
+            startFrameLoop()
+        } else {
+            stopFrameLoop()
+            displayedHeadingDegrees = null
+        }
         invalidate()
     }
 
-    private fun animateHeadingTo(heading: Double?) {
-        targetHeadingDegrees = heading
-        if (heading == null) {
+    private fun startFrameLoop() {
+        if (frameLoopActive || !isAttachedToWindow) return
+        frameLoopActive = true
+        choreographer.postFrameCallback(frameCallback)
+    }
+
+    private fun stopFrameLoop() {
+        frameLoopActive = false
+        choreographer.removeFrameCallback(frameCallback)
+    }
+
+    private fun stepHeadingTowardTarget() {
+        val target = targetHeadingDegrees ?: run {
             displayedHeadingDegrees = null
-            headingAnimator?.cancel()
             return
         }
-        val from = displayedHeadingDegrees
-        if (from == null) {
-            displayedHeadingDegrees = heading
+        val current = displayedHeadingDegrees ?: run {
+            displayedHeadingDegrees = target
             return
         }
-        var delta = heading - from
-        while (delta > 180.0) delta -= 360.0
-        while (delta < -180.0) delta += 360.0
-        if (kotlin.math.abs(delta) < 0.15) {
-            displayedHeadingDegrees = heading
-            return
-        }
-        headingAnimator?.cancel()
-        val start = from
-        headingAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 140L
-            interpolator = DecelerateInterpolator()
-            addUpdateListener { anim ->
-                val t = anim.animatedValue as Float
-                displayedHeadingDegrees = GeoUtils.normalizeBearing(start + delta * t)
-                invalidate()
-            }
-            start()
-        }
+        displayedHeadingDegrees = CompassHeadingSmoother.stepToward(
+            current = current,
+            target = target,
+            rotationRateDps = rotationRateDps
+        )
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -242,25 +263,29 @@ class CompassRadarView @JvmOverloads constructor(
         hitTargets.clear()
 
         val cx = width / 2f
-        val cy = height / 2f + 6f * density
-        val outerPad = 28f * density
-        val radius = min(width, height) / 2f - outerPad
-        if (radius < 40f * density) return
+        val minDim = min(width, height)
+        val compact = minDim < 220f * density
+        val outerPad = min(28f * density, minDim * 0.14f).coerceAtLeast(10f * density)
+        val cy = height / 2f + if (compact) 2f * density else 6f * density
+        val radius = minDim / 2f - outerPad
+        if (radius < 14f * density) return
 
         drawDisc(canvas, cx, cy, radius)
-        drawRangeRings(canvas, cx, cy, radius)
+        drawRangeRings(canvas, cx, cy, radius, compact)
         drawCrosshair(canvas, cx, cy, radius)
         drawHeadingBeam(canvas, cx, cy, radius)
 
         val heading = displayedHeadingDegrees
         if (heading != null) {
-            drawAzimuthRing(canvas, cx, cy, radius, heading)
+            drawAzimuthRing(canvas, cx, cy, radius, heading, compact)
         }
 
-        drawHeadingLug(canvas, cx, cy, radius)
-        drawYou(canvas, cx, cy)
-        drawTowers(canvas, cx, cy, radius)
-        drawFocusReadout(canvas, cx, cy, radius)
+        drawHeadingLug(canvas, cx, cy, radius, compact)
+        drawYou(canvas, cx, cy, compact)
+        drawTowers(canvas, cx, cy, radius, compact)
+        if (!compact) {
+            drawFocusReadout(canvas, cx, cy, radius)
+        }
     }
 
     private fun drawDisc(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
@@ -283,8 +308,9 @@ class CompassRadarView @JvmOverloads constructor(
         }
     }
 
-    private fun drawRangeRings(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
+    private fun drawRangeRings(canvas: Canvas, cx: Float, cy: Float, radius: Float, compact: Boolean) {
         rangeLabelPaint.color = mutedColor
+        rangeLabelPaint.textSize = if (compact) 7.5f * density else 9f * density
         for (i in 1..4) {
             val frac = i / 4f
             val r = radius * frac
@@ -333,12 +359,14 @@ class CompassRadarView @JvmOverloads constructor(
         beamPaint.shader = null
     }
 
-    private fun drawHeadingLug(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
+    private fun drawHeadingLug(canvas: Canvas, cx: Float, cy: Float, radius: Float, compact: Boolean) {
         val tipY = cy - radius - 2f * density
+        val lugHalf = if (compact) 6f * density else 8f * density
+        val lugDepth = if (compact) 10f * density else 14f * density
         lugPath.reset()
         lugPath.moveTo(cx, tipY)
-        lugPath.lineTo(cx - 8f * density, tipY + 14f * density)
-        lugPath.lineTo(cx + 8f * density, tipY + 14f * density)
+        lugPath.lineTo(cx - lugHalf, tipY + lugDepth)
+        lugPath.lineTo(cx + lugHalf, tipY + lugDepth)
         lugPath.close()
         val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
@@ -355,8 +383,9 @@ class CompassRadarView @JvmOverloads constructor(
         canvas.drawLine(cx, cy - radius + 2f * density, cx, cy - radius + 18f * density, tick)
     }
 
-    private fun drawAzimuthRing(canvas: Canvas, cx: Float, cy: Float, radius: Float, heading: Double) {
-        for (deg in 0 until 360 step 5) {
+    private fun drawAzimuthRing(canvas: Canvas, cx: Float, cy: Float, radius: Float, heading: Double, compact: Boolean) {
+        val tickStep = if (compact) 15 else 5
+        for (deg in 0 until 360 step tickStep) {
             val relative = ((deg - heading + 540.0) % 360.0) - 180.0
             val rad = Math.toRadians(relative)
             val major = deg % 30 == 0
@@ -383,7 +412,7 @@ class CompassRadarView @JvmOverloads constructor(
             val iy = cy - (cos(rad) * inner).toFloat()
             canvas.drawLine(ox, oy, ix, iy, tickPaint)
 
-            if (major) {
+            if (major && !compact) {
                 val labelR = radius - 22f * density
                 val lx = cx + (sin(rad) * labelR).toFloat()
                 val ly = cy - (cos(rad) * labelR).toFloat()
@@ -392,39 +421,51 @@ class CompassRadarView @JvmOverloads constructor(
             }
         }
 
-        val cardinals = listOf(
-            "N" to 0.0, "NE" to 45.0, "E" to 90.0, "SE" to 135.0,
-            "S" to 180.0, "SW" to 225.0, "W" to 270.0, "NW" to 315.0
-        )
+        val cardinals = if (compact) {
+            listOf("N" to 0.0, "E" to 90.0, "S" to 180.0, "W" to 270.0)
+        } else {
+            listOf(
+                "N" to 0.0, "NE" to 45.0, "E" to 90.0, "SE" to 135.0,
+                "S" to 180.0, "SW" to 225.0, "W" to 270.0, "NW" to 315.0
+            )
+        }
         cardinals.forEach { (label, absolute) ->
             val relative = ((absolute - heading + 540.0) % 360.0) - 180.0
             val rad = Math.toRadians(relative)
-            val r = radius + 12f * density
+            val r = radius + if (compact) 8f * density else 12f * density
             val x = cx + (sin(rad) * r).toFloat()
             val y = cy - (cos(rad) * r).toFloat()
-            val primary = label == "N" || label.length == 1
-            cardinalPaint.textSize = if (primary) 13f * density else 10f * density
+            val primary = label == "N" || (!compact && label.length == 1)
+            cardinalPaint.textSize = when {
+                label == "N" -> if (compact) 11f * density else 13f * density
+                compact -> 9f * density
+                primary -> 13f * density
+                else -> 10f * density
+            }
             cardinalPaint.color = if (label == "N") accentColor else textColor
             cardinalPaint.alpha = if (primary) 255 else 200
             canvas.drawText(label, x, y + 4f * density, cardinalPaint)
         }
     }
 
-    private fun drawYou(canvas: Canvas, cx: Float, cy: Float) {
+    private fun drawYou(canvas: Canvas, cx: Float, cy: Float, compact: Boolean) {
+        val dot = if (compact) 5f * density else 6.5f * density
         youPaint.color = accentColor
-        canvas.drawCircle(cx, cy, 6.5f * density, youPaint)
-        canvas.drawCircle(cx, cy, 6.5f * density, youStroke)
+        canvas.drawCircle(cx, cy, dot, youPaint)
+        canvas.drawCircle(cx, cy, dot, youStroke)
     }
 
-    private fun drawTowers(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
+    private fun drawTowers(canvas: Canvas, cx: Float, cy: Float, radius: Float, compact: Boolean) {
+        val heading = displayedHeadingDegrees ?: return
         val dense = markers.size > 24
         val veryDense = markers.size > 48
         val placements = ArrayList<PlacedLabel>(markers.size)
 
         markers.forEach { marker ->
+            val relative = GeoUtils.relativeBearingDegrees(heading, marker.bearingDegrees)
             val clamped = marker.distanceMeters.coerceIn(0.0, maxDistanceMeters.toDouble())
             val frac = sqrt(clamped / maxDistanceMeters).toFloat().coerceIn(0.04f, 1f)
-            val screenAngleRad = Math.toRadians(marker.relativeBearingDegrees)
+            val screenAngleRad = Math.toRadians(relative)
             val x = cx + (sin(screenAngleRad) * radius * frac).toFloat()
             val y = cy - (cos(screenAngleRad) * radius * frac).toFloat()
             val isFocus = marker.towerId == focusTowerId
@@ -432,8 +473,9 @@ class CompassRadarView @JvmOverloads constructor(
             val iconScale = if (isFocus) proximityScale * 1.25f else proximityScale
             val bmp = if (isFocus) towerBitmapYellow else towerBitmapTeal
             if (bmp != null) {
-                val iw = bmp.width * iconScale
-                val ih = bmp.height * iconScale
+                val scale = if (compact) 0.82f else 1f
+                val iw = bmp.width * iconScale * scale
+                val ih = bmp.height * iconScale * scale
                 val dest = RectF(x - iw / 2f, y - ih * 0.85f, x + iw / 2f, y + ih * 0.15f)
                 if (isFocus) {
                     glowPaint.color = Color.argb(160, Color.red(accentColor), Color.green(accentColor), Color.blue(accentColor))
@@ -445,36 +487,40 @@ class CompassRadarView @JvmOverloads constructor(
                 hitTargets.add(HitTarget(marker.towerId, x, y, 14f * density))
             }
 
-            val rawName = when {
-                isFocus -> marker.name
-                veryDense && marker.name.length > 6 -> abbreviate(marker.name, 5)
-                dense && marker.name.length > 10 -> abbreviate(marker.name, 8)
-                marker.name.length > 16 -> abbreviate(marker.name, 14)
-                else -> marker.name
+            if (!compact) {
+                val rawName = when {
+                    isFocus -> marker.name
+                    veryDense && marker.name.length > 6 -> abbreviate(marker.name, 5)
+                    dense && marker.name.length > 10 -> abbreviate(marker.name, 8)
+                    marker.name.length > 16 -> abbreviate(marker.name, 14)
+                    else -> marker.name
+                }
+                val label = if (isFocus) {
+                    val dist = GeoUtils.formatDistance(marker.distanceMeters)
+                    "$rawName  $dist"
+                } else {
+                    rawName
+                }
+                // Initial label position: radially outward a bit, prefer above marker
+                var lx = x
+                var ly = y - 18f * density * iconScale
+                placements.add(PlacedLabel(marker.towerId, label, x, y, lx, ly, isFocus))
             }
-            val label = if (isFocus) {
-                val dist = GeoUtils.formatDistance(marker.distanceMeters)
-                "$rawName  $dist"
-            } else {
-                rawName
-            }
-            // Initial label position: radially outward a bit, prefer above marker
-            var lx = x
-            var ly = y - 18f * density * iconScale
-            placements.add(PlacedLabel(marker.towerId, label, x, y, lx, ly, isFocus))
         }
 
-        resolveLabelCollisions(placements)
+        if (!compact) {
+            resolveLabelCollisions(placements)
 
-        placements.forEach { p ->
-            labelPaint.color = if (p.isFocus) accentColor else textColor
-            labelPaint.textSize = if (p.isFocus) 11.5f * density else 9.5f * density
-            labelPaint.alpha = if (p.isFocus) 255 else 220
-            if (hypot((p.labelX - p.markerX).toDouble(), (p.labelY - p.markerY).toDouble()) > 10.0) {
-                leaderPaint.color = if (p.isFocus) accentColor else 0x55FFFFFF
-                canvas.drawLine(p.markerX, p.markerY - 8f * density, p.labelX, p.labelY + 2f * density, leaderPaint)
+            placements.forEach { p ->
+                labelPaint.color = if (p.isFocus) accentColor else textColor
+                labelPaint.textSize = if (p.isFocus) 11.5f * density else 9.5f * density
+                labelPaint.alpha = if (p.isFocus) 255 else 220
+                if (hypot((p.labelX - p.markerX).toDouble(), (p.labelY - p.markerY).toDouble()) > 10.0) {
+                    leaderPaint.color = if (p.isFocus) accentColor else 0x55FFFFFF
+                    canvas.drawLine(p.markerX, p.markerY - 8f * density, p.labelX, p.labelY + 2f * density, leaderPaint)
+                }
+                canvas.drawText(p.text, p.labelX, p.labelY, labelPaint)
             }
-            canvas.drawText(p.text, p.labelX, p.labelY, labelPaint)
         }
     }
 
@@ -559,7 +605,7 @@ class CompassRadarView @JvmOverloads constructor(
     }
 
     override fun onDetachedFromWindow() {
-        headingAnimator?.cancel()
+        stopFrameLoop()
         super.onDetachedFromWindow()
     }
 }

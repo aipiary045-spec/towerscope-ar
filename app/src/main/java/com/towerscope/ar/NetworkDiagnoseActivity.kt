@@ -1,26 +1,27 @@
 package com.towerscope.ar
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.DiagnoseLayer
 import com.towerscope.ar.network.DiagnoseLayerResult
 import com.towerscope.ar.network.DiagnoseReport
 import com.towerscope.ar.network.DiagnoseStatus
 import com.towerscope.ar.network.NetworkDiagnose
+import com.towerscope.ar.ui.DiagnoseLayerAdapter
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.ToolScaffold
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 /**
  * Layered path diagnose: link → DNS → TCP → TLS → HTTP.
@@ -32,7 +33,8 @@ class NetworkDiagnoseActivity : AppCompatActivity() {
     private lateinit var runButton: MaterialButton
     private lateinit var verdictLabel: TextView
     private lateinit var fixHintLabel: TextView
-    private lateinit var layersContainer: LinearLayout
+    private lateinit var layersList: RecyclerView
+    private lateinit var layersAdapter: DiagnoseLayerAdapter
     private var job: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,7 +47,18 @@ class NetworkDiagnoseActivity : AppCompatActivity() {
         runButton = findViewById(R.id.diagnoseRunButton)
         verdictLabel = findViewById(R.id.diagnoseVerdict)
         fixHintLabel = findViewById(R.id.diagnoseFixHint)
-        layersContainer = findViewById(R.id.diagnoseLayersContainer)
+        layersList = findViewById(R.id.diagnoseLayersContainer)
+        layersAdapter = DiagnoseLayerAdapter()
+        layersList.apply {
+            layoutManager = LinearLayoutManager(this@NetworkDiagnoseActivity)
+            adapter = layersAdapter
+            itemAnimator = null
+        }
+        ToolScaffold.bind(
+            activity = this,
+            titleRes = R.string.home_job_diagnose,
+            subtitleRes = R.string.home_job_diagnose_sub
+        )
 
         runButton.setOnClickListener { startDiagnose() }
         hostInput.setOnEditorActionListener { _, actionId, _ ->
@@ -56,11 +69,6 @@ class NetworkDiagnoseActivity : AppCompatActivity() {
                 false
             }
         }
-        findViewById<MaterialButton>(R.id.diagnoseBackButton).setOnClickListener {
-            job?.cancel()
-            finish()
-        }
-
         renderIdleLayers()
     }
 
@@ -155,56 +163,6 @@ class NetworkDiagnoseActivity : AppCompatActivity() {
     }
 
     private fun renderLayers(layers: List<DiagnoseLayerResult>) {
-        layersContainer.removeAllViews()
-        val inflater = LayoutInflater.from(this)
-        layers.forEachIndexed { index, layer ->
-            val row = inflater.inflate(R.layout.item_diagnose_layer_row, layersContainer, false)
-            if (index > 0) {
-                val lp = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                lp.topMargin = (10 * resources.displayMetrics.density).toInt()
-                row.layoutParams = lp
-            }
-            bindLayerRow(row, layer)
-            layersContainer.addView(row)
-        }
-    }
-
-    private fun bindLayerRow(row: android.view.View, layer: DiagnoseLayerResult) {
-        val statusView = row.findViewById<TextView>(R.id.diagnoseLayerStatus)
-        val titleView = row.findViewById<TextView>(R.id.diagnoseLayerTitle)
-        val detailView = row.findViewById<TextView>(R.id.diagnoseLayerDetail)
-        val latencyView = row.findViewById<TextView>(R.id.diagnoseLayerLatency)
-
-        titleView.text = layer.title
-        detailView.text = layer.detail
-        latencyView.text = layer.latencyMs?.let {
-            String.format(Locale.US, "%.0f ms", it)
-        }.orEmpty()
-
-        when (layer.status) {
-            DiagnoseStatus.PENDING -> {
-                statusView.text = "·"
-                statusView.setTextColor(getColor(R.color.text_muted))
-            }
-            DiagnoseStatus.RUNNING -> {
-                statusView.text = "…"
-                statusView.setTextColor(getColor(R.color.accent_teal))
-            }
-            DiagnoseStatus.PASS -> {
-                statusView.text = "✓"
-                statusView.setTextColor(getColor(R.color.status_clear))
-            }
-            DiagnoseStatus.FAIL -> {
-                statusView.text = "✕"
-                statusView.setTextColor(getColor(R.color.chip_poor))
-            }
-            DiagnoseStatus.SKIPPED -> {
-                statusView.text = "–"
-                statusView.setTextColor(getColor(R.color.text_dim))
-            }
-        }
+        layersAdapter.submitList(layers)
     }
 }
