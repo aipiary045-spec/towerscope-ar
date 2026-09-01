@@ -212,65 +212,6 @@
                 android:textColor="@color/text_dim"
                 android:textSize="12sp" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/homeCompassButton"
-                style="@style/Widget.TowerScope.Button.Primary"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="14dp"
-                android:text="@string/home_job_aim"
-                android:visibility="gone" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/homeImportButton"
-                style="@style/Widget.TowerScope.Button.Primary"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="14dp"
-                android:text="@string/home_import_sites"
-                android:visibility="gone" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:text="@string/home_section_quick"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_wfm_group_card"
-                android:orientation="vertical">
-
-                <include
-                    android:id="@+id/homeQuickCompass"
-                    layout="@layout/item_home_quick_action_inline" />
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="66dp"
-                    android:background="@color/divider_subtle" />
-
-                <include
-                    android:id="@+id/homeQuickLocate"
-                    layout="@layout/item_home_quick_action_inline" />
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="66dp"
-                    android:background="@color/divider_subtle" />
-
-                <include
-                    android:id="@+id/homeQuickLos"
-                    layout="@layout/item_home_quick_action_inline" />
-            </LinearLayout>
-
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

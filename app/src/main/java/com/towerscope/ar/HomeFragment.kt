@@ -1,7 +1,6 @@
 package com.towerscope.ar
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
@@ -16,8 +15,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.WifiMonitor
+import com.towerscope.ar.ui.BottomNavTab
 import com.towerscope.ar.ui.HomeLiveMetrics
 import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.SwipeRefreshHelper
@@ -40,8 +39,6 @@ class HomeFragment : Fragment(R.layout.activity_home) {
     private lateinit var nearestLabel: TextView
     private lateinit var nearestDetail: TextView
     private lateinit var gpsStatus: TextView
-    private lateinit var importButton: MaterialButton
-    private lateinit var compassButton: MaterialButton
     private lateinit var wifiMetric: HomeLiveMetrics.MetricViews
     private lateinit var internetMetric: HomeLiveMetrics.MetricViews
     private lateinit var speedMetric: HomeLiveMetrics.MetricViews
@@ -70,8 +67,6 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         nearestLabel = view.findViewById(R.id.homeNearestLabel)
         nearestDetail = view.findViewById(R.id.homeNearestDetail)
         gpsStatus = view.findViewById(R.id.homeGpsStatus)
-        importButton = view.findViewById(R.id.homeImportButton)
-        compassButton = view.findViewById(R.id.homeCompassButton)
 
         LocationSourceChip(
             chip = locationChip,
@@ -79,33 +74,13 @@ class HomeFragment : Fragment(R.layout.activity_home) {
             viewModel = viewModel
         )
 
-        importButton.setOnClickListener {
-            startActivity(Intent(requireContext(), DataMenuActivity::class.java))
-        }
-        compassButton.setOnClickListener {
-            startActivity(Intent(requireContext(), MainActivity::class.java))
-        }
-
-        bindQuickAction(view, R.id.homeQuickCompass, R.drawable.ic_compass_rose, R.color.accent_yellow,
-            R.string.home_job_aim, R.string.home_job_aim_sub) {
-            startActivity(Intent(requireContext(), MainActivity::class.java))
-        }
-        bindQuickAction(view, R.id.homeQuickLocate, R.drawable.ic_satellite_map, R.color.accent_teal,
-            R.string.home_job_locate, R.string.home_job_locate_sub) {
-            startActivity(Intent(requireContext(), MapActivity::class.java))
-        }
-        bindQuickAction(view, R.id.homeQuickLos, R.drawable.ic_terrain_profile, R.color.accent_teal,
-            R.string.home_job_los, R.string.home_job_los_sub) {
-            startActivity(Intent(requireContext(), LosProfilesActivity::class.java))
-        }
-
         bindHubLink(view, R.id.homeNetworkHubButton, R.drawable.ic_wifi_signal, R.color.accent_teal,
             R.string.home_hub_network, R.string.home_hub_network_sub) {
-            (activity as? MainHostActivity)?.showTab(com.towerscope.ar.ui.BottomNavTab.NETWORK)
+            (activity as? MainHostActivity)?.showTab(BottomNavTab.NETWORK)
         }
         bindHubLink(view, R.id.homeInstallHubButton, R.drawable.ic_compass_rose, R.color.accent_yellow,
             R.string.home_hub_install, R.string.home_hub_install_sub) {
-            (activity as? MainHostActivity)?.showTab(com.towerscope.ar.ui.BottomNavTab.INSTALL)
+            (activity as? MainHostActivity)?.showTab(BottomNavTab.INSTALL)
         }
 
         SwipeRefreshHelper.bind(
@@ -171,8 +146,6 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         val inRange = state.visibleTowers().size
         val hasSites = towerCount > 0
 
-        importButton.isVisible = !hasSites
-        compassButton.isVisible = hasSites
         sitesCount.text = if (hasSites) {
             towerCount.toString()
         } else {
@@ -249,25 +222,6 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         }
         row.findViewById<TextView>(R.id.homeHubTitle).setText(title)
         row.findViewById<TextView>(R.id.homeHubSubtitle).setText(subtitle)
-        row.setOnClickListener { onClick() }
-    }
-
-    private fun bindQuickAction(
-        root: View,
-        rowId: Int,
-        icon: Int,
-        iconTint: Int,
-        title: Int,
-        subtitle: Int,
-        onClick: () -> Unit
-    ) {
-        val row = root.findViewById<View>(rowId)
-        row.findViewById<ImageView>(R.id.homeQuickIcon).apply {
-            setImageResource(icon)
-            setColorFilter(ContextCompat.getColor(requireContext(), iconTint))
-        }
-        row.findViewById<TextView>(R.id.homeQuickTitle).setText(title)
-        row.findViewById<TextView>(R.id.homeQuickSubtitle).setText(subtitle)
         row.setOnClickListener { onClick() }
     }
 

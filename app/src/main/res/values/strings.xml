@@ -15,13 +15,12 @@
     <string name="home_section_status">Field status</string>
     <string name="home_section_sites">Sites</string>
     <string name="home_section_nearest">Nearest</string>
-    <string name="home_section_quick">Field tools</string>
-    <string name="home_section_browse">Browse</string>
+    <string name="home_section_browse">Hubs</string>
     <string name="home_sites_loaded">%1$d sites loaded</string>
     <string name="home_sites_in_range">%1$d in range</string>
     <string name="home_nearest_tower">Nearest: %1$s</string>
     <string name="home_nearest_detail">%1$s · %2$s</string>
-    <string name="home_nearest_none">Import sites to see nearest tower</string>
+    <string name="home_nearest_none">Open Install to import sites</string>
     <string name="home_nearest_waiting">Waiting for position to find nearest site</string>
     <string name="home_gps_waiting">Waiting for GPS fix…</string>
     <string name="home_gps_accuracy">GPS ±%1$s</string>
