@@ -273,29 +273,12 @@ object NetworkHubPreviews {
     live: InternetLiveMonitor.State,
     views: HomeLiveMetrics.MetricViews
   ) {
-    views.label.setText(R.string.hub_internet_metric_speed)
-    when {
-      live.quickSpeedRunning -> {
-        views.hero.text = "…"
-        views.hero.setTextColor(ContextCompat.getColor(context, R.color.accent_teal))
-        views.meta.text = context.getString(R.string.hub_internet_speed_sampling)
-      }
-      live.quickSpeedMbps != null -> {
-        views.hero.text = String.format(Locale.US, "%.0f Mbps", live.quickSpeedMbps)
-        views.hero.setTextColor(ContextCompat.getColor(context, R.color.status_clear))
-        views.meta.text = context.getString(R.string.hub_internet_speed_quick)
-      }
-      live.cachedSpeed != null && !NetworkSession.isLastSpeedQuick(context) -> {
-        views.hero.text = String.format(Locale.US, "%.0f Mbps", live.cachedSpeed.downloadMbps)
-        views.hero.setTextColor(ContextCompat.getColor(context, R.color.status_clear))
-        views.meta.text = formatSpeedAge(context, live.speedAgeMs, live.cachedSpeed)
-      }
-      else -> {
-        views.hero.text = "—"
-        views.hero.setTextColor(ContextCompat.getColor(context, R.color.text_muted))
-        views.meta.text = context.getString(R.string.hub_preview_speed_none)
-      }
-    }
+    InternetSpeedMetricBinder.bind(
+      context = context,
+      live = live,
+      views = views,
+      labelRes = R.string.hub_internet_metric_speed
+    )
   }
 
   private fun formatSpeedDetail(context: Context, live: InternetLiveMonitor.State): String {

@@ -38,7 +38,8 @@ object HomeLiveMetrics {
         topologyRoot: View,
         wifi: MetricViews,
         internet: MetricViews,
-        speed: MetricViews
+        speed: MetricViews,
+        internetLive: InternetLiveMonitor.State? = null
     ) {
         val snapshot = withContext(Dispatchers.IO) {
             ConnectionSnapshotCollector.collect(context, fetchPublicIp = false)
@@ -48,7 +49,11 @@ object HomeLiveMetrics {
         bindWifi(context, wifiMonitor, link, wifi)
         val ping = withContext(Dispatchers.IO) { PingMonitor.pingOnce("1.1.1.1") }
         bindInternet(context, ping, internet)
-        bindSpeed(context, NetworkSession.lastSpeedSnapshot(context), speed, snapshot)
+        if (internetLive != null) {
+            InternetSpeedMetricBinder.bind(context, internetLive, speed)
+        } else {
+            bindSpeedLegacy(context, NetworkSession.lastSpeedSnapshot(context), speed, snapshot)
+        }
     }
 
     private fun bindWifi(
@@ -101,7 +106,7 @@ object HomeLiveMetrics {
         views.meta.text = context.getString(R.string.hub_preview_ping_to, ping.host)
     }
 
-    private fun bindSpeed(
+    private fun bindSpeedLegacy(
         context: Context,
         snapshot: NetworkSession.SpeedSnapshot?,
         views: MetricViews,

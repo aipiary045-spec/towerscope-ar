@@ -320,21 +320,22 @@ data class TowerUiState(
 
     fun towerById(id: String): Tower? = towers.firstOrNull { it.id == id }
 
-    fun nearestMatches(limit: Int = 5): List<Tower> {
+    fun visibleTowersSortedByDistance(): List<Tower> {
         val location = positioningLocation()
         val visible = visibleTowers()
-        if (location == null) return visible.take(limit)
-        return visible
-            .sortedBy {
-                GeoUtils.haversineMeters(
-                    location.latitude,
-                    location.longitude,
-                    it.latitude,
-                    it.longitude
-                )
-            }
-            .take(limit)
+        if (location == null) return visible
+        return visible.sortedBy { tower ->
+            GeoUtils.haversineMeters(
+                location.latitude,
+                location.longitude,
+                tower.latitude,
+                tower.longitude
+            )
+        }
     }
+
+    fun nearestMatches(limit: Int = 5): List<Tower> =
+        visibleTowersSortedByDistance().take(limit)
 
     /** Every loaded site sorted nearest-first; distance is null without a positioning fix. */
     fun allTowersSortedByDistance(): List<Pair<Tower, Double?>> {

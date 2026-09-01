@@ -3,8 +3,10 @@ package com.towerscope.ar
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -18,6 +20,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.towerscope.ar.network.WifiMonitor
 import com.towerscope.ar.ui.BottomNavTab
 import com.towerscope.ar.ui.HomeLiveMetrics
+import com.towerscope.ar.ui.InternetLiveMonitor
 import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.SwipeRefreshHelper
 import com.towerscope.ar.util.DisplayUnits
@@ -28,20 +31,21 @@ import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class HomeFragment : Fragment(R.layout.activity_home) {
 
     private val viewModel: TowerScopeViewModel by activityViewModels()
 
-    private lateinit var sitesCount: TextView
-    private lateinit var inRangeCount: TextView
+    private lateinit var sitesSummary: TextView
+    private lateinit var nearbySitesEmpty: TextView
+    private lateinit var nearbySitesList: LinearLayout
     private lateinit var locationChip: TextView
-    private lateinit var nearestLabel: TextView
-    private lateinit var nearestDetail: TextView
     private lateinit var gpsStatus: TextView
     private lateinit var wifiMetric: HomeLiveMetrics.MetricViews
     private lateinit var internetMetric: HomeLiveMetrics.MetricViews
     private lateinit var speedMetric: HomeLiveMetrics.MetricViews
+    private val internetMonitor = InternetLiveMonitor()
     private var networkTopology: View? = null
 
     private val permissionLauncher = registerForActivityResult(
@@ -61,11 +65,10 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         internetMetric = HomeLiveMetrics.views(view, R.id.homeMetricInternet)
         speedMetric = HomeLiveMetrics.views(view, R.id.homeMetricSpeed)
 
-        sitesCount = view.findViewById(R.id.homeSitesCount)
-        inRangeCount = view.findViewById(R.id.homeInRangeCount)
+        sitesSummary = view.findViewById(R.id.homeSitesSummary)
+        nearbySitesEmpty = view.findViewById(R.id.homeNearbySitesEmpty)
+        nearbySitesList = view.findViewById(R.id.homeNearbySitesList)
         locationChip = view.findViewById(R.id.homeLocationChip)
-        nearestLabel = view.findViewById(R.id.homeNearestLabel)
-        nearestDetail = view.findViewById(R.id.homeNearestDetail)
         gpsStatus = view.findViewById(R.id.homeGpsStatus)
 
         LocationSourceChip(
@@ -83,11 +86,15 @@ class HomeFragment : Fragment(R.layout.activity_home) {
             (activity as? MainHostActivity)?.showTab(BottomNavTab.INSTALL)
         }
 
+        view.findViewById<View>(R.id.homeMetricSpeed).setOnClickListener {
+            (activity as? MainHostActivity)?.showTab(BottomNavTab.NETWORK)
+        }
+
         SwipeRefreshHelper.bind(
             view.findViewById<SwipeRefreshLayout>(R.id.homeSwipeRefresh),
             viewLifecycleOwner.lifecycleScope
         ) {
-            refreshHomeMetrics()
+            refreshHomeMetrics(forceInternetSpeed = true)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -112,16 +119,21 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         ensureLocationPermission()
     }
 
-    private suspend fun refreshHomeMetrics(wifiMonitor: WifiMonitor? = null) {
+    private suspend fun refreshHomeMetrics(
+        wifiMonitor: WifiMonitor? = null,
+        forceInternetSpeed: Boolean = false
+    ) {
         val topo = networkTopology ?: return
         val monitor = wifiMonitor ?: WifiMonitor(requireContext())
+        val live = internetMonitor.tick(requireContext(), forceQuickSpeed = forceInternetSpeed)
         HomeLiveMetrics.refresh(
             context = requireContext(),
             wifiMonitor = monitor,
             topologyRoot = topo,
             wifi = wifiMetric,
             internet = internetMetric,
-            speed = speedMetric
+            speed = speedMetric,
+            internetLive = live
         )
         if (hasLocationPermission()) {
             viewModel.startLocationUpdates(includeHeading = false)
@@ -146,15 +158,9 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         val inRange = state.visibleTowers().size
         val hasSites = towerCount > 0
 
-        sitesCount.text = if (hasSites) {
-            towerCount.toString()
-        } else {
-            getString(R.string.home_no_sites)
-        }
-
-        inRangeCount.isVisible = hasSites
-        if (hasSites) {
-            inRangeCount.text = getString(R.string.home_sites_in_range, inRange)
+        sitesSummary.text = when {
+            !hasSites -> getString(R.string.home_no_sites)
+            else -> getString(R.string.home_sites_summary, towerCount, inRange)
         }
 
         LocationSourceChip.chipLabel(state, requireContext()).let { label ->
@@ -163,28 +169,7 @@ class HomeFragment : Fragment(R.layout.activity_home) {
             }
         }
 
-        val nearest = state.nearestVisibleTower()
-        if (nearest != null && state.positioningLocation() != null) {
-            val distance = state.distanceTo(nearest)
-            val bearing = state.bearingTo(nearest)
-            nearestLabel.text = nearest.name
-            if (distance != null && bearing != null) {
-                nearestDetail.text = getString(
-                    R.string.home_nearest_detail,
-                    UnitFormat.formatDistance(distance, state.distanceUnitSystem),
-                    GeoUtils.formatBearing(bearing)
-                )
-                nearestDetail.isVisible = true
-            } else {
-                nearestDetail.isVisible = false
-            }
-        } else if (hasSites) {
-            nearestLabel.text = getString(R.string.home_nearest_waiting)
-            nearestDetail.isVisible = false
-        } else {
-            nearestLabel.text = getString(R.string.home_nearest_none)
-            nearestDetail.isVisible = false
-        }
+        renderNearbySites(state)
 
         gpsStatus.text = when {
             state.usesCustomLocation() -> getString(
@@ -203,6 +188,64 @@ class HomeFragment : Fragment(R.layout.activity_home) {
                 }
             }
             else -> getString(R.string.home_gps_waiting)
+        }
+    }
+
+    private fun renderNearbySites(state: TowerUiState) {
+        val sorted = state.visibleTowersSortedByDistance()
+        when {
+            state.towers.isEmpty() -> {
+                nearbySitesEmpty.isVisible = true
+                nearbySitesEmpty.text = getString(R.string.home_nearest_none)
+                nearbySitesList.isVisible = false
+                nearbySitesList.removeAllViews()
+            }
+            state.positioningLocation() == null -> {
+                nearbySitesEmpty.isVisible = true
+                nearbySitesEmpty.text = getString(R.string.home_nearby_waiting)
+                nearbySitesList.isVisible = false
+                nearbySitesList.removeAllViews()
+            }
+            sorted.isEmpty() -> {
+                nearbySitesEmpty.isVisible = true
+                nearbySitesEmpty.text = getString(R.string.home_nearby_none_in_range)
+                nearbySitesList.isVisible = false
+                nearbySitesList.removeAllViews()
+            }
+            else -> {
+                nearbySitesEmpty.isVisible = false
+                nearbySitesList.isVisible = true
+                val newIds = sorted.map { it.id }
+                val currentIds = (0 until nearbySitesList.childCount).map {
+                    nearbySitesList.getChildAt(it).tag as String
+                }
+                if (currentIds != newIds) {
+                    nearbySitesList.removeAllViews()
+                    val inflater = LayoutInflater.from(requireContext())
+                    sorted.forEach { tower ->
+                        val row = inflater.inflate(R.layout.item_home_nearby_site_row, nearbySitesList, false)
+                        row.tag = tower.id
+                        row.setOnClickListener {
+                            viewModel.selectTower(tower.id)
+                            (activity as? MainHostActivity)?.showTab(BottomNavTab.INSTALL)
+                        }
+                        nearbySitesList.addView(row)
+                    }
+                }
+                for (index in sorted.indices) {
+                    val tower = sorted[index]
+                    val row = nearbySitesList.getChildAt(index)
+                    row.findViewById<TextView>(R.id.homeNearbySiteName).text = tower.name
+                    val distance = state.distanceTo(tower)
+                    val bearing = state.bearingTo(tower)
+                    val distText = distance?.let {
+                        UnitFormat.formatDistance(it, state.distanceUnitSystem)
+                    } ?: "—"
+                    val azText = bearing?.let { GeoUtils.formatBearing(it) } ?: "—"
+                    row.findViewById<TextView>(R.id.homeNearbySiteMeta).text =
+                        String.format(Locale.US, "%s · %s", distText, azText)
+                }
+            }
         }
     }
 

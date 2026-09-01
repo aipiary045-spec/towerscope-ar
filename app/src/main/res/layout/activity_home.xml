@@ -87,119 +87,83 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp" />
 
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:scrollbars="none">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <include
-                        android:id="@+id/homeMetricWifi"
-                        layout="@layout/include_home_metric_tile" />
-
-                    <include
-                        android:id="@+id/homeMetricInternet"
-                        layout="@layout/include_home_metric_tile" />
-
-                    <include
-                        android:id="@+id/homeMetricSpeed"
-                        layout="@layout/include_home_metric_tile"
-                        android:layout_marginEnd="0dp" />
-                </LinearLayout>
-            </HorizontalScrollView>
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="10dp"
+                android:baselineAligned="false"
                 android:orientation="horizontal">
 
-                <LinearLayout
+                <include
+                    android:id="@+id/homeMetricWifi"
+                    layout="@layout/include_home_metric_tile"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_field_card"
-                    android:orientation="vertical"
-                    android:padding="14dp">
+                    android:layout_marginEnd="0dp"
+                    android:layout_weight="1" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:letterSpacing="0.08"
-                        android:text="@string/home_section_sites"
-                        android:textAllCaps="true"
-                        android:textColor="@color/text_dim"
-                        android:textSize="10sp" />
-
-                    <TextView
-                        android:id="@+id/homeSitesCount"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:text="@string/home_no_sites"
-                        android:textColor="@color/text_primary"
-                        android:textSize="18sp" />
-
-                    <TextView
-                        android:id="@+id/homeInRangeCount"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:fontFamily="@font/source_sans3_regular"
-                        android:textColor="@color/text_muted"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
-                </LinearLayout>
-
-                <LinearLayout
+                <include
+                    android:id="@+id/homeMetricInternet"
+                    layout="@layout/include_home_metric_tile"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_field_card"
+                    android:layout_marginEnd="0dp"
+                    android:layout_weight="1" />
+
+                <include
+                    android:id="@+id/homeMetricSpeed"
+                    layout="@layout/include_home_metric_tile"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="0dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:text="@string/home_section_nearby"
+                android:textColor="@color/text_primary"
+                android:textSize="17sp" />
+
+            <TextView
+                android:id="@+id/homeSitesSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/source_sans3_regular"
+                android:text="@string/home_no_sites"
+                android:textColor="@color/text_muted"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:id="@+id/homeNearbySitesCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_wfm_group_card"
+                android:orientation="vertical"
+                android:paddingVertical="4dp">
+
+                <TextView
+                    android:id="@+id/homeNearbySitesEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_regular"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="12dp"
+                    android:text="@string/home_nearest_none"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:id="@+id/homeNearbySitesList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="14dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:letterSpacing="0.08"
-                        android:text="@string/home_section_nearest"
-                        android:textAllCaps="true"
-                        android:textColor="@color/text_dim"
-                        android:textSize="10sp" />
-
-                    <TextView
-                        android:id="@+id/homeNearestLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:ellipsize="end"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:maxLines="2"
-                        android:text="@string/home_nearest_none"
-                        android:textColor="@color/text_primary"
-                        android:textSize="15sp" />
-
-                    <TextView
-                        android:id="@+id/homeNearestDetail"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:fontFamily="@font/source_sans3_regular"
-                        android:textColor="@color/text_muted"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
-                </LinearLayout>
+                    android:visibility="gone" />
             </LinearLayout>
 
             <TextView
