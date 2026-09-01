@@ -86,13 +86,19 @@
         </LinearLayout>
     </HorizontalScrollView>
 
-    <ScrollView
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/networkHubSwipeRefresh"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="12dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:fillViewport="true">
+        android:layout_weight="1">
+
+        <ScrollView
+            android:id="@+id/networkHubScroll"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="true">
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -271,5 +277,6 @@
                 </LinearLayout>
             </LinearLayout>
         </FrameLayout>
-    </ScrollView>
+        </ScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </LinearLayout>

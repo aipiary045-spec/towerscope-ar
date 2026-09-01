@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/homeRoot"
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/homeSwipeRefresh"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_topo_screen"
-    android:orientation="vertical">
+    android:background="@drawable/bg_topo_screen">
 
     <ScrollView
+        android:id="@+id/homeScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
         android:fillViewport="true">
 
         <LinearLayout
+            android:id="@+id/homeRoot"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -340,4 +341,4 @@
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
-</LinearLayout>
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

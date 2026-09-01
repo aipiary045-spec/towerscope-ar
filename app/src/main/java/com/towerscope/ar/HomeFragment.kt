@@ -15,10 +15,12 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.WifiMonitor
 import com.towerscope.ar.ui.HomeLiveMetrics
 import com.towerscope.ar.ui.LocationSourceChip
+import com.towerscope.ar.ui.SwipeRefreshHelper
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.UnitFormat
@@ -121,6 +123,13 @@ class HomeFragment : Fragment(R.layout.activity_home) {
             (activity as? MainHostActivity)?.showTab(com.towerscope.ar.ui.BottomNavTab.INSTALL)
         }
 
+        SwipeRefreshHelper.bind(
+            view.findViewById<SwipeRefreshLayout>(R.id.homeSwipeRefresh),
+            viewLifecycleOwner.lifecycleScope
+        ) {
+            refreshHomeMetrics()
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
@@ -134,21 +143,30 @@ class HomeFragment : Fragment(R.layout.activity_home) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 val wifiMonitor = WifiMonitor(requireContext())
                 while (isActive) {
-                    val topo = networkTopology ?: break
-                    HomeLiveMetrics.refresh(
-                        context = requireContext(),
-                        wifiMonitor = wifiMonitor,
-                        topologyRoot = topo,
-                        wifi = wifiMetric,
-                        internet = internetMetric,
-                        speed = speedMetric
-                    )
+                    refreshHomeMetrics(wifiMonitor)
                     delay(4_000L)
                 }
             }
         }
 
         ensureLocationPermission()
+    }
+
+    private suspend fun refreshHomeMetrics(wifiMonitor: WifiMonitor? = null) {
+        val topo = networkTopology ?: return
+        val monitor = wifiMonitor ?: WifiMonitor(requireContext())
+        HomeLiveMetrics.refresh(
+            context = requireContext(),
+            wifiMonitor = monitor,
+            topologyRoot = topo,
+            wifi = wifiMetric,
+            internet = internetMetric,
+            speed = speedMetric
+        )
+        if (hasLocationPermission()) {
+            viewModel.startLocationUpdates(includeHeading = false)
+        }
+        renderDashboard(viewModel.uiState.value)
     }
 
     override fun onResume() {

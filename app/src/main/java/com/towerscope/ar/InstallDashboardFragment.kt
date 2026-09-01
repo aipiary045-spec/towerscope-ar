@@ -14,9 +14,11 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.towerscope.ar.ui.InstallHubPreviews
 import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.NetworkHubPreviews
+import com.towerscope.ar.ui.SwipeRefreshHelper
 import com.towerscope.ar.ui.WfmSegmentTabs
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.GeoUtils
@@ -65,6 +67,13 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
         view.findViewById<View>(R.id.installTabTools).findViewById<TextView>(R.id.wfmTabLabel)
             .setText(R.string.install_tab_tools)
         WfmSegmentTabs.bindInstallHub(view)
+
+        SwipeRefreshHelper.bind(
+            view.findViewById<SwipeRefreshLayout>(R.id.installDashboardSwipeRefresh),
+            viewLifecycleOwner.lifecycleScope
+        ) {
+            refreshInstallDashboard()
+        }
 
         view.findViewById<View>(R.id.installDashboardCompassButton).setOnClickListener {
             startActivity(Intent(requireContext(), MainActivity::class.java))
@@ -116,6 +125,16 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
     override fun onPause() {
         viewModel.stopLocationUpdates()
         super.onPause()
+    }
+
+    private fun refreshInstallDashboard() {
+        viewModel.syncFromFileStore()
+        if (hasLocationPermission()) {
+            viewModel.startLocationUpdates(includeHeading = false)
+        }
+        startedLosScan = false
+        maybeStartLosScan(force = true)
+        render(viewModel.uiState.value)
     }
 
     private fun bindToolRow(

@@ -60,12 +60,18 @@
         </LinearLayout>
     </HorizontalScrollView>
 
-    <ScrollView
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/installDashboardSwipeRefresh"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="12dp"
-        android:layout_weight="1"
-        android:clipToPadding="false">
+        android:layout_weight="1">
+
+        <ScrollView
+            android:id="@+id/installDashboardScroll"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false">
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -186,5 +192,6 @@
                 </LinearLayout>
             </LinearLayout>
         </FrameLayout>
-    </ScrollView>
+        </ScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </LinearLayout>
