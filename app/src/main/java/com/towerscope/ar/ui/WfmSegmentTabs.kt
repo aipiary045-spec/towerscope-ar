@@ -21,14 +21,18 @@ enum class InstallHubTab {
 
 object WfmSegmentTabs {
 
-    fun bindNetworkHub(root: View, initial: NetworkHubTab = NetworkHubTab.CONNECTION) {
+    fun bindNetworkHub(
+        root: View,
+        initial: NetworkHubTab = NetworkHubTab.CONNECTION,
+        onTabSelected: ((NetworkHubTab) -> Unit)? = null
+    ) {
         val tabs = listOf(
             Triple(R.id.hubTabConnection, R.id.hubPanelConnection, NetworkHubTab.CONNECTION),
             Triple(R.id.hubTabWifi, R.id.hubPanelWifi, NetworkHubTab.WIFI),
             Triple(R.id.hubTabLocal, R.id.hubPanelLocal, NetworkHubTab.LOCAL),
             Triple(R.id.hubTabInternet, R.id.hubPanelInternet, NetworkHubTab.INTERNET)
         )
-        bind(root, tabs, initial) { selected, tab ->
+        bind(root, tabs, initial, onTabSelected) { selected, tab ->
             selected == tab
         }
     }
@@ -38,7 +42,7 @@ object WfmSegmentTabs {
             Triple(R.id.installTabOverview, R.id.installPanelOverview, InstallHubTab.OVERVIEW),
             Triple(R.id.installTabTools, R.id.installPanelTools, InstallHubTab.TOOLS)
         )
-        bind(root, tabs, initial) { selected, tab ->
+        bind(root, tabs, initial, onTabSelected = null) { selected, tab ->
             selected == tab
         }
     }
@@ -47,6 +51,7 @@ object WfmSegmentTabs {
         root: View,
         tabs: List<Triple<Int, Int, T>>,
         initial: T,
+        onTabSelected: ((T) -> Unit)? = null,
         isSelected: (T, T) -> Boolean
     ) {
         val ctx = root.context
@@ -65,6 +70,7 @@ object WfmSegmentTabs {
                     typeface = if (on) semibold else regular
                 }
             }
+            onTabSelected?.invoke(tab)
         }
 
         tabs.forEach { (tabId, _, value) ->

@@ -24,9 +24,12 @@
             android:orientation="vertical"
             android:paddingBottom="12dp">
 
+            <include layout="@layout/include_wifi_topology" />
+
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
                 android:scrollbars="none">
 
                 <LinearLayout
@@ -85,7 +88,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="5dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_metric_tile"
+                    android:background="@drawable/bg_field_card"
                     android:orientation="vertical"
                     android:padding="14dp">
 
@@ -93,10 +96,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/source_sans3_semibold"
-                        android:letterSpacing="0.1"
-                        android:text="DOWN"
+                        android:letterSpacing="0.08"
+                        android:text="@string/speed_metric_down"
+                        android:textAllCaps="true"
                         android:textColor="@color/text_dim"
-                        android:textSize="11sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:id="@+id/speedDownload"
@@ -116,7 +120,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_metric_tile"
+                    android:background="@drawable/bg_field_card"
                     android:orientation="vertical"
                     android:padding="14dp">
 
@@ -124,10 +128,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/source_sans3_semibold"
-                        android:letterSpacing="0.1"
-                        android:text="UP"
+                        android:letterSpacing="0.08"
+                        android:text="@string/speed_metric_up"
+                        android:textAllCaps="true"
                         android:textColor="@color/text_dim"
-                        android:textSize="11sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:id="@+id/speedUpload"
@@ -154,18 +159,19 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="5dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_metric_card"
+                    android:background="@drawable/bg_field_card"
                     android:orientation="vertical"
-                    android:padding="@dimen/card_padding_lg">
+                    android:padding="14dp">
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/source_sans3_semibold"
-                        android:letterSpacing="0.12"
-                        android:text="LATENCY"
+                        android:letterSpacing="0.08"
+                        android:text="@string/speed_metric_latency"
+                        android:textAllCaps="true"
                         android:textColor="@color/text_dim"
-                        android:textSize="11sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:id="@+id/speedLatency"
@@ -184,18 +190,19 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_metric_card"
+                    android:background="@drawable/bg_field_card"
                     android:orientation="vertical"
-                    android:padding="@dimen/card_padding_lg">
+                    android:padding="14dp">
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/source_sans3_semibold"
-                        android:letterSpacing="0.12"
-                        android:text="JITTER"
+                        android:letterSpacing="0.08"
+                        android:text="@string/speed_metric_jitter"
+                        android:textAllCaps="true"
                         android:textColor="@color/text_dim"
-                        android:textSize="11sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:id="@+id/speedJitter"
@@ -236,18 +243,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/bg_metric_card"
+                android:background="@drawable/bg_field_card"
                 android:orientation="vertical"
-                android:padding="@dimen/card_padding_lg">
+                android:padding="14dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/source_sans3_semibold"
-                    android:letterSpacing="0.12"
-                    android:text="BUFFERBLOAT"
+                    android:letterSpacing="0.08"
+                    android:text="@string/speed_metric_bufferbloat"
+                    android:textAllCaps="true"
                     android:textColor="@color/text_dim"
-                    android:textSize="11sp" />
+                    android:textSize="10sp" />
 
                 <TextView
                     android:id="@+id/speedBufferbloatStatus"

@@ -56,6 +56,11 @@ data class SpeedProgress(
     val serverLabel: String? = null
 )
 
+data class QuickSpeedResult(
+    val downloadMbps: Double,
+    val latencyMs: Double
+)
+
 /**
  * Multi-server field speed test with auto-pick, parallel streams,
  * sustained Mbps, and latency jitter.
@@ -118,6 +123,37 @@ object SpeedTestClient {
 
     fun serverById(id: String): SpeedTestServer? =
         servers.firstOrNull { it.id == id }
+
+    /** Lightweight download sample for hub previews (~2 MB, single stream). */
+    suspend fun runQuick(): QuickSpeedResult = withContext(Dispatchers.IO) {
+        val server = servers.first { it.id == "cloudflare" }
+        val latency = probeLatencyMs(server.latencyUrl) ?: Double.NaN
+        val targetBytes = 2_000_000L
+        val url = server.downloadUrl(targetBytes)
+        var downloaded = 0L
+        val start = System.nanoTime()
+        openGet(url, refererFor(url)).use { connection ->
+            if (connection.responseCode !in 200..399) {
+                error("HTTP ${connection.responseCode}")
+            }
+            connection.inputStream.use { input ->
+                val buf = ByteArray(64 * 1024)
+                while (downloaded < targetBytes) {
+                    coroutineContext.ensureActive()
+                    val read = input.read(buf)
+                    if (read <= 0) break
+                    downloaded += read
+                }
+            }
+        }
+        val elapsedSec = (System.nanoTime() - start) / 1_000_000_000.0
+        val mbps = if (elapsedSec > 0 && downloaded > 0) {
+            (downloaded * 8.0) / elapsedSec / 1_000_000.0
+        } else {
+            Double.NaN
+        }
+        QuickSpeedResult(downloadMbps = mbps, latencyMs = latency)
+    }
 
     suspend fun run(
         serverId: String = AUTO_SERVER_ID,

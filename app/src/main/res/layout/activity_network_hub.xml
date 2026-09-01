@@ -32,7 +32,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:background="@drawable/bg_metric_tile"
+        android:background="@drawable/bg_field_card"
         android:fontFamily="@font/source_sans3_regular"
         android:padding="12dp"
         android:textColor="@color/accent_teal"
@@ -197,6 +197,36 @@
                     layout="@layout/include_hub_live_preview"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <include
+                            android:id="@+id/hubInternetPingMetric"
+                            layout="@layout/include_home_metric_tile" />
+
+                        <include
+                            android:id="@+id/hubInternetSpeedMetric"
+                            layout="@layout/include_home_metric_tile"
+                            android:layout_marginEnd="0dp" />
+                    </LinearLayout>
+                </HorizontalScrollView>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/hubInternetQuickCheck"
+                    style="@style/Widget.TowerScope.Button.Ghost"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/hub_internet_quick_check" />
 
                 <LinearLayout
                     android:layout_width="match_parent"

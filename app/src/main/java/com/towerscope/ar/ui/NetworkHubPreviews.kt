@@ -19,6 +19,7 @@ import com.towerscope.ar.network.WifiMonitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 object NetworkHubPreviews {
 
@@ -46,7 +47,10 @@ object NetworkHubPreviews {
     connection: PreviewViews,
     wifi: PreviewViews,
     local: PreviewViews,
-    internet: PreviewViews
+    internet: PreviewViews,
+    internetLive: InternetLiveMonitor.State? = null,
+    internetPingMetric: HomeLiveMetrics.MetricViews? = null,
+    internetSpeedMetric: HomeLiveMetrics.MetricViews? = null
   ) {
     val snapshot = withContext(Dispatchers.IO) {
       ConnectionSnapshotCollector.collect(context, fetchPublicIp = false)
@@ -61,8 +65,14 @@ object NetworkHubPreviews {
     )
     bindWifi(context, link, analysis, wifi)
     bindLocal(context, snapshot, SubnetScanner.localSubnet(context), local)
-    val ping = withContext(Dispatchers.IO) { PingMonitor.pingOnce("1.1.1.1") }
-    bindInternet(context, ping, NetworkSession.lastSpeedSnapshot(context), internet)
+    if (internetLive != null) {
+      bindInternetLive(context, internetLive, internet)
+      internetPingMetric?.let { bindInternetPingMetric(context, internetLive, it) }
+      internetSpeedMetric?.let { bindInternetSpeedMetric(context, internetLive, it) }
+    } else {
+      val ping = withContext(Dispatchers.IO) { PingMonitor.pingOnce("1.1.1.1") }
+      bindInternet(context, ping, NetworkSession.lastSpeedSnapshot(context), internet)
+    }
   }
 
   private fun bindConnection(context: Context, snapshot: ConnectionSnapshot, views: PreviewViews) {
@@ -192,6 +202,140 @@ object NetworkHubPreviews {
       views.hero.text = "—"
       views.meta.isVisible = false
       views.detail.text = context.getString(R.string.hub_preview_local_unavailable)
+    }
+  }
+
+  private fun bindInternetLive(
+    context: Context,
+    live: InternetLiveMonitor.State,
+    views: PreviewViews
+  ) {
+    views.label.setText(R.string.hub_preview_internet_label)
+    val avg = live.avgMs
+    views.hero.text = when {
+      live.sampleCount == 0 && live.lastMs == null -> context.getString(R.string.hub_preview_ping_failed)
+      avg != null && avg > 0 -> String.format(Locale.US, "%.0f ms", avg)
+      live.lastMs != null -> String.format(Locale.US, "%.0f ms", live.lastMs)
+      else -> context.getString(R.string.hub_preview_ping_failed)
+    }
+    val reachable = live.sampleCount > 0 || live.lastMs != null
+    views.hero.setTextColor(
+      ContextCompat.getColor(
+        context,
+        if (reachable) R.color.status_clear else R.color.status_blocked
+      )
+    )
+    views.meta.isVisible = true
+    views.meta.text = if (live.sampleCount > 0) {
+      context.getString(
+        R.string.hub_internet_ping_meta,
+        live.jitterMs ?: 0.0,
+        live.lossPercent,
+        live.sampleCount
+      )
+    } else {
+      context.getString(R.string.hub_preview_ping_to, live.host)
+    }
+    views.detail.text = formatSpeedDetail(context, live)
+  }
+
+  private fun bindInternetPingMetric(
+    context: Context,
+    live: InternetLiveMonitor.State,
+    views: HomeLiveMetrics.MetricViews
+  ) {
+    views.label.setText(R.string.hub_internet_metric_ping)
+    val avg = live.avgMs
+    views.hero.text = when {
+      avg != null && avg > 0 -> String.format(Locale.US, "%.0f ms", avg)
+      live.lastMs != null -> String.format(Locale.US, "%.0f ms", live.lastMs)
+      else -> "—"
+    }
+    views.hero.setTextColor(
+      ContextCompat.getColor(
+        context,
+        if (live.sampleCount > 0) R.color.status_clear else R.color.text_muted
+      )
+    )
+    views.meta.text = if (live.sampleCount > 0) {
+      context.getString(
+        R.string.hub_internet_ping_tile_meta,
+        live.jitterMs ?: 0.0,
+        live.lossPercent
+      )
+    } else {
+      context.getString(R.string.hub_internet_ping_collecting)
+    }
+  }
+
+  private fun bindInternetSpeedMetric(
+    context: Context,
+    live: InternetLiveMonitor.State,
+    views: HomeLiveMetrics.MetricViews
+  ) {
+    views.label.setText(R.string.hub_internet_metric_speed)
+    when {
+      live.quickSpeedRunning -> {
+        views.hero.text = "…"
+        views.hero.setTextColor(ContextCompat.getColor(context, R.color.accent_teal))
+        views.meta.text = context.getString(R.string.hub_internet_speed_sampling)
+      }
+      live.quickSpeedMbps != null -> {
+        views.hero.text = String.format(Locale.US, "%.0f Mbps", live.quickSpeedMbps)
+        views.hero.setTextColor(ContextCompat.getColor(context, R.color.status_clear))
+        views.meta.text = context.getString(R.string.hub_internet_speed_quick)
+      }
+      live.cachedSpeed != null -> {
+        views.hero.text = String.format(Locale.US, "%.0f Mbps", live.cachedSpeed.downloadMbps)
+        views.hero.setTextColor(ContextCompat.getColor(context, R.color.status_clear))
+        views.meta.text = formatSpeedAge(context, live.speedAgeMs, live.cachedSpeed)
+      }
+      else -> {
+        views.hero.text = "—"
+        views.hero.setTextColor(ContextCompat.getColor(context, R.color.text_muted))
+        views.meta.text = context.getString(R.string.hub_preview_speed_none)
+      }
+    }
+  }
+
+  private fun formatSpeedDetail(context: Context, live: InternetLiveMonitor.State): String {
+    return when {
+      live.quickSpeedRunning -> context.getString(R.string.hub_internet_speed_sampling)
+      live.quickSpeedMbps != null -> context.getString(
+        R.string.hub_internet_speed_detail_quick,
+        live.quickSpeedMbps
+      )
+      live.cachedSpeed != null -> {
+        val age = formatSpeedAge(context, live.speedAgeMs, live.cachedSpeed)
+        String.format(
+          Locale.US,
+          "%.0f↓ / %.0f↑ Mbps · %.0f ms\n%s",
+          live.cachedSpeed.downloadMbps,
+          live.cachedSpeed.uploadMbps,
+          live.cachedSpeed.latencyMs,
+          age
+        )
+      }
+      else -> context.getString(R.string.hub_preview_speed_none)
+    }
+  }
+
+  private fun formatSpeedAge(
+    context: Context,
+    ageMs: Long?,
+    speed: NetworkSession.SpeedSnapshot
+  ): String {
+    if (ageMs == null) {
+      return context.getString(R.string.hub_internet_speed_last_full)
+    }
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(ageMs)
+    return when {
+      minutes < 1 -> context.getString(R.string.hub_internet_speed_age_recent)
+      minutes < 60 -> context.getString(R.string.hub_internet_speed_age_minutes, minutes.toInt())
+      else -> context.getString(
+        R.string.hub_internet_speed_age_hours,
+        TimeUnit.MILLISECONDS.toHours(ageMs).toInt()
+      )
     }
   }
 

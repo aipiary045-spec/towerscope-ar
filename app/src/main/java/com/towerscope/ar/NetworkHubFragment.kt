@@ -11,9 +11,13 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.NetworkSession
 import com.towerscope.ar.network.WifiMonitor
+import com.towerscope.ar.ui.HomeLiveMetrics
+import com.towerscope.ar.ui.InternetLiveMonitor
 import com.towerscope.ar.ui.NetworkHubPreviews
+import com.towerscope.ar.ui.NetworkHubTab
 import com.towerscope.ar.ui.WfmSegmentTabs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -25,6 +29,10 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
     private lateinit var wifiPreview: NetworkHubPreviews.PreviewViews
     private lateinit var localPreview: NetworkHubPreviews.PreviewViews
     private lateinit var internetPreview: NetworkHubPreviews.PreviewViews
+    private lateinit var internetPingMetric: HomeLiveMetrics.MetricViews
+    private lateinit var internetSpeedMetric: HomeLiveMetrics.MetricViews
+    private val internetMonitor = InternetLiveMonitor()
+    private var activeTab = NetworkHubTab.CONNECTION
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -33,6 +41,8 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
         wifiPreview = NetworkHubPreviews.views(view, R.id.hubWifiPreview)
         localPreview = NetworkHubPreviews.views(view, R.id.hubLocalPreview)
         internetPreview = NetworkHubPreviews.views(view, R.id.hubInternetPreview)
+        internetPingMetric = HomeLiveMetrics.views(view, R.id.hubInternetPingMetric)
+        internetSpeedMetric = HomeLiveMetrics.views(view, R.id.hubInternetSpeedMetric)
 
         view.findViewById<View>(R.id.hubTabConnection).findViewById<TextView>(R.id.wfmTabLabel)
             .setText(R.string.hub_section_connection)
@@ -43,9 +53,30 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
         view.findViewById<View>(R.id.hubTabInternet).findViewById<TextView>(R.id.wfmTabLabel)
             .setText(R.string.hub_section_internet)
 
-        WfmSegmentTabs.bindNetworkHub(view)
+        WfmSegmentTabs.bindNetworkHub(view) { tab ->
+            activeTab = tab
+        }
 
         refreshResume(view.findViewById(R.id.networkHubResumeLabel))
+
+        view.findViewById<MaterialButton>(R.id.hubInternetQuickCheck).setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val ctx = context ?: return@launch
+                val live = internetMonitor.tick(ctx, forceQuickSpeed = true)
+                NetworkHubPreviews.refresh(
+                    root = view,
+                    context = ctx,
+                    wifiMonitor = WifiMonitor(ctx),
+                    connection = connectionPreview,
+                    wifi = wifiPreview,
+                    local = localPreview,
+                    internet = internetPreview,
+                    internetLive = live,
+                    internetPingMetric = internetPingMetric,
+                    internetSpeedMetric = internetSpeedMetric
+                )
+            }
+        }
 
         bindTile(view, R.id.hubConnectionRow, R.drawable.ic_my_location, R.color.accent_teal,
             R.string.home_job_connection, R.string.home_job_connection_sub) {
@@ -85,6 +116,11 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
                 val wifiMonitor = WifiMonitor(requireContext())
                 while (isActive) {
                     val ctx = context ?: break
+                    val live = if (activeTab == NetworkHubTab.INTERNET) {
+                        internetMonitor.tick(ctx)
+                    } else {
+                        null
+                    }
                     NetworkHubPreviews.refresh(
                         root = view,
                         context = ctx,
@@ -92,7 +128,18 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
                         connection = connectionPreview,
                         wifi = wifiPreview,
                         local = localPreview,
-                        internet = internetPreview
+                        internet = internetPreview,
+                        internetLive = live,
+                        internetPingMetric = if (activeTab == NetworkHubTab.INTERNET) {
+                            internetPingMetric
+                        } else {
+                            null
+                        },
+                        internetSpeedMetric = if (activeTab == NetworkHubTab.INTERNET) {
+                            internetSpeedMetric
+                        } else {
+                            null
+                        }
                     )
                     refreshResume(view.findViewById(R.id.networkHubResumeLabel))
                     delay(4_000L)
@@ -104,8 +151,9 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
     private fun refreshResume(label: TextView?) {
         val ctx = context ?: return
         val resume = listOfNotNull(
-            NetworkSession.speedSummary(ctx)?.let { "Speed: $it" },
-            NetworkSession.pingSummary(ctx)?.let { "Ping: $it" }
+            NetworkSession.speedSummary(ctx)?.let { getString(R.string.hub_resume_speed, it) },
+            NetworkSession.livePingSummary(ctx)?.let { getString(R.string.hub_resume_ping, it) },
+            NetworkSession.pingSummary(ctx)?.let { getString(R.string.hub_resume_ping, it) }
         ).joinToString("\n")
         label?.apply {
             isVisible = resume.isNotBlank()

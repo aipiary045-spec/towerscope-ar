@@ -24,6 +24,7 @@ object NetworkSession {
             .putFloat(KEY_SPEED_DOWN, downloadMbps.toFloat())
             .putFloat(KEY_SPEED_UP, uploadMbps.toFloat())
             .putFloat(KEY_SPEED_LATENCY, latencyMs.toFloat())
+            .putBoolean(KEY_SPEED_QUICK, false)
             .apply()
     }
 
@@ -71,6 +72,61 @@ object NetworkSession {
         )
     }
 
+    fun speedSnapshotAgeMs(context: Context): Long? {
+        val p = prefs(context)
+        if (!p.contains(KEY_SPEED_AT)) return null
+        return (System.currentTimeMillis() - p.getLong(KEY_SPEED_AT, 0L)).coerceAtLeast(0L)
+    }
+
+    fun recordQuickSpeed(context: Context, downloadMbps: Double, latencyMs: Double) {
+        val previous = lastSpeedSnapshot(context)
+        prefs(context).edit()
+            .putLong(KEY_SPEED_AT, System.currentTimeMillis())
+            .putFloat(KEY_SPEED_DOWN, downloadMbps.toFloat())
+            .putFloat(KEY_SPEED_UP, previous?.uploadMbps ?: 0f)
+            .putFloat(KEY_SPEED_LATENCY, latencyMs.toFloat())
+            .putBoolean(KEY_SPEED_QUICK, true)
+            .apply()
+    }
+
+    fun isLastSpeedQuick(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_SPEED_QUICK, false)
+
+    data class LivePingSnapshot(
+        val host: String,
+        val avgMs: Float,
+        val jitterMs: Float,
+        val lossPercent: Float,
+        val sampleCount: Int
+    )
+
+    fun recordLivePing(
+        context: Context,
+        host: String,
+        avgMs: Double,
+        jitterMs: Double,
+        lossPercent: Double,
+        sampleCount: Int
+    ) {
+        prefs(context).edit()
+            .putLong(KEY_LIVE_PING_AT, System.currentTimeMillis())
+            .putString(KEY_LIVE_PING_HOST, host)
+            .putFloat(KEY_LIVE_PING_AVG, avgMs.toFloat())
+            .putFloat(KEY_LIVE_PING_JITTER, jitterMs.toFloat())
+            .putFloat(KEY_LIVE_PING_LOSS, lossPercent.toFloat())
+            .putInt(KEY_LIVE_PING_SAMPLES, sampleCount)
+            .apply()
+    }
+
+    fun livePingSummary(context: Context): String? {
+        val p = prefs(context)
+        if (!p.contains(KEY_LIVE_PING_AT)) return null
+        val host = p.getString(KEY_LIVE_PING_HOST, null) ?: return null
+        val avg = p.getFloat(KEY_LIVE_PING_AVG, 0f)
+        val jitter = p.getFloat(KEY_LIVE_PING_JITTER, 0f)
+        return String.format(Locale.US, "%s · %.0f ms avg · σ %.0f ms", host, avg, jitter)
+    }
+
     private const val KEY_SPEED_AT = "speed_at"
     private const val KEY_SPEED_DOWN = "speed_down"
     private const val KEY_SPEED_UP = "speed_up"
@@ -78,4 +134,11 @@ object NetworkSession {
     private const val KEY_PING_AT = "ping_at"
     private const val KEY_PING_HOSTS = "ping_hosts"
     private const val KEY_PING_SUMMARY = "ping_summary"
+    private const val KEY_SPEED_QUICK = "speed_quick"
+    private const val KEY_LIVE_PING_AT = "live_ping_at"
+    private const val KEY_LIVE_PING_HOST = "live_ping_host"
+    private const val KEY_LIVE_PING_AVG = "live_ping_avg"
+    private const val KEY_LIVE_PING_JITTER = "live_ping_jitter"
+    private const val KEY_LIVE_PING_LOSS = "live_ping_loss"
+    private const val KEY_LIVE_PING_SAMPLES = "live_ping_samples"
 }

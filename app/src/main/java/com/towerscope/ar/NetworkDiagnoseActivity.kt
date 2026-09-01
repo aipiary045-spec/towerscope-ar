@@ -19,6 +19,7 @@ import com.towerscope.ar.network.NetworkDiagnose
 import com.towerscope.ar.ui.DiagnoseLayerAdapter
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.ToolScaffold
+import com.towerscope.ar.ui.ToolTopology
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
@@ -59,6 +60,7 @@ class NetworkDiagnoseActivity : AppCompatActivity() {
             titleRes = R.string.home_job_diagnose,
             subtitleRes = R.string.home_job_diagnose_sub
         )
+        ToolTopology.bindWhenResumed(this, findViewById(R.id.diagnoseRoot))
 
         runButton.setOnClickListener { startDiagnose() }
         hostInput.setOnEditorActionListener { _, actionId, _ ->

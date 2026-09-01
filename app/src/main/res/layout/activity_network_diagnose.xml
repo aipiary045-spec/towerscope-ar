@@ -1,129 +1,140 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/diagnoseRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_topo_screen"
-    android:clipToPadding="false"
-    android:fillViewport="true">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="@dimen/screen_padding"
-        android:paddingTop="12dp"
-        android:paddingBottom="28dp">
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/screen_padding"
+    android:paddingTop="12dp">
 
     <include layout="@layout/include_tool_scaffold_header" />
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:background="@drawable/bg_wfm_group_card"
-        android:orientation="vertical"
-        android:padding="14dp">
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true">
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:letterSpacing="0.08"
-            android:text="TARGET"
-            android:textAllCaps="true"
-            android:textColor="@color/text_dim"
-            android:textSize="10sp" />
-
-        <EditText
-            android:id="@+id/diagnoseHostInput"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_hud_input"
-            android:fontFamily="@font/source_sans3_regular"
-            android:hint="host or https://example.com"
-            android:imeOptions="actionGo"
-            android:importantForAutofill="no"
-            android:inputType="textUri"
-            android:paddingHorizontal="14dp"
-            android:text="cloudflare.com"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_dim"
-            android:textSize="15sp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/diagnoseRunButton"
-            style="@style/Widget.TowerScope.Button.Primary"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginTop="12dp"
-            android:text="Run Path Doctor" />
-    </LinearLayout>
-
-    <LinearLayout
-            android:id="@+id/diagnoseVerdictCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/bg_metric_card"
             android:orientation="vertical"
-            android:padding="@dimen/card_padding_lg">
+            android:paddingBottom="12dp">
+
+            <include layout="@layout/include_wifi_topology" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_wfm_group_card"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:letterSpacing="0.08"
+                    android:text="@string/diagnose_target_label"
+                    android:textAllCaps="true"
+                    android:textColor="@color/text_dim"
+                    android:textSize="10sp" />
+
+                <EditText
+                    android:id="@+id/diagnoseHostInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_hud_input"
+                    android:fontFamily="@font/source_sans3_regular"
+                    android:hint="host or https://example.com"
+                    android:imeOptions="actionGo"
+                    android:importantForAutofill="no"
+                    android:inputType="textUri"
+                    android:paddingHorizontal="14dp"
+                    android:text="cloudflare.com"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_dim"
+                    android:textSize="15sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/diagnoseRunButton"
+                    style="@style/Widget.TowerScope.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/diagnose_run" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/diagnoseVerdictCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_field_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:letterSpacing="0.08"
+                    android:text="@string/diagnose_verdict_label"
+                    android:textAllCaps="true"
+                    android:textColor="@color/text_dim"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/diagnoseVerdict"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:text="@string/diagnose_verdict_idle"
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/diagnoseFixHint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/source_sans3_regular"
+                    android:text=""
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:fontFamily="@font/source_sans3_semibold"
-                android:letterSpacing="0.1"
-                android:text="VERDICT"
-                android:textColor="@color/text_dim"
-                android:textSize="11sp" />
-
-            <TextView
-                android:id="@+id/diagnoseVerdict"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:text="Enter a host and run Path Doctor"
+                android:text="@string/diagnose_layers_label"
                 android:textColor="@color/text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:textSize="17sp" />
 
-            <TextView
-                android:id="@+id/diagnoseFixHint"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/diagnoseLayersContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:fontFamily="@font/source_sans3_regular"
-                android:text=""
-                android:textColor="@color/accent_yellow"
-                android:textSize="13sp"
-                android:visibility="gone" />
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
         </LinearLayout>
+    </ScrollView>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:letterSpacing="0.1"
-            android:text="LAYERS"
-            android:textColor="@color/text_dim"
-            android:textSize="11sp" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/diagnoseLayersContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:nestedScrollingEnabled="false"
-            android:overScrollMode="never" />
-
-        <include
-            layout="@layout/include_tool_actions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp" />
-    </LinearLayout>
-</ScrollView>
+    <include
+        layout="@layout/include_tool_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/item_gap"
+        android:layout_marginBottom="14dp" />
+</LinearLayout>

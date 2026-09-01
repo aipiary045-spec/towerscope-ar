@@ -23,6 +23,7 @@ import com.towerscope.ar.ui.LatencyGraphView
 import com.towerscope.ar.ui.SpeedGaugeView
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.ToolScaffold
+import com.towerscope.ar.ui.ToolTopology
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -81,6 +82,7 @@ class SpeedTestActivity : AppCompatActivity() {
             subtitleRes = R.string.home_job_speed_sub,
             onShare = { share() }
         )
+        ToolTopology.bindWhenResumed(this, findViewById(R.id.speedRoot))
 
         buildServerPicker()
         includeBufferbloat.setOnCheckedChangeListener { _, checked ->

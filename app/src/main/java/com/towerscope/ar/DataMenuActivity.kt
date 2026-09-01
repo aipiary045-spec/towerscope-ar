@@ -16,6 +16,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.data.CsvTowerParser
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.ui.ToolScaffold
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import kotlinx.coroutines.launch
 /**
@@ -38,6 +39,11 @@ class DataMenuActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_data_menu)
         SystemBars.apply(findViewById(R.id.dataMenuRoot))
+        ToolScaffold.bind(
+            activity = this,
+            titleRes = R.string.data_menu_title,
+            subtitleRes = R.string.data_menu_sub
+        )
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
 
         sourceStatus = findViewById(R.id.sourceStatus)
@@ -69,9 +75,13 @@ class DataMenuActivity : AppCompatActivity() {
                 viewModel.uiState.collect { state ->
                     val source = state.sourceName
                     sourceStatus.text = when {
-                        state.towers.isEmpty() -> "No sites loaded"
-                        source != null -> "Loaded ${state.towers.size} sites\nSource: $source"
-                        else -> "Loaded ${state.towers.size} sites"
+                        state.towers.isEmpty() -> getString(R.string.data_menu_status_empty)
+                        source != null -> getString(
+                            R.string.data_menu_status_loaded_source,
+                            state.towers.size,
+                            source
+                        )
+                        else -> getString(R.string.data_menu_status_loaded, state.towers.size)
                     }
                     val message = state.errorMessage
                         ?: state.statusMessage?.takeIf {
