@@ -8,8 +8,7 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="match_parent"
         android:clipToPadding="false"
         android:fillViewport="true">
 
@@ -18,23 +17,27 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="@dimen/screen_padding"
-            android:paddingTop="16dp"
-            android:paddingBottom="20dp">
+            android:paddingTop="14dp"
+            android:paddingBottom="24dp">
 
-            <!-- Brand header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:adjustViewBounds="true"
-                    android:contentDescription="@string/app_name"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/logo_wispeaze" />
+                <FrameLayout
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/bg_icon_well">
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@string/app_name"
+                        android:src="@mipmap/ic_launcher" />
+                </FrameLayout>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -49,8 +52,7 @@
                         android:fontFamily="@font/source_sans3_semibold"
                         android:text="@string/app_name"
                         android:textColor="@color/text_primary"
-                        android:textSize="22sp"
-                        android:textStyle="bold" />
+                        android:textSize="22sp" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -61,59 +63,39 @@
                         android:textColor="@color/text_muted"
                         android:textSize="13sp" />
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/homeLocationChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_metric_tile"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="6dp"
+                    android:text="@string/location_chip_gps_waiting"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="11sp" />
             </LinearLayout>
 
-            <!-- Live status card -->
             <LinearLayout
                 android:id="@+id/homeStatusCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/bg_field_card"
                 android:orientation="vertical"
-                android:padding="@dimen/card_padding">
+                android:padding="16dp">
 
                 <TextView
+                    android:id="@+id/homeSitesCount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/source_sans3_semibold"
-                    android:letterSpacing="0.08"
-                    android:text="@string/home_section_status"
-                    android:textAllCaps="true"
-                    android:textColor="@color/accent_teal"
-                    android:textSize="11sp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/homeSitesCount"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:text="@string/home_no_sites"
-                        android:textColor="@color/text_primary"
-                        android:textSize="15sp" />
-
-                    <TextView
-                        android:id="@+id/homeLocationChip"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_hud_chip"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:fontFamily="@font/source_sans3_semibold"
-                        android:paddingHorizontal="10dp"
-                        android:paddingVertical="5dp"
-                        android:text="@string/location_chip_gps_waiting"
-                        android:textColor="@color/text_primary"
-                        android:textSize="11sp" />
-                </LinearLayout>
+                    android:text="@string/home_no_sites"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/homeInRangeCount"
@@ -128,9 +110,8 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="@color/grid_faint" />
+                    android:layout_marginVertical="12dp"
+                    android:background="@color/divider_subtle" />
 
                 <TextView
                     android:id="@+id/homeNearestLabel"
@@ -167,114 +148,79 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:fontFamily="@font/source_sans3_regular"
-                    android:textColor="@color/text_muted"
+                    android:textColor="@color/accent_teal"
                     android:textSize="12sp"
                     android:visibility="gone" />
             </LinearLayout>
 
-            <!-- Import CTA when no sites -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/homeImportButton"
+                style="@style/Widget.TowerScope.Button.Primary"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:minHeight="48dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="12dp"
                 android:text="@string/home_import_sites"
-                android:textAllCaps="false"
                 android:visibility="gone" />
 
-            <!-- Quick tools -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
                 android:fontFamily="@font/source_sans3_semibold"
-                android:letterSpacing="0.08"
                 android:text="@string/home_section_quick"
-                android:textAllCaps="true"
-                android:textColor="@color/text_muted"
-                android:textSize="11sp" />
+                android:textColor="@color/text_primary"
+                android:textSize="17sp" />
 
-            <LinearLayout
+            <include
+                android:id="@+id/homeQuickCompass"
+                layout="@layout/item_home_quick_action"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="horizontal">
+                android:layout_marginTop="10dp" />
 
-                <include
-                    android:id="@+id/homeQuickCompass"
-                    layout="@layout/item_home_quick_action"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1" />
-
-                <include
-                    android:id="@+id/homeQuickLocate"
-                    layout="@layout/item_home_quick_action"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1" />
-            </LinearLayout>
-
-            <LinearLayout
+            <include
+                android:id="@+id/homeQuickLocate"
+                layout="@layout/item_home_quick_action"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="horizontal">
+                android:layout_marginTop="8dp" />
 
-                <include
-                    android:id="@+id/homeQuickLos"
-                    layout="@layout/item_home_quick_action"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1" />
-
-                <include
-                    android:id="@+id/homeQuickWifi"
-                    layout="@layout/item_home_quick_action"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1" />
-            </LinearLayout>
-
-            <LinearLayout
+            <include
+                android:id="@+id/homeQuickLos"
+                layout="@layout/item_home_quick_action"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="horizontal">
+                android:layout_marginTop="8dp" />
 
-                <include
-                    android:id="@+id/homeQuickSpeed"
-                    layout="@layout/item_home_quick_action"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1" />
+            <include
+                android:id="@+id/homeQuickWifi"
+                layout="@layout/item_home_quick_action"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" />
 
-                <include
-                    android:id="@+id/homeQuickDiagnose"
-                    layout="@layout/item_home_quick_action"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1" />
-            </LinearLayout>
+            <include
+                android:id="@+id/homeQuickSpeed"
+                layout="@layout/item_home_quick_action"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" />
 
-            <!-- Browse hubs -->
+            <include
+                android:id="@+id/homeQuickDiagnose"
+                layout="@layout/item_home_quick_action"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
                 android:fontFamily="@font/source_sans3_semibold"
-                android:letterSpacing="0.08"
                 android:text="@string/home_section_browse"
-                android:textAllCaps="true"
-                android:textColor="@color/text_muted"
-                android:textSize="11sp" />
+                android:textColor="@color/text_primary"
+                android:textSize="17sp" />
 
             <include
                 android:id="@+id/homeNetworkHubButton"
@@ -288,7 +234,7 @@
                 layout="@layout/include_home_hub_link"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" />
+                android:layout_marginTop="8dp" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

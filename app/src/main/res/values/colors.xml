@@ -8,8 +8,9 @@
     <color name="surface_elevated">#FFFFFF</color>
     <color name="surface_glass">#F7FFFFFF</color>
     <color name="border_luminous">#332F6BFF</color>
-    <color name="border_strong">#552F6BFF</color>
+    <color name="border_strong">#552A5BE0</color>
     <color name="grid_faint">#142F6BFF</color>
+    <color name="divider_subtle">#E4EAF4</color>
 
     <color name="accent_yellow">#2A5BE0</color>
     <color name="accent_yellow_dim">#592A5BE0</color>
@@ -36,6 +37,7 @@
     <color name="status_clear_bg">#261B9E6E</color>
     <color name="status_blocked_bg">#26C45B5B</color>
     <color name="status_warn_bg">#332A5BE0</color>
+    <color name="status_warn">#C9A000</color>
 
     <color name="ic_launcher_background">#070B16</color>
     <color name="hud_panel">#F2FFFFFF</color>

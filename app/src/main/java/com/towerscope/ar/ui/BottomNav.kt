@@ -22,7 +22,7 @@ enum class BottomNavTab {
 object BottomNav {
     fun bind(activity: FragmentActivity, selected: BottomNavTab) {
         val root = activity.findViewById<android.view.View>(R.id.bottomNavBar) ?: return
-        val active = ContextCompat.getColor(activity, R.color.accent_teal)
+        val active = ContextCompat.getColor(activity, R.color.accent_yellow)
         val idle = ContextCompat.getColor(activity, R.color.text_dim)
 
         fun style(tab: BottomNavTab, iconId: Int, labelId: Int) {
@@ -62,7 +62,7 @@ object BottomNav {
 
     fun bindHost(activity: MainHostActivity, selected: BottomNavTab) {
         val root = activity.findViewById<android.view.View>(R.id.mainHostBottomNav) ?: return
-        val active = ContextCompat.getColor(activity, R.color.accent_teal)
+        val active = ContextCompat.getColor(activity, R.color.accent_yellow)
         val idle = ContextCompat.getColor(activity, R.color.text_dim)
 
         fun style(tab: BottomNavTab, iconId: Int, labelId: Int) {

@@ -2,12 +2,16 @@ package com.towerscope.ar
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -16,6 +20,8 @@ import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.ChannelPlanner
 import com.towerscope.ar.network.InterferenceLevel
 import com.towerscope.ar.network.TestResultExport
+import com.towerscope.ar.network.WifiChannelAnalysis
+import com.towerscope.ar.network.WifiLinkStatus
 import com.towerscope.ar.network.WifiMonitor
 import com.towerscope.ar.network.WifiScanAp
 import com.towerscope.ar.ui.SystemBars
@@ -46,6 +52,14 @@ class WifiMonitorActivity : AppCompatActivity() {
     private lateinit var scanStatus: TextView
     private lateinit var scanAdapter: WifiScanAdapter
     private lateinit var scanButton: MaterialButton
+    private lateinit var topoInternetDetail: TextView
+    private lateinit var topoInternetStatus: TextView
+    private lateinit var topoApDetail: TextView
+    private lateinit var topoDeviceLabel: TextView
+    private lateinit var topoDeviceDetail: TextView
+    private lateinit var factorSpectrum: View
+    private lateinit var factorRadio: View
+    private lateinit var factorChannel: View
     private var scanJob: Job? = null
     private var latestScan: List<WifiScanAp> = emptyList()
     private var lastPlannerReport = ""
@@ -88,6 +102,14 @@ class WifiMonitorActivity : AppCompatActivity() {
         plannerResult = findViewById(R.id.wifiPlannerResult)
         scanStatus = findViewById(R.id.wifiScanStatus)
         scanButton = findViewById(R.id.wifiScanButton)
+        topoInternetDetail = findViewById(R.id.wifiTopoInternetDetail)
+        topoInternetStatus = findViewById(R.id.wifiTopoInternetStatus)
+        topoApDetail = findViewById(R.id.wifiTopoApDetail)
+        topoDeviceLabel = findViewById(R.id.wifiTopoDeviceLabel)
+        topoDeviceDetail = findViewById(R.id.wifiTopoDeviceDetail)
+        factorSpectrum = findViewById(R.id.wifiFactorSpectrum)
+        factorRadio = findViewById(R.id.wifiFactorRadio)
+        factorChannel = findViewById(R.id.wifiFactorChannel)
 
         scanAdapter = WifiScanAdapter()
         findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.wifiScanList).apply {
@@ -176,21 +198,83 @@ class WifiMonitorActivity : AppCompatActivity() {
         val annotated = monitor.annotateScan(link, latestScan)
         val analysis = monitor.analyzeChannels(link, annotated)
         overlapSummary.text = analysis.overlapSummary
-        interferenceLevel.text =
-            "RF risk  ${WifiMonitor.interferenceLabel(analysis.interferenceLevel)}"
+        interferenceLevel.text = when (analysis.interferenceLevel) {
+            InterferenceLevel.LOW -> getString(R.string.wifi_rf_excellent)
+            InterferenceLevel.MODERATE -> getString(R.string.wifi_rf_fair)
+            InterferenceLevel.HIGH -> getString(R.string.wifi_rf_poor)
+            InterferenceLevel.UNKNOWN -> "—"
+        }
         interferenceLevel.setTextColor(
             ContextCompat.getColor(
                 this,
                 when (analysis.interferenceLevel) {
                     InterferenceLevel.LOW -> R.color.status_clear
-                    InterferenceLevel.MODERATE -> R.color.accent_yellow
+                    InterferenceLevel.MODERATE -> R.color.status_warn
                     InterferenceLevel.HIGH -> R.color.chip_poor
                     InterferenceLevel.UNKNOWN -> R.color.text_muted
                 }
             )
         )
         interferenceHints.text = analysis.interferenceHints.joinToString("\n")
+        interferenceHints.isVisible = analysis.interferenceHints.isNotEmpty()
+        updateTopology(link)
+        updateFactorCards(link, analysis)
         updateChannelPlanner(annotated)
+    }
+
+    private fun updateTopology(link: WifiLinkStatus) {
+        topoInternetDetail.text = if (link.connected) {
+            getString(R.string.wifi_topo_available)
+        } else {
+            getString(R.string.wifi_topo_offline)
+        }
+        topoInternetStatus.text = topoInternetDetail.text
+        topoInternetStatus.setTextColor(
+            ContextCompat.getColor(
+                this,
+                if (link.connected) R.color.status_clear else R.color.chip_poor
+            )
+        )
+        topoApDetail.text = when {
+            link.ssid != null -> link.ssid
+            link.connected -> getString(R.string.wifi_topo_access_point)
+            else -> "—"
+        }
+        val deviceName = Build.MODEL?.takeIf { it.isNotBlank() } ?: getString(R.string.wifi_topo_device)
+        topoDeviceLabel.text = deviceName
+        topoDeviceDetail.text = link.bssid ?: "—"
+    }
+
+    private fun updateFactorCards(link: WifiLinkStatus, analysis: WifiChannelAnalysis) {
+        val band = link.band ?: "—"
+        val channel = link.channel?.toString() ?: "—"
+        val freq = link.frequencyMhz?.let { "$it MHz" } ?: "—"
+        bindFactor(
+            factorSpectrum,
+            getString(R.string.wifi_factor_spectrum),
+            "Wi‑Fi band  $band\nChannel width  $freq",
+            link.connected && link.band != null
+        )
+        val rssi = link.rssiDbm
+        val signalLine = rssi?.let { String.format(Locale.US, "Signal  %d dBm", it) } ?: "Signal  —"
+        bindFactor(
+            factorRadio,
+            getString(R.string.wifi_factor_radio),
+            "Link  ${link.linkSpeedMbps ?: "—"} Mbps\n$signalLine",
+            rssi != null && rssi >= -75
+        )
+        bindFactor(
+            factorChannel,
+            getString(R.string.wifi_factor_channel),
+            "Channel  $channel\n${analysis.overlapSummary}",
+            analysis.interferenceLevel != InterferenceLevel.HIGH
+        )
+    }
+
+    private fun bindFactor(root: View, title: String, body: String, ok: Boolean) {
+        root.findViewById<TextView>(R.id.wifiFactorTitle).text = title
+        root.findViewById<TextView>(R.id.wifiFactorBody).text = body
+        root.findViewById<ImageView>(R.id.wifiFactorCheck).isVisible = ok
     }
 
     private fun updateChannelPlanner(scan: List<WifiScanAp>) {
