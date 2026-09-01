@@ -201,10 +201,6 @@ class LosProfilesActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
         })
 
-        findViewById<MaterialButton>(R.id.losRangeHomeButton).setOnClickListener {
-            startActivity(MainHostActivity.intent(this, com.towerscope.ar.ui.BottomNavTab.HOME))
-            finish()
-        }
         findViewById<MaterialButton>(R.id.losRangeCancelButton).setOnClickListener {
             viewModel.clearLosRangeProfiles()
             startedScan = false
@@ -323,6 +319,11 @@ class LosProfilesActivity : AppCompatActivity() {
     private fun applyLinkSettingsExpanded() {
         linkSettingsExpanded.isVisible = linkSettingsOpen
         linkSettingsToggle.text = if (linkSettingsOpen) "Done" else "Edit"
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.syncFromFileStore()
     }
 
     override fun onStart() {

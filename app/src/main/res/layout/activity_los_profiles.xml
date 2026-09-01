@@ -243,17 +243,8 @@
                 style="@style/Widget.TowerScope.Button.Ghost"
                 android:layout_width="0dp"
                 android:layout_height="52dp"
-                android:layout_marginStart="6dp"
                 android:layout_weight="1"
                 android:text="Refresh" />
         </LinearLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/losRangeHomeButton"
-            style="@style/Widget.TowerScope.Button.Primary"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginTop="8dp"
-            android:text="Home" />
     </LinearLayout>
 </LinearLayout>

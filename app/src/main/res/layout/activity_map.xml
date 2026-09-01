@@ -179,20 +179,10 @@
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/mapHomeButton"
-                style="@style/Widget.TowerScope.Button.Ghost"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:text="Home" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/mapDetailsButton"
                 style="@style/Widget.TowerScope.Button.Primary"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:layout_weight="1"
                 android:text="Tower details" />
         </LinearLayout>
     </LinearLayout>

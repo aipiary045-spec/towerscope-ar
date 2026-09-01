@@ -124,7 +124,6 @@ class MapActivity : AppCompatActivity() {
             val showAll = !viewModel.uiState.value.mapShowAllSites
             viewModel.setMapShowAllSites(showAll)
         }
-        findViewById<MaterialButton>(R.id.mapHomeButton).setOnClickListener { finish() }
         findViewById<MaterialButton>(R.id.mapDetailsButton).setOnClickListener {
             viewModel.uiState.value.mapFocusTower()?.id?.let { openTowerDetails(it) }
         }
