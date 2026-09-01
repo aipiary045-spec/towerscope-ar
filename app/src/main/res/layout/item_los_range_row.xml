@@ -3,22 +3,20 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="@dimen/item_gap"
-    android:background="@drawable/bg_field_card"
-    android:foreground="?attr/selectableItemBackground"
-    android:minHeight="48dp"
-    android:orientation="horizontal"
+    android:background="@drawable/bg_wfm_group_card"
+    android:orientation="vertical"
     android:padding="0dp">
 
     <View
         android:id="@+id/rowStatusBar"
-        android:layout_width="4dp"
-        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
         android:background="@color/status_clear" />
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:foreground="?attr/selectableItemBackground"
         android:orientation="vertical"
         android:padding="@dimen/card_padding">
 
@@ -32,10 +30,9 @@
                 android:id="@+id/rowRank"
                 android:layout_width="28dp"
                 android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:textColor="@color/text_muted"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:fontFamily="@font/source_sans3_semibold"
+                android:textColor="@color/text_dim"
+                android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/rowName"
@@ -46,8 +43,7 @@
                 android:fontFamily="@font/source_sans3_semibold"
                 android:maxLines="1"
                 android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textSize="16sp" />
 
             <TextView
                 android:id="@+id/rowStatusPill"
@@ -56,13 +52,13 @@
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_pill_clear"
                 android:fontFamily="@font/source_sans3_semibold"
+                android:gravity="center"
                 android:letterSpacing="0.06"
                 android:minHeight="28dp"
-                android:gravity="center"
+                android:paddingHorizontal="8dp"
                 android:text="CLEAR"
                 android:textColor="@color/status_clear"
-                android:textSize="11sp"
-                android:textStyle="bold"
+                android:textSize="10sp"
                 android:visibility="gone" />
         </LinearLayout>
 
@@ -71,8 +67,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:fontFamily="monospace"
-            android:textColor="@color/accent_teal"
+            android:fontFamily="@font/source_sans3_regular"
+            android:textColor="@color/text_muted"
             android:textSize="12sp" />
 
         <TextView
@@ -82,8 +78,7 @@
             android:layout_marginTop="4dp"
             android:fontFamily="@font/source_sans3_semibold"
             android:textColor="@color/accent_yellow"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textSize="13sp" />
 
         <TextView
             android:id="@+id/rowLinkEstimate"
@@ -117,7 +112,7 @@
             android:layout_width="match_parent"
             android:layout_height="112dp"
             android:layout_marginTop="10dp"
-            android:background="#16000000"
+            android:background="@color/bg_mid"
             android:clickable="false"
             android:focusable="false"
             android:visibility="gone" />

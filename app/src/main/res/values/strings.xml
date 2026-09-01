@@ -13,6 +13,8 @@
     <string name="home_hub_install">Install</string>
     <string name="home_hub_install_sub">Dashboard · sites · compass · LOS</string>
     <string name="home_section_status">Field status</string>
+    <string name="home_section_sites">Sites</string>
+    <string name="home_section_nearest">Nearest</string>
     <string name="home_section_quick">Quick tools</string>
     <string name="home_section_browse">Browse</string>
     <string name="home_sites_loaded">%1$d sites loaded</string>

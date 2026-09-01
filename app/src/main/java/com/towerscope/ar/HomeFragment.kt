@@ -15,8 +15,11 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.network.ConnectionSnapshotCollector
 import com.towerscope.ar.network.NetworkSession
 import com.towerscope.ar.ui.LocationSourceChip
+import com.towerscope.ar.ui.NetworkTopologyBinder
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.UnitFormat
@@ -34,8 +37,10 @@ class HomeFragment : Fragment(R.layout.activity_home) {
     private lateinit var nearestLabel: TextView
     private lateinit var nearestDetail: TextView
     private lateinit var gpsStatus: TextView
-    private lateinit var importButton: View
+    private lateinit var importButton: MaterialButton
+    private lateinit var compassButton: MaterialButton
     private var networkStatus: TextView? = null
+    private var networkTopology: View? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -50,6 +55,7 @@ class HomeFragment : Fragment(R.layout.activity_home) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         networkStatus = view.findViewById(R.id.homeNetworkStatus)
+        networkTopology = view.findViewById(R.id.homeNetworkTopology)
 
         sitesCount = view.findViewById(R.id.homeSitesCount)
         inRangeCount = view.findViewById(R.id.homeInRangeCount)
@@ -58,6 +64,7 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         nearestDetail = view.findViewById(R.id.homeNearestDetail)
         gpsStatus = view.findViewById(R.id.homeGpsStatus)
         importButton = view.findViewById(R.id.homeImportButton)
+        compassButton = view.findViewById(R.id.homeCompassButton)
 
         LocationSourceChip(
             chip = locationChip,
@@ -67,6 +74,12 @@ class HomeFragment : Fragment(R.layout.activity_home) {
 
         importButton.setOnClickListener {
             startActivity(Intent(requireContext(), DataMenuActivity::class.java))
+        }
+        compassButton.setOnClickListener {
+            startActivity(Intent(requireContext(), MainActivity::class.java))
+        }
+        view.findViewById<MaterialButton>(R.id.homeConnectionButton).setOnClickListener {
+            startActivity(Intent(requireContext(), ConnectionSnapshotActivity::class.java))
         }
 
         bindQuickAction(view, R.id.homeQuickCompass, R.drawable.ic_compass_rose, R.color.accent_yellow,
@@ -121,11 +134,20 @@ class HomeFragment : Fragment(R.layout.activity_home) {
             viewModel.startLocationUpdates(includeHeading = false)
         }
         renderNetworkSession()
+        refreshNetworkTopology()
     }
 
     override fun onPause() {
         viewModel.stopLocationUpdates()
         super.onPause()
+    }
+
+    private fun refreshNetworkTopology() {
+        val topo = networkTopology ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val snapshot = ConnectionSnapshotCollector.collect(requireContext(), fetchPublicIp = false)
+            NetworkTopologyBinder.bind(topo, snapshot)
+        }
     }
 
     private fun renderNetworkSession() {
@@ -145,8 +167,9 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         val hasSites = towerCount > 0
 
         importButton.isVisible = !hasSites
+        compassButton.isVisible = hasSites
         sitesCount.text = if (hasSites) {
-            getString(R.string.home_sites_loaded, towerCount)
+            towerCount.toString()
         } else {
             getString(R.string.home_no_sites)
         }
@@ -166,7 +189,7 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         if (nearest != null && state.positioningLocation() != null) {
             val distance = state.distanceTo(nearest)
             val bearing = state.bearingTo(nearest)
-            nearestLabel.text = getString(R.string.home_nearest_tower, nearest.name)
+            nearestLabel.text = nearest.name
             if (distance != null && bearing != null) {
                 nearestDetail.text = getString(
                     R.string.home_nearest_detail,

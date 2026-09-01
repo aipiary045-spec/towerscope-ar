@@ -8,7 +8,9 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.towerscope.ar.network.NetworkSession
+import kotlinx.coroutines.launch
 
 class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
 
@@ -24,6 +26,11 @@ class NetworkHubFragment : Fragment(R.layout.activity_network_hub) {
         resumeLabel?.apply {
             isVisible = resume.isNotBlank()
             text = resume
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val snapshot = com.towerscope.ar.network.ConnectionSnapshotCollector.collect(ctx, fetchPublicIp = false)
+            com.towerscope.ar.ui.NetworkTopologyBinder.bind(view, snapshot)
         }
 
         bindTile(view, R.id.hubConnectionRow, R.drawable.ic_my_location, R.color.accent_teal,

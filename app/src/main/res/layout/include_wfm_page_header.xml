@@ -2,7 +2,7 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
 
     <TextView
-        android:id="@+id/toolTitle"
+        android:id="@+id/wfmPageTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fontFamily="@font/source_sans3_semibold"
@@ -11,7 +11,7 @@
         android:textStyle="bold" />
 
     <TextView
-        android:id="@+id/toolSubtitle"
+        android:id="@+id/wfmPageSubtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"

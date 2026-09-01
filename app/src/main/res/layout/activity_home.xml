@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="@dimen/screen_padding"
-            android:paddingTop="14dp"
+            android:paddingTop="12dp"
             android:paddingBottom="24dp">
 
             <LinearLayout
@@ -52,7 +52,7 @@
                         android:fontFamily="@font/source_sans3_semibold"
                         android:text="@string/app_name"
                         android:textColor="@color/text_primary"
-                        android:textSize="22sp" />
+                        android:textSize="24sp" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -79,88 +79,150 @@
                     android:textSize="11sp" />
             </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/homeStatusCard"
+            <include
+                android:id="@+id/homeNetworkTopology"
+                layout="@layout/include_wifi_topology"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_field_card"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="16dp" />
 
-                <TextView
-                    android:id="@+id/homeSitesCount"
-                    android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/homeNetworkStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_metric_tile"
+                android:fontFamily="@font/source_sans3_regular"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="10dp"
+                android:textColor="@color/accent_teal"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/source_sans3_semibold"
-                    android:text="@string/home_no_sites"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp" />
+                    android:layout_marginEnd="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_field_card"
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
-                <TextView
-                    android:id="@+id/homeInRangeCount"
-                    android:layout_width="match_parent"
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:letterSpacing="0.08"
+                        android:text="@string/home_section_sites"
+                        android:textAllCaps="true"
+                        android:textColor="@color/text_dim"
+                        android:textSize="10sp" />
+
+                    <TextView
+                        android:id="@+id/homeSitesCount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:text="@string/home_no_sites"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp" />
+
+                    <TextView
+                        android:id="@+id/homeInRangeCount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/source_sans3_regular"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:fontFamily="@font/source_sans3_regular"
-                    android:textColor="@color/text_muted"
-                    android:textSize="13sp"
-                    android:visibility="gone" />
+                    android:layout_marginStart="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_field_card"
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginVertical="12dp"
-                    android:background="@color/divider_subtle" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:letterSpacing="0.08"
+                        android:text="@string/home_section_nearest"
+                        android:textAllCaps="true"
+                        android:textColor="@color/text_dim"
+                        android:textSize="10sp" />
 
-                <TextView
-                    android:id="@+id/homeNearestLabel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/source_sans3_semibold"
-                    android:text="@string/home_nearest_none"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp" />
+                    <TextView
+                        android:id="@+id/homeNearestLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:maxLines="2"
+                        android:text="@string/home_nearest_none"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp" />
 
-                <TextView
-                    android:id="@+id/homeNearestDetail"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:fontFamily="@font/source_sans3_regular"
-                    android:textColor="@color/text_muted"
-                    android:textSize="13sp"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/homeGpsStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:fontFamily="@font/source_sans3_regular"
-                    android:text="@string/home_gps_waiting"
-                    android:textColor="@color/text_dim"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/homeNetworkStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/source_sans3_regular"
-                    android:textColor="@color/accent_teal"
-                    android:textSize="12sp"
-                    android:visibility="gone" />
+                    <TextView
+                        android:id="@+id/homeNearestDetail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/source_sans3_regular"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/homeGpsStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:fontFamily="@font/source_sans3_regular"
+                android:text="@string/home_gps_waiting"
+                android:textColor="@color/text_dim"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/homeCompassButton"
+                style="@style/Widget.TowerScope.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="14dp"
+                android:text="@string/home_job_aim"
+                android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/homeImportButton"
                 style="@style/Widget.TowerScope.Button.Primary"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:text="@string/home_import_sites"
                 android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/homeConnectionButton"
+                style="@style/Widget.TowerScope.Button.Ghost"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/home_job_connection" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -171,47 +233,67 @@
                 android:textColor="@color/text_primary"
                 android:textSize="17sp" />
 
-            <include
-                android:id="@+id/homeQuickCompass"
-                layout="@layout/item_home_quick_action"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" />
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_wfm_group_card"
+                android:orientation="vertical">
 
-            <include
-                android:id="@+id/homeQuickLocate"
-                layout="@layout/item_home_quick_action"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                <include
+                    android:id="@+id/homeQuickCompass"
+                    layout="@layout/item_home_quick_action_inline" />
 
-            <include
-                android:id="@+id/homeQuickLos"
-                layout="@layout/item_home_quick_action"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="66dp"
+                    android:background="@color/divider_subtle" />
 
-            <include
-                android:id="@+id/homeQuickWifi"
-                layout="@layout/item_home_quick_action"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                <include
+                    android:id="@+id/homeQuickLocate"
+                    layout="@layout/item_home_quick_action_inline" />
 
-            <include
-                android:id="@+id/homeQuickSpeed"
-                layout="@layout/item_home_quick_action"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="66dp"
+                    android:background="@color/divider_subtle" />
 
-            <include
-                android:id="@+id/homeQuickDiagnose"
-                layout="@layout/item_home_quick_action"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                <include
+                    android:id="@+id/homeQuickLos"
+                    layout="@layout/item_home_quick_action_inline" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="66dp"
+                    android:background="@color/divider_subtle" />
+
+                <include
+                    android:id="@+id/homeQuickWifi"
+                    layout="@layout/item_home_quick_action_inline" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="66dp"
+                    android:background="@color/divider_subtle" />
+
+                <include
+                    android:id="@+id/homeQuickSpeed"
+                    layout="@layout/item_home_quick_action_inline" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="66dp"
+                    android:background="@color/divider_subtle" />
+
+                <include
+                    android:id="@+id/homeQuickDiagnose"
+                    layout="@layout/item_home_quick_action_inline" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
@@ -222,19 +304,27 @@
                 android:textColor="@color/text_primary"
                 android:textSize="17sp" />
 
-            <include
-                android:id="@+id/homeNetworkHubButton"
-                layout="@layout/include_home_hub_link"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" />
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_wfm_group_card"
+                android:orientation="vertical">
 
-            <include
-                android:id="@+id/homeInstallHubButton"
-                layout="@layout/include_home_hub_link"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                <include
+                    android:id="@+id/homeNetworkHubButton"
+                    layout="@layout/include_home_hub_link_inline" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="66dp"
+                    android:background="@color/divider_subtle" />
+
+                <include
+                    android:id="@+id/homeInstallHubButton"
+                    layout="@layout/include_home_hub_link_inline" />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

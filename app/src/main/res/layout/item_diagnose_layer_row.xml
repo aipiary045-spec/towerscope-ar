@@ -2,23 +2,29 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_network_card"
+    android:layout_marginBottom="@dimen/item_gap"
+    android:background="@drawable/bg_wfm_group_card"
     android:gravity="center_vertical"
     android:minHeight="64dp"
     android:orientation="horizontal"
     android:paddingHorizontal="14dp"
     android:paddingVertical="12dp">
 
-    <TextView
-        android:id="@+id/diagnoseLayerStatus"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:background="@drawable/bg_job_icon"
-        android:fontFamily="@font/source_sans3_semibold"
-        android:gravity="center"
-        android:text="·"
-        android:textColor="@color/text_muted"
-        android:textSize="14sp" />
+    <FrameLayout
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@drawable/bg_icon_well">
+
+        <TextView
+            android:id="@+id/diagnoseLayerStatus"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fontFamily="@font/source_sans3_semibold"
+            android:gravity="center"
+            android:text="·"
+            android:textColor="@color/text_muted"
+            android:textSize="14sp" />
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="0dp"
@@ -34,8 +40,7 @@
             android:fontFamily="@font/source_sans3_semibold"
             android:text="Layer"
             android:textColor="@color/text_primary"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:textSize="15sp" />
 
         <TextView
             android:id="@+id/diagnoseLayerDetail"
@@ -52,8 +57,8 @@
         android:id="@+id/diagnoseLayerLatency"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="monospace"
+        android:fontFamily="@font/source_sans3_semibold"
         android:text=""
         android:textColor="@color/accent_teal"
-        android:textSize="12sp" />
+        android:textSize="13sp" />
 </LinearLayout>

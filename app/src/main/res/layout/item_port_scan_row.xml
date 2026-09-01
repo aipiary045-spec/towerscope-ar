@@ -2,13 +2,11 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_metric_tile"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?attr/selectableItemBackground"
+    android:layout_marginBottom="@dimen/item_gap"
+    android:background="@drawable/bg_wfm_group_card"
     android:orientation="vertical"
-    android:paddingHorizontal="12dp"
-    android:paddingVertical="10dp">
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -42,9 +40,9 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:ellipsize="end"
-        android:fontFamily="monospace"
+        android:fontFamily="@font/source_sans3_regular"
         android:maxLines="1"
         android:text="https://192.168.1.1/"
-        android:textColor="@color/accent_yellow"
+        android:textColor="@color/accent_teal"
         android:textSize="12sp" />
 </LinearLayout>

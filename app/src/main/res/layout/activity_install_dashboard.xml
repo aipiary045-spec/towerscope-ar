@@ -6,7 +6,7 @@
     android:background="@drawable/bg_topo_screen"
     android:orientation="vertical"
     android:paddingHorizontal="@dimen/screen_padding"
-    android:paddingTop="18dp">
+    android:paddingTop="12dp">
 
     <TextView
         android:layout_width="match_parent"
@@ -14,7 +14,7 @@
         android:fontFamily="@font/source_sans3_semibold"
         android:text="@string/install_dashboard_title"
         android:textColor="@color/text_primary"
-        android:textSize="@dimen/screen_title"
+        android:textSize="28sp"
         android:textStyle="bold" />
 
     <TextView
@@ -50,7 +50,7 @@
                 android:id="@+id/installDashboardSitesSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_metric_tile"
+                android:background="@drawable/bg_wfm_group_card"
                 android:fontFamily="@font/source_sans3_semibold"
                 android:padding="14dp"
                 android:textColor="@color/accent_teal"
@@ -72,7 +72,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/bg_metric_tile"
+                android:background="@drawable/bg_wfm_group_card"
                 android:fontFamily="monospace"
                 android:lineSpacingExtra="4dp"
                 android:padding="14dp"
@@ -96,7 +96,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/bg_metric_tile"
+                android:background="@drawable/bg_wfm_group_card"
                 android:fontFamily="@font/source_sans3_regular"
                 android:lineSpacingExtra="3dp"
                 android:padding="14dp"

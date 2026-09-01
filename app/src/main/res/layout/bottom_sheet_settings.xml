@@ -27,7 +27,7 @@
             android:fontFamily="@font/source_sans3_semibold"
             android:text="Settings"
             android:textColor="@color/text_primary"
-            android:textSize="@dimen/screen_title"
+            android:textSize="28sp"
             android:textStyle="bold" />
 
         <TextView
@@ -52,7 +52,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:background="@drawable/bg_settings_section"
+            android:background="@drawable/bg_wfm_group_card"
             android:orientation="vertical">
 
             <LinearLayout
@@ -147,7 +147,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:background="@drawable/bg_settings_section"
+            android:background="@drawable/bg_wfm_group_card"
             android:orientation="vertical">
 
             <LinearLayout
@@ -226,7 +226,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:background="@drawable/bg_settings_section"
+            android:background="@drawable/bg_wfm_group_card"
             android:orientation="vertical">
 
             <LinearLayout
@@ -350,7 +350,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:background="@drawable/bg_settings_section"
+            android:background="@drawable/bg_wfm_group_card"
             android:orientation="vertical">
 
             <LinearLayout
@@ -490,7 +490,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:background="@drawable/bg_settings_section"
+            android:background="@drawable/bg_wfm_group_card"
             android:orientation="vertical">
 
             <LinearLayout
@@ -664,7 +664,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:background="@drawable/bg_settings_section"
+            android:background="@drawable/bg_wfm_group_card"
             android:orientation="vertical">
 
             <LinearLayout

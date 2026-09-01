@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="@dimen/screen_padding"
-            android:paddingTop="14dp"
+            android:paddingTop="12dp"
             android:paddingBottom="24dp">
 
             <TextView
@@ -26,7 +26,8 @@
                 android:fontFamily="@font/source_sans3_semibold"
                 android:text="@string/home_hub_network"
                 android:textColor="@color/text_primary"
-                android:textSize="26sp" />
+                android:textSize="28sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -49,6 +50,12 @@
                 android:textSize="12sp"
                 android:visibility="gone" />
 
+            <include
+                layout="@layout/include_wifi_topology"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -58,12 +65,17 @@
                 android:textColor="@color/text_primary"
                 android:textSize="17sp" />
 
-            <include
-                android:id="@+id/hubConnectionRow"
-                layout="@layout/item_hub_tool_row"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" />
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_wfm_group_card"
+                android:orientation="vertical">
+
+                <include
+                    android:id="@+id/hubConnectionRow"
+                    layout="@layout/item_hub_tool_row_inline" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
@@ -74,19 +86,27 @@
                 android:textColor="@color/text_primary"
                 android:textSize="17sp" />
 
-            <include
-                android:id="@+id/hubWifiRow"
-                layout="@layout/item_hub_tool_row"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" />
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_wfm_group_card"
+                android:orientation="vertical">
 
-            <include
-                android:id="@+id/hubWalkRow"
-                layout="@layout/item_hub_tool_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                <include
+                    android:id="@+id/hubWifiRow"
+                    layout="@layout/item_hub_tool_row_inline" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="66dp"
+                    android:background="@color/divider_subtle" />
+
+                <include
+                    android:id="@+id/hubWalkRow"
+                    layout="@layout/item_hub_tool_row_inline" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
@@ -97,12 +117,17 @@
                 android:textColor="@color/text_primary"
                 android:textSize="17sp" />
 
-            <include
-                android:id="@+id/hubLanRow"
-                layout="@layout/item_hub_tool_row"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" />
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_wfm_group_card"
+                android:orientation="vertical">
+
+                <include
+                    android:id="@+id/hubLanRow"
+                    layout="@layout/item_hub_tool_row_inline" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
@@ -113,33 +138,47 @@
                 android:textColor="@color/text_primary"
                 android:textSize="17sp" />
 
-            <include
-                android:id="@+id/hubSpeedRow"
-                layout="@layout/item_hub_tool_row"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" />
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_wfm_group_card"
+                android:orientation="vertical">
 
-            <include
-                android:id="@+id/hubPingRow"
-                layout="@layout/item_hub_tool_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                <include
+                    android:id="@+id/hubSpeedRow"
+                    layout="@layout/item_hub_tool_row_inline" />
 
-            <include
-                android:id="@+id/hubDiagnoseRow"
-                layout="@layout/item_hub_tool_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="66dp"
+                    android:background="@color/divider_subtle" />
 
-            <include
-                android:id="@+id/hubTraceRow"
-                layout="@layout/item_hub_tool_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                <include
+                    android:id="@+id/hubPingRow"
+                    layout="@layout/item_hub_tool_row_inline" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="66dp"
+                    android:background="@color/divider_subtle" />
+
+                <include
+                    android:id="@+id/hubDiagnoseRow"
+                    layout="@layout/item_hub_tool_row_inline" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="66dp"
+                    android:background="@color/divider_subtle" />
+
+                <include
+                    android:id="@+id/hubTraceRow"
+                    layout="@layout/item_hub_tool_row_inline" />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

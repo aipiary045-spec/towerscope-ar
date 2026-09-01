@@ -6,7 +6,7 @@
     android:background="@drawable/bg_topo_screen"
     android:orientation="vertical"
     android:paddingHorizontal="@dimen/screen_padding"
-    android:paddingTop="18dp">
+    android:paddingTop="12dp">
 
     <include layout="@layout/include_tool_scaffold_header" />
 

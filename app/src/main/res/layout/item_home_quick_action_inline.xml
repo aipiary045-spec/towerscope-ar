@@ -2,51 +2,63 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="@dimen/item_gap"
-    android:background="@drawable/bg_wfm_group_card"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
     android:gravity="center_vertical"
     android:minHeight="64dp"
     android:orientation="horizontal"
     android:paddingHorizontal="14dp"
     android:paddingVertical="12dp">
 
+    <FrameLayout
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_icon_well">
+
+        <ImageView
+            android:id="@+id/homeQuickIcon"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_compass_rose" />
+    </FrameLayout>
+
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
         android:layout_weight="1"
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/wifiRowSsid"
+            android:id="@+id/homeQuickTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
             android:fontFamily="@font/source_sans3_semibold"
-            android:maxLines="1"
-            android:text="SSID"
+            android:text="Tool"
             android:textColor="@color/text_primary"
             android:textSize="15sp" />
 
         <TextView
-            android:id="@+id/wifiRowMeta"
+            android:id="@+id/homeQuickSubtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="2dp"
             android:ellipsize="end"
             android:fontFamily="@font/source_sans3_regular"
             android:maxLines="1"
-            android:text="ch — · —"
+            android:text="Subtitle"
             android:textColor="@color/text_muted"
             android:textSize="12sp" />
     </LinearLayout>
 
     <TextView
-        android:id="@+id/wifiRowRssi"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:fontFamily="@font/source_sans3_semibold"
-        android:text="-70"
-        android:textColor="@color/accent_teal"
-        android:textSize="18sp" />
+        android:fontFamily="@font/source_sans3_regular"
+        android:text="›"
+        android:textColor="@color/text_dim"
+        android:textSize="20sp" />
 </LinearLayout>

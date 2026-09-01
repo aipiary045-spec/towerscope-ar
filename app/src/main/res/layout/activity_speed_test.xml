@@ -6,7 +6,7 @@
     android:background="@drawable/bg_topo_screen"
     android:orientation="vertical"
     android:paddingHorizontal="@dimen/screen_padding"
-    android:paddingTop="18dp">
+    android:paddingTop="12dp">
 
     <include layout="@layout/include_tool_scaffold_header" />
 
@@ -46,18 +46,33 @@
                 android:textColor="@color/text_dim"
                 android:textSize="12sp" />
 
-            <com.towerscope.ar.ui.SpeedGaugeView
-                android:id="@+id/speedGauge"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                android:background="@drawable/bg_field_card"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <com.towerscope.ar.ui.LatencyGraphView
-                android:id="@+id/speedGraph"
-                android:layout_width="match_parent"
-                android:layout_height="72dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/bg_metric_tile" />
+                <com.towerscope.ar.ui.SpeedGaugeView
+                    android:id="@+id/speedGauge"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <com.towerscope.ar.ui.LatencyGraphView
+                    android:id="@+id/speedGraph"
+                    android:layout_width="match_parent"
+                    android:layout_height="72dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_metric_tile" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/speedRunButton"
+                    style="@style/Widget.TowerScope.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/speed_run_test" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -258,13 +273,6 @@
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/speedRunButton"
-        style="@style/Widget.TowerScope.Button.Primary"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="@string/speed_run_test" />
 
     <include
         layout="@layout/include_tool_actions"
