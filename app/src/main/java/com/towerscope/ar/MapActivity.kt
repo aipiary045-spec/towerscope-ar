@@ -7,20 +7,26 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
+import android.view.View
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.ui.HudThemeApplier
 import com.towerscope.ar.ui.LocationSourceChip
-import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.CardinalSector
 import com.towerscope.ar.util.GeoUtils
@@ -52,11 +58,23 @@ class MapActivity : AppCompatActivity() {
 
     private lateinit var viewModel: TowerScopeViewModel
     private lateinit var mapView: MapView
+    private lateinit var topChrome: View
+    private lateinit var topBar: View
+    private lateinit var focusStrip: View
+    private lateinit var bottomPanel: View
+    private lateinit var trackingWarning: TextView
+    private lateinit var mapTitle: TextView
+    private lateinit var mapSubtitle: TextView
+    private lateinit var gpsChip: TextView
+    private lateinit var sitesHeader: TextView
     private lateinit var focusLabel: TextView
     private lateinit var metaLabel: TextView
     private lateinit var towerChips: LinearLayout
     private lateinit var rangeToggle: MaterialButton
+    private lateinit var detailsButton: MaterialButton
     private lateinit var locationSourceChip: LocationSourceChip
+    private var topChromeBasePadding = 0
+    private var bottomPanelBasePadding = 0
 
     private var losLine: Polyline? = null
     private val towerMarkers = mutableMapOf<String, Marker>()
@@ -86,7 +104,7 @@ class MapActivity : AppCompatActivity() {
             viewModel.startLocationUpdates(includeHeading = false)
             render(viewModel.uiState.value)
         } else {
-            focusLabel.text = "Location permission required"
+            focusLabel.text = getString(R.string.map_permission_required)
         }
     }
 
@@ -96,52 +114,13 @@ class MapActivity : AppCompatActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_map)
-        SystemBars.apply(
-            root = findViewById(R.id.mapRoot),
-            alsoBottom = findViewById(R.id.mapBottomPanel)
-        )
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
         pendingLaunchTowerId = TowerIntents.towerIdFrom(intent)?.also { viewModel.selectTower(it) }
 
-        mapView = findViewById(R.id.mapView)
-        focusLabel = findViewById(R.id.mapFocusLabel)
-        metaLabel = findViewById(R.id.mapMetaLabel)
-        towerChips = findViewById(R.id.mapTowerChips)
-        rangeToggle = findViewById(R.id.mapRangeToggle)
-        locationSourceChip = LocationSourceChip(
-            chip = findViewById(R.id.mapLocationChip),
-            fragmentManager = supportFragmentManager,
-            viewModel = viewModel,
-            onCoordinatesApplied = { latitude, longitude ->
-                snapToCustomLocation(latitude, longitude)
-                metaLabel.text = "Custom location set from coordinates"
-            }
-        )
-
+        bindViews()
+        applySystemBarInsets()
         setupMap()
-
-        rangeToggle.setOnClickListener {
-            val showAll = !viewModel.uiState.value.mapShowAllSites
-            viewModel.setMapShowAllSites(showAll)
-        }
-        findViewById<MaterialButton>(R.id.mapDetailsButton).setOnClickListener {
-            viewModel.uiState.value.mapFocusTower()?.id?.let { openTowerDetails(it) }
-        }
-        findViewById<android.widget.ImageButton>(R.id.mapFitButton).setOnClickListener {
-            fitToYouAndFocus()
-        }
-        findViewById<android.widget.ImageButton>(R.id.mapMyLocationButton).setOnClickListener {
-            centerOnUser()
-        }
-        findViewById<android.widget.ImageButton>(R.id.mapInstallButton).setOnClickListener {
-            viewModel.setInstallSiteFromGps()
-            metaLabel.text = "Custom location set to your GPS · long-press map to move"
-        }
-        findViewById<android.widget.ImageButton>(R.id.mapInstallButton).setOnLongClickListener {
-            viewModel.clearInstallSite()
-            metaLabel.text = "Custom location cleared"
-            true
-        }
+        wireActions()
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -155,6 +134,75 @@ class MapActivity : AppCompatActivity() {
         }
 
         ensureLocationPermission()
+    }
+
+    private fun bindViews() {
+        topChrome = findViewById(R.id.mapTopChrome)
+        topBar = findViewById(R.id.mapTopBar)
+        focusStrip = findViewById(R.id.mapFocusStrip)
+        bottomPanel = findViewById(R.id.mapBottomPanel)
+        trackingWarning = findViewById(R.id.mapTrackingWarning)
+        mapTitle = findViewById(R.id.mapTitle)
+        mapSubtitle = findViewById(R.id.mapSubtitle)
+        gpsChip = findViewById(R.id.mapGpsChip)
+        sitesHeader = findViewById(R.id.mapSitesHeader)
+        mapView = findViewById(R.id.mapView)
+        focusLabel = findViewById(R.id.mapFocusLabel)
+        metaLabel = findViewById(R.id.mapMetaLabel)
+        towerChips = findViewById(R.id.mapTowerChips)
+        rangeToggle = findViewById(R.id.mapRangeToggle)
+        detailsButton = findViewById(R.id.mapDetailsButton)
+        locationSourceChip = LocationSourceChip(
+            chip = findViewById(R.id.mapLocationChip),
+            fragmentManager = supportFragmentManager,
+            viewModel = viewModel,
+            onCoordinatesApplied = { latitude, longitude ->
+                snapToCustomLocation(latitude, longitude)
+                metaLabel.text = getString(R.string.map_custom_set_coords)
+            }
+        )
+        topChromeBasePadding = topChrome.paddingTop
+        bottomPanelBasePadding = bottomPanel.paddingBottom
+    }
+
+    private fun applySystemBarInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(topChrome) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updatePadding(top = topChromeBasePadding + bars.top)
+            insets
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(bottomPanel) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updatePadding(bottom = bottomPanelBasePadding + bars.bottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(findViewById(R.id.mapRoot))
+    }
+
+    private fun wireActions() {
+        findViewById<ImageButton>(R.id.mapBackButton).setOnClickListener { finish() }
+        rangeToggle.setOnClickListener {
+            val showAll = !viewModel.uiState.value.mapShowAllSites
+            viewModel.setMapShowAllSites(showAll)
+        }
+        detailsButton.setOnClickListener {
+            viewModel.uiState.value.mapFocusTower()?.id?.let { openTowerDetails(it) }
+        }
+        findViewById<ImageButton>(R.id.mapFitButton).setOnClickListener {
+            fitToYouAndFocus()
+        }
+        findViewById<ImageButton>(R.id.mapMyLocationButton).setOnClickListener {
+            centerOnUser()
+        }
+        findViewById<ImageButton>(R.id.mapInstallButton).setOnClickListener {
+            viewModel.setInstallSiteFromGps()
+            metaLabel.text = getString(R.string.map_custom_set_gps)
+        }
+        findViewById<ImageButton>(R.id.mapInstallButton).setOnLongClickListener {
+            viewModel.clearInstallSite()
+            metaLabel.text = getString(R.string.map_custom_cleared)
+            true
+        }
     }
 
     private fun configureOsmDroid() {
@@ -197,7 +245,7 @@ class MapActivity : AppCompatActivity() {
                 if (p == null) return false
                 viewModel.setInstallSite(p.latitude, p.longitude)
                 snapToCustomLocation(p.latitude, p.longitude)
-                metaLabel.text = "Custom location pinned"
+                metaLabel.text = getString(R.string.map_custom_pinned)
                 return true
             }
         }
@@ -294,35 +342,44 @@ class MapActivity : AppCompatActivity() {
             getString(R.string.map_range_nearby)
         }
         focusLabel.text = when {
-            focus == null && state.towers.isEmpty() -> "No sites loaded — import in Installation Hub"
-            focus == null && state.mapShowAllSites -> "No sites to show"
-            focus == null -> "No AP in range"
+            focus == null && state.towers.isEmpty() -> getString(R.string.map_no_sites)
+            focus == null && state.mapShowAllSites -> getString(R.string.map_no_sites_show)
+            focus == null -> getString(R.string.map_no_ap_range)
             else -> focus.name
         }
         metaLabel.text = buildString {
             when (state.locationMode) {
-                LocationMode.CURRENT_GPS -> append("From your GPS  ·  ")
-                LocationMode.CUSTOM -> append("From custom pin  ·  ")
+                LocationMode.CURRENT_GPS -> append(getString(R.string.map_meta_from_gps))
+                LocationMode.CUSTOM -> append(getString(R.string.map_meta_from_pin))
             }
+            append("  ·  ")
             if (distance != null) append(GeoUtils.formatDistance(distance))
             if (bearing != null) {
-                if (isNotEmpty() && !endsWith("  ·  ")) append("  ·  ")
+                if (distance != null) append("  ·  ")
                 append("Az ").append(GeoUtils.formatAzimuthPadded(bearing))
             }
             val sector = sectorTowardInstall(state, focus)
             if (sector != null && focus != null) {
-                if (isNotEmpty()) append("  ·  ")
+                append("  ·  ")
                 append("AP ").append(sector.shortLabel).append(" sector")
             }
-            if (isEmpty()) {
-                if (state.mapShowAllSites) append("All ${mapSites.size} sites")
-                else append("Range ${GeoUtils.formatDistance(state.maxDistanceMeters.toDouble())}")
+            if (distance == null && bearing == null && sector == null) {
+                if (state.mapShowAllSites) {
+                    append("All ").append(mapSites.size).append(" sites")
+                } else {
+                    append("Range ").append(GeoUtils.formatDistance(state.maxDistanceMeters.toDouble()))
+                }
             } else {
                 append("  ·  ").append(mapSites.size)
                 append(if (state.mapShowAllSites) " sites" else " in range")
             }
         }
 
+        detailsButton.isEnabled = focus != null
+        detailsButton.alpha = if (focus != null) 1f else 0.45f
+
+        renderTrackingChips(state)
+        renderTheme(state)
         renderChips(state)
         locationSourceChip.render(state, this)
         renderMapOverlays(state)
@@ -349,16 +406,17 @@ class MapActivity : AppCompatActivity() {
         val focusId = state.mapFocusTower()?.id
         val signature = matches.joinToString("|") { tower ->
             val distanceBucket = state.distanceTo(tower)?.let { (it / 50.0).toInt() } ?: -1
-            "${tower.id}:$distanceBucket"
+            "${tower.id}:$distanceBucket:${state.hudTheme.name}:${tower.id == focusId}"
         } + "|f=$focusId"
         if (signature == lastChipSignature && towerChips.childCount == matches.size) return
         lastChipSignature = signature
 
         towerChips.removeAllViews()
+        val chipColors = HudThemeApplier.colorsFor(state.hudTheme, towerChips)
         val density = resources.displayMetrics.density
         matches.forEach { tower ->
             val distance = state.distanceTo(tower)
-            val selected = tower.id == focusId
+            val isFocus = tower.id == focusId
             val label = if (distance != null) {
                 "${tower.name}  ${GeoUtils.formatDistance(distance)}"
             } else {
@@ -366,32 +424,30 @@ class MapActivity : AppCompatActivity() {
             }
             val chip = TextView(this).apply {
                 text = label
-                setTextColor(
-                    ContextCompat.getColor(
-                        this@MapActivity,
-                        if (selected) R.color.bg_deep else R.color.text_primary
-                    )
-                )
+                setTextColor(if (isFocus) chipColors.accent else chipColors.text)
                 textSize = 12f
+                typeface = resources.getFont(
+                    if (isFocus) R.font.source_sans3_semibold else R.font.source_sans3_regular
+                )
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                minHeight = (36 * density).toInt()
                 setPadding(
                     (12 * density).toInt(),
-                    (8 * density).toInt(),
+                    (7 * density).toInt(),
                     (12 * density).toInt(),
-                    (8 * density).toInt()
+                    (7 * density).toInt()
                 )
-                setBackgroundColor(
-                    ContextCompat.getColor(
-                        this@MapActivity,
-                        if (selected) R.color.accent_yellow else R.color.surface_elevated
-                    )
+                background = ContextCompat.getDrawable(
+                    this@MapActivity,
+                    if (isFocus) R.drawable.bg_nav_item_selected else R.drawable.bg_hud_match_chip
                 )
-                minHeight = (48 * density).toInt()
-                gravity = android.view.Gravity.CENTER_VERTICAL
+                isClickable = true
+                isFocusable = true
                 val params = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
-                params.marginEnd = (8 * density).toInt()
+                params.marginEnd = (6 * density).toInt()
                 layoutParams = params
                 setOnClickListener {
                     viewModel.selectTower(tower.id)
@@ -400,6 +456,85 @@ class MapActivity : AppCompatActivity() {
             }
             towerChips.addView(chip)
         }
+    }
+
+    private fun renderTrackingChips(state: TowerUiState) {
+        val accuracy = state.userLocation?.accuracyMeters
+        val hasFine = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val gpsTier = when {
+            !hasFine -> "Coarse"
+            accuracy == null || !accuracy.isFinite() -> null
+            accuracy <= 8f -> "Good"
+            accuracy <= 20f -> "Fair"
+            else -> "Poor"
+        }
+        gpsChip.text = if (gpsTier != null && accuracy != null && accuracy.isFinite()) {
+            "GPS · $gpsTier ±${accuracy.toInt()}m"
+        } else if (gpsTier == "Coarse") {
+            "GPS · Coarse"
+        } else {
+            "GPS · —"
+        }
+        val gpsColorRes = when (gpsTier) {
+            "Good" -> R.color.chip_good
+            "Fair" -> R.color.chip_fair
+            "Poor", "Coarse" -> R.color.chip_poor
+            else -> R.color.chip_off
+        }
+        val gpsColor = ContextCompat.getColor(this, gpsColorRes)
+        gpsChip.setTextColor(gpsColor)
+        gpsChip.background = HudThemeApplier.statusChipBackground(gpsChip, gpsColor)
+
+        val showWarning = state.towers.isNotEmpty() && (
+            (state.locationMode == LocationMode.CUSTOM && state.hasInstallSite) ||
+                state.userLocation == null ||
+                (accuracy != null && accuracy > 25f)
+            )
+        trackingWarning.isVisible = showWarning
+        if (trackingWarning.isVisible) {
+            trackingWarning.text = when {
+                state.locationMode == LocationMode.CUSTOM && state.hasInstallSite ->
+                    getString(R.string.map_warning_custom_location)
+                state.userLocation == null ->
+                    getString(R.string.map_warning_waiting_gps)
+                else ->
+                    getString(R.string.map_warning_gps_weak, accuracy?.toInt() ?: 0)
+            }
+        }
+    }
+
+    private fun renderTheme(state: TowerUiState) {
+        HudThemeApplier.apply(
+            theme = state.hudTheme,
+            topBar = topBar,
+            compassStrip = focusStrip,
+            bottomPanel = bottomPanel,
+            trackingWarning = trackingWarning,
+            appTitle = mapTitle,
+            headingLabel = mapSubtitle,
+            focusTowerLabel = focusLabel,
+            visibleCount = metaLabel,
+            nearestHeader = sitesHeader
+        )
+        focusStrip.setBackgroundResource(
+            if (state.mapFocusTower() != null) {
+                R.drawable.bg_compass_aim_active
+            } else {
+                R.drawable.bg_field_card
+            }
+        )
+        val colors = HudThemeApplier.colorsFor(state.hudTheme, topBar)
+        findViewById<ImageButton>(R.id.mapBackButton).imageTintList =
+            android.content.res.ColorStateList.valueOf(colors.mutedText)
+        findViewById<ImageButton>(R.id.mapFitButton).imageTintList =
+            android.content.res.ColorStateList.valueOf(colors.accent)
+        findViewById<ImageButton>(R.id.mapMyLocationButton).imageTintList =
+            android.content.res.ColorStateList.valueOf(colors.secondary)
+        findViewById<ImageButton>(R.id.mapInstallButton).imageTintList =
+            android.content.res.ColorStateList.valueOf(colors.accent)
     }
 
     private fun renderMapOverlays(state: TowerUiState) {
