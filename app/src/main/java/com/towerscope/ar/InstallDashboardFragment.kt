@@ -15,6 +15,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.towerscope.ar.ui.HeroActionCardBinder
 import com.towerscope.ar.ui.InstallHubPreviews
 import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.NetworkHubPreviews
@@ -67,6 +68,13 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
         view.findViewById<View>(R.id.installTabTools).findViewById<TextView>(R.id.wfmTabLabel)
             .setText(R.string.install_tab_tools)
         WfmSegmentTabs.bindInstallHub(view)
+
+        HeroActionCardBinder.bind(
+            heroRoot = view.findViewById(R.id.installHeroCompass),
+            context = requireContext(),
+            state = viewModel.uiState.value,
+            onClick = { startActivity(Intent(requireContext(), MainActivity::class.java)) }
+        )
 
         SwipeRefreshHelper.bind(
             view.findViewById<SwipeRefreshLayout>(R.id.installDashboardSwipeRefresh),
@@ -216,5 +224,12 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
         }
 
         InstallHubPreviews.bindLos(requireContext(), state, losPreview)
+
+        HeroActionCardBinder.bind(
+            heroRoot = requireView().findViewById(R.id.installHeroCompass),
+            context = requireContext(),
+            state = state,
+            onClick = { startActivity(Intent(requireContext(), MainActivity::class.java)) }
+        )
     }
 }

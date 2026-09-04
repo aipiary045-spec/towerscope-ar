@@ -19,6 +19,9 @@
     <color name="accent_teal_dim">#400A84FF</color>
     <color name="accent_teal_soft">#1A0A84FF</color>
     <color name="accent_glow">#330A84FF</color>
+    <color name="hero_compass_start">#0A5BD6</color>
+    <color name="hero_compass_end">#0A84FF</color>
+    <color name="accent_install">#FFD60A</color>
 
     <color name="forest">#1C1C1E</color>
     <color name="sage">#48484A</color>

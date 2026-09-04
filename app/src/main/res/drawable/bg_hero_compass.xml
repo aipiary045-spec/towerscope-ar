@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/surface_slate" />
+    <gradient
+        android:angle="135"
+        android:endColor="@color/hero_compass_end"
+        android:startColor="@color/hero_compass_start"
+        android:type="linear" />
     <corners android:radius="@dimen/radius_lg" />
-    <stroke
-        android:width="1dp"
-        android:color="@color/border_luminous" />
 </shape>

@@ -1,47 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/bottomNavBar"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_bottom_nav"
-    android:gravity="center_vertical"
-    android:minHeight="72dp"
-    android:orientation="horizontal"
-    android:paddingHorizontal="6dp"
-    android:paddingTop="8dp"
+    android:clipToPadding="false"
+    android:paddingHorizontal="12dp"
+    android:paddingTop="4dp"
     android:paddingBottom="10dp">
 
-    <FrameLayout
-        android:layout_width="0dp"
+    <LinearLayout
+        android:id="@+id/bottomNavBar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1">
-
-        <View
-            android:id="@+id/navHomePill"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_gravity="center"
-            android:layout_marginHorizontal="4dp"
-            android:background="@drawable/bg_nav_tab_active"
-            android:visibility="gone" />
+        android:background="@drawable/bg_nav_floating"
+        android:gravity="center_vertical"
+        android:minHeight="60dp"
+        android:orientation="horizontal"
+        android:padding="5dp">
 
         <LinearLayout
             android:id="@+id/navHome"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_nav_item_selected"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingVertical="6dp">
 
             <ImageView
                 android:id="@+id/navHomeIcon"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
                 android:contentDescription="@string/nav_home"
-                android:src="@drawable/ic_nav_home"
-                android:tint="@color/accent_teal" />
+                android:src="@drawable/ic_nav_home" />
 
             <TextView
                 android:id="@+id/navHomeLabel"
@@ -50,42 +43,27 @@
                 android:layout_marginTop="3dp"
                 android:fontFamily="@font/source_sans3_semibold"
                 android:text="@string/nav_home"
-                android:textColor="@color/accent_teal"
                 android:textSize="10sp" />
         </LinearLayout>
-    </FrameLayout>
-
-    <FrameLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-
-        <View
-            android:id="@+id/navNetworkPill"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_gravity="center"
-            android:layout_marginHorizontal="4dp"
-            android:background="@drawable/bg_nav_tab_active"
-            android:visibility="gone" />
 
         <LinearLayout
             android:id="@+id/navNetwork"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_nav_item_idle"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingVertical="6dp">
 
             <ImageView
                 android:id="@+id/navNetworkIcon"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
                 android:contentDescription="@string/nav_network"
-                android:src="@drawable/ic_wifi_signal"
-                android:tint="@color/text_dim" />
+                android:src="@drawable/ic_wifi_signal" />
 
             <TextView
                 android:id="@+id/navNetworkLabel"
@@ -94,42 +72,27 @@
                 android:layout_marginTop="3dp"
                 android:fontFamily="@font/source_sans3_regular"
                 android:text="@string/nav_network"
-                android:textColor="@color/text_dim"
                 android:textSize="10sp" />
         </LinearLayout>
-    </FrameLayout>
-
-    <FrameLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-
-        <View
-            android:id="@+id/navInstallPill"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_gravity="center"
-            android:layout_marginHorizontal="4dp"
-            android:background="@drawable/bg_nav_tab_active"
-            android:visibility="gone" />
 
         <LinearLayout
             android:id="@+id/navInstall"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_nav_item_idle"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingVertical="6dp">
 
             <ImageView
                 android:id="@+id/navInstallIcon"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
                 android:contentDescription="@string/nav_install"
-                android:src="@drawable/ic_compass_rose"
-                android:tint="@color/text_dim" />
+                android:src="@drawable/ic_compass_rose" />
 
             <TextView
                 android:id="@+id/navInstallLabel"
@@ -138,42 +101,27 @@
                 android:layout_marginTop="3dp"
                 android:fontFamily="@font/source_sans3_regular"
                 android:text="@string/nav_install"
-                android:textColor="@color/text_dim"
                 android:textSize="10sp" />
         </LinearLayout>
-    </FrameLayout>
-
-    <FrameLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-
-        <View
-            android:id="@+id/navSettingsPill"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_gravity="center"
-            android:layout_marginHorizontal="4dp"
-            android:background="@drawable/bg_nav_tab_active"
-            android:visibility="gone" />
 
         <LinearLayout
             android:id="@+id/navSettings"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_nav_item_idle"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingVertical="6dp">
 
             <ImageView
                 android:id="@+id/navSettingsIcon"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
                 android:contentDescription="@string/nav_settings"
-                android:src="@drawable/ic_settings_cog"
-                android:tint="@color/text_dim" />
+                android:src="@drawable/ic_settings_cog" />
 
             <TextView
                 android:id="@+id/navSettingsLabel"
@@ -182,8 +130,7 @@
                 android:layout_marginTop="3dp"
                 android:fontFamily="@font/source_sans3_regular"
                 android:text="@string/nav_settings"
-                android:textColor="@color/text_dim"
                 android:textSize="10sp" />
         </LinearLayout>
-    </FrameLayout>
-</LinearLayout>
+    </LinearLayout>
+</FrameLayout>

@@ -1,5 +1,6 @@
 package com.towerscope.ar
 
+import android.content.Intent
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -18,7 +19,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.towerscope.ar.network.WifiMonitor
+import com.towerscope.ar.ui.FieldGreeting
 import com.towerscope.ar.ui.BottomNavTab
+import com.towerscope.ar.ui.HeroActionCardBinder
 import com.towerscope.ar.ui.HomeLiveMetrics
 import com.towerscope.ar.ui.InternetLiveMonitor
 import com.towerscope.ar.ui.LocationSourceChip
@@ -42,6 +45,7 @@ class HomeFragment : Fragment(R.layout.activity_home) {
     private lateinit var nearbySitesList: LinearLayout
     private lateinit var locationChip: TextView
     private lateinit var gpsStatus: TextView
+    private lateinit var homeGreeting: TextView
     private lateinit var wifiMetric: HomeLiveMetrics.MetricViews
     private lateinit var internetMetric: HomeLiveMetrics.MetricViews
     private lateinit var speedMetric: HomeLiveMetrics.MetricViews
@@ -70,6 +74,14 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         nearbySitesList = view.findViewById(R.id.homeNearbySitesList)
         locationChip = view.findViewById(R.id.homeLocationChip)
         gpsStatus = view.findViewById(R.id.homeGpsStatus)
+        homeGreeting = view.findViewById(R.id.homeGreeting)
+
+        HeroActionCardBinder.bind(
+            heroRoot = view.findViewById(R.id.homeHeroCompass),
+            context = requireContext(),
+            state = viewModel.uiState.value,
+            onClick = { startActivity(Intent(requireContext(), MainActivity::class.java)) }
+        )
 
         LocationSourceChip(
             chip = locationChip,
@@ -154,6 +166,14 @@ class HomeFragment : Fragment(R.layout.activity_home) {
     }
 
     private fun renderDashboard(state: TowerUiState) {
+        homeGreeting.text = FieldGreeting.headline(requireContext())
+        HeroActionCardBinder.bind(
+            heroRoot = requireView().findViewById(R.id.homeHeroCompass),
+            context = requireContext(),
+            state = state,
+            onClick = { startActivity(Intent(requireContext(), MainActivity::class.java)) }
+        )
+
         val towerCount = state.towers.size
         val inRange = state.visibleTowers().size
         val hasSites = towerCount > 0

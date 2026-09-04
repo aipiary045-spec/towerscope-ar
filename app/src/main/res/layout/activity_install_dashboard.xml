@@ -84,10 +84,17 @@
                 android:orientation="vertical"
                 android:paddingBottom="8dp">
 
+                <include
+                    android:id="@+id/installHeroCompass"
+                    layout="@layout/include_hero_action_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
                 <TextView
                     android:id="@+id/installDashboardSitesSummary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
                     android:background="@drawable/bg_field_card"
                     android:fontFamily="@font/source_sans3_semibold"
                     android:padding="16dp"

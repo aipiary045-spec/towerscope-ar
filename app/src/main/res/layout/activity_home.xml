@@ -21,9 +21,21 @@
             android:paddingTop="12dp"
             android:paddingBottom="24dp">
 
+            <TextView
+                android:id="@+id/homeGreeting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/source_sans3_semibold"
+                android:letterSpacing="0.06"
+                android:text="@string/home_greeting_morning"
+                android:textAllCaps="true"
+                android:textColor="@color/accent_teal"
+                android:textSize="11sp" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -79,6 +91,13 @@
                     android:textColor="@color/accent_teal"
                     android:textSize="11sp" />
             </LinearLayout>
+
+            <include
+                android:id="@+id/homeHeroCompass"
+                layout="@layout/include_hero_action_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp" />
 
             <include
                 android:id="@+id/homeNetworkTopology"
