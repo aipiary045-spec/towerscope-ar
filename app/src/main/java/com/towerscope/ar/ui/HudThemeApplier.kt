@@ -64,7 +64,6 @@ object HudThemeApplier {
         nearestHeader: TextView
     ) {
         val colors = colorsFor(theme, topBar)
-        listOf(topBar, compassStrip, bottomPanel).forEach { it.setBackgroundColor(colors.panel) }
         appTitle.setTextColor(colors.text)
         headingLabel.setTextColor(colors.secondary)
         focusTowerLabel.setTextColor(colors.text)

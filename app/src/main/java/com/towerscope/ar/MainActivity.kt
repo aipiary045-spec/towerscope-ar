@@ -51,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bottomPanel: View
     private lateinit var trackingWarning: TextView
     private lateinit var appTitle: TextView
+    private lateinit var compassBackButton: ImageButton
     private lateinit var settingsButton: ImageButton
     private lateinit var calibrateButton: ImageButton
     private lateinit var gpsChip: TextView
@@ -123,6 +124,7 @@ class MainActivity : AppCompatActivity() {
         bottomPanel = findViewById(R.id.bottomPanel)
         trackingWarning = findViewById(R.id.trackingWarning)
         appTitle = findViewById(R.id.appTitle)
+        compassBackButton = findViewById(R.id.compassBackButton)
         settingsButton = findViewById(R.id.settingsButton)
         calibrateButton = findViewById(R.id.calibrateButton)
         gpsChip = findViewById(R.id.gpsChip)
@@ -171,6 +173,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun wireActions() {
+        compassBackButton.setOnClickListener { finish() }
         findViewById<MaterialButton>(R.id.grantPermissionsButton).setOnClickListener { requestPermissions() }
         settingsButton.setOnClickListener { openSettings() }
         calibrateButton.setOnClickListener { viewModel.beginCompassImprove() }
@@ -287,15 +290,21 @@ class MainActivity : AppCompatActivity() {
                 text = label
                 setTextColor(if (isFocus) chipColors.accent else chipColors.text)
                 textSize = 12f
+                typeface = resources.getFont(
+                    if (isFocus) R.font.source_sans3_semibold else R.font.source_sans3_regular
+                )
                 gravity = android.view.Gravity.CENTER_VERTICAL
-                minHeight = (40 * density).toInt()
+                minHeight = (36 * density).toInt()
                 setPadding(
                     (12 * density).toInt(),
-                    (8 * density).toInt(),
+                    (7 * density).toInt(),
                     (12 * density).toInt(),
-                    (8 * density).toInt()
+                    (7 * density).toInt()
                 )
-                background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_hud_match_chip)
+                background = ContextCompat.getDrawable(
+                    this@MainActivity,
+                    if (isFocus) R.drawable.bg_nav_item_selected else R.drawable.bg_hud_match_chip
+                )
                 isClickable = true
                 isFocusable = true
                 val params = LinearLayout.LayoutParams(
@@ -417,7 +426,7 @@ class MainActivity : AppCompatActivity() {
 
         val focus = state.focusTower()
         if (focus == null) {
-            focusTowerLabel.text = "No tower in range"
+            focusTowerLabel.text = getString(R.string.compass_no_tower_in_range)
             aimFocusHud.isVisible = false
             return
         }
@@ -516,9 +525,17 @@ class MainActivity : AppCompatActivity() {
             visibleCount = visibleCount,
             nearestHeader = nearestHeader
         )
+        compassStrip.setBackgroundResource(
+            if (state.focusTower() != null) {
+                R.drawable.bg_compass_aim_active
+            } else {
+                R.drawable.bg_field_card
+            }
+        )
         val colors = HudThemeApplier.colorsFor(state.hudTheme, settingsButton)
         settingsButton.imageTintList = android.content.res.ColorStateList.valueOf(colors.secondary)
         calibrateButton.imageTintList = android.content.res.ColorStateList.valueOf(colors.accent)
+        compassBackButton.imageTintList = android.content.res.ColorStateList.valueOf(colors.mutedText)
     }
 
     private fun renderCompassImprove(state: TowerUiState) {

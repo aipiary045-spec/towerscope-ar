@@ -16,63 +16,84 @@
             android:id="@+id/topChrome"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingHorizontal="12dp">
 
             <LinearLayout
                 android:id="@+id/topBar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_field_card"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="14dp"
+                android:paddingHorizontal="10dp"
                 android:paddingVertical="10dp">
 
-                <TextView
-                    android:id="@+id/appTitle"
+                <ImageButton
+                    android:id="@+id/compassBackButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/compass_back"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_nav_back"
+                    android:tint="@color/text_muted" />
+
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
                     android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:fontFamily="@font/source_sans3_semibold"
-                    android:maxLines="1"
-                    android:text="@string/hud_title"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/appTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/source_sans3_semibold"
+                        android:maxLines="1"
+                        android:text="@string/compass_hud_title"
+                        android:textColor="@color/text_primary"
+                        android:textSize="17sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/source_sans3_regular"
+                        android:text="@string/compass_hud_sub"
+                        android:textColor="@color/text_muted"
+                        android:textSize="11sp" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/gpsChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:background="@drawable/bg_hud_chip"
-                    android:paddingHorizontal="9dp"
-                    android:paddingVertical="6dp"
+                    android:layout_marginEnd="5dp"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="5dp"
                     android:text="GPS · —"
-                    android:textColor="@color/chip_text_on_dark"
-                    android:textSize="11sp" />
+                    android:textSize="10sp" />
 
                 <TextView
                     android:id="@+id/compassChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_hud_chip"
-                    android:paddingHorizontal="9dp"
-                    android:paddingVertical="6dp"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="5dp"
                     android:text="Compass · —"
-                    android:textColor="@color/chip_text_on_dark"
-                    android:textSize="11sp" />
+                    android:textSize="10sp" />
             </LinearLayout>
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
                 android:layout_marginTop="8dp"
-                android:paddingHorizontal="2dp"
                 android:scrollbars="none">
 
                 <include
@@ -86,10 +107,11 @@
                 android:id="@+id/trackingWarning"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
                 android:layout_marginTop="6dp"
+                android:background="@drawable/bg_metric_tile"
                 android:fontFamily="@font/source_sans3_regular"
-                android:paddingHorizontal="4dp"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="8dp"
                 android:text="Compass needs calibration"
                 android:textColor="@color/chip_poor"
                 android:textSize="11sp"
@@ -99,7 +121,6 @@
                 android:id="@+id/compassStrip"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_field_card"
                 android:orientation="vertical"
@@ -110,12 +131,12 @@
                     android:id="@+id/headingLabel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="monospace"
-                    android:letterSpacing="0.02"
+                    android:fontFamily="@font/source_sans3_semibold"
+                    android:letterSpacing="0.06"
                     android:text="HEADING  —"
+                    android:textAllCaps="true"
                     android:textColor="@color/accent_teal"
-                    android:textSize="17sp"
-                    android:textStyle="bold" />
+                    android:textSize="11sp" />
 
                 <TextView
                     android:id="@+id/focusTowerLabel"
@@ -125,18 +146,20 @@
                     android:ellipsize="end"
                     android:fontFamily="@font/source_sans3_semibold"
                     android:maxLines="1"
-                    android:text="No tower in range"
+                    android:text="@string/compass_no_tower_in_range"
                     android:textColor="@color/text_primary"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textSize="22sp" />
 
                 <LinearLayout
                     android:id="@+id/aimFocusHud"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_metric_tile"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp"
                     android:visibility="gone">
 
                     <LinearLayout
@@ -146,14 +169,24 @@
                         android:orientation="vertical">
 
                         <TextView
-                            android:id="@+id/aimTurnLabel"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/source_sans3_semibold"
+                            android:letterSpacing="0.08"
+                            android:text="@string/compass_aim_turn_label"
+                            android:textAllCaps="true"
+                            android:textColor="@color/text_dim"
+                            android:textSize="9sp" />
+
+                        <TextView
+                            android:id="@+id/aimTurnLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/source_sans3_semibold"
                             android:text="—"
                             android:textColor="@color/accent_yellow"
-                            android:textSize="26sp"
-                            android:textStyle="bold" />
+                            android:textSize="28sp" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -164,27 +197,49 @@
                         android:orientation="vertical">
 
                         <TextView
-                            android:id="@+id/aimDistanceLabel"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/source_sans3_semibold"
                             android:gravity="end"
+                            android:letterSpacing="0.08"
+                            android:text="@string/compass_aim_distance_label"
+                            android:textAllCaps="true"
+                            android:textColor="@color/text_dim"
+                            android:textSize="9sp" />
+
+                        <TextView
+                            android:id="@+id/aimDistanceLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/source_sans3_semibold"
+                            android:gravity="end"
                             android:text="—"
                             android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textSize="17sp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="@font/source_sans3_semibold"
+                            android:gravity="end"
+                            android:letterSpacing="0.08"
+                            android:text="@string/compass_aim_signal_label"
+                            android:textAllCaps="true"
+                            android:textColor="@color/text_dim"
+                            android:textSize="9sp" />
 
                         <TextView
                             android:id="@+id/aimSignalLabel"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:fontFamily="monospace"
+                            android:fontFamily="@font/source_sans3_semibold"
                             android:gravity="end"
                             android:text="Est.  —"
                             android:textColor="@color/accent_teal"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
+                            android:textSize="14sp" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -197,7 +252,9 @@
             android:layout_marginHorizontal="12dp"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:background="@drawable/bg_compass_radar_frame"
+            android:padding="6dp">
 
             <com.towerscope.ar.ui.CompassRadarView
                 android:id="@+id/compassRadar"
@@ -210,31 +267,31 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|end"
-                android:layout_marginEnd="4dp"
-                android:layout_marginBottom="4dp"
-                android:orientation="vertical">
+                android:layout_marginEnd="2dp"
+                android:layout_marginBottom="2dp"
+                android:background="@drawable/bg_nav_floating"
+                android:orientation="vertical"
+                android:padding="5dp">
 
                 <ImageButton
                     android:id="@+id/calibrateButton"
-                    android:layout_width="@dimen/fab_size"
-                    android:layout_height="@dimen/fab_size"
-                    android:background="@drawable/bg_settings_fab"
-                    android:contentDescription="Improve compass accuracy"
-                    android:elevation="8dp"
-                    android:padding="14dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_compass_fab"
+                    android:contentDescription="@string/compass_improve_title"
+                    android:padding="11dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_compass_rose"
                     android:tint="@color/accent_yellow" />
 
                 <ImageButton
                     android:id="@+id/settingsButton"
-                    android:layout_width="@dimen/fab_size"
-                    android:layout_height="@dimen/fab_size"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_settings_fab"
-                    android:contentDescription="Settings"
-                    android:elevation="8dp"
-                    android:padding="15dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_compass_fab"
+                    android:contentDescription="@string/nav_settings"
+                    android:padding="12dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_settings_cog"
                     android:tint="@color/accent_teal" />
@@ -247,7 +304,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="12dp"
             android:layout_marginBottom="10dp"
-            android:background="@drawable/bg_field_card"
+            android:background="@drawable/bg_wfm_group_card"
             android:orientation="vertical"
             android:paddingHorizontal="14dp"
             android:paddingVertical="12dp">
@@ -262,11 +319,10 @@
                 android:focusable="true"
                 android:fontFamily="@font/source_sans3_semibold"
                 android:gravity="center_vertical"
-                android:minHeight="36dp"
+                android:minHeight="32dp"
                 android:text="Visible 0 / 0"
-                android:textColor="@color/text_primary"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:textColor="@color/text_muted"
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/nearestHeader"
@@ -274,14 +330,16 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:fontFamily="@font/source_sans3_semibold"
-                android:text="Nearby"
+                android:text="@string/compass_nearby_label"
                 android:textColor="@color/text_primary"
-                android:textSize="13sp" />
+                android:textSize="14sp" />
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
+                android:clipToPadding="false"
+                android:paddingEnd="4dp"
                 android:scrollbars="none">
 
                 <LinearLayout
@@ -297,7 +355,7 @@
         android:id="@+id/compassImproveOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#E60B1C2C"
+        android:background="@drawable/bg_compass_overlay_scrim"
         android:clickable="true"
         android:focusable="true"
         android:visibility="gone">
@@ -306,13 +364,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:layout_marginHorizontal="24dp"
+            android:background="@drawable/bg_field_card"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:paddingHorizontal="28dp">
+            android:padding="22dp">
 
             <ImageView
-                android:layout_width="72dp"
-                android:layout_height="72dp"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_compass_rose"
                 android:tint="@color/accent_yellow" />
@@ -321,31 +381,30 @@
                 android:id="@+id/compassImproveTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="14dp"
                 android:fontFamily="@font/source_sans3_semibold"
                 android:gravity="center"
-                android:text="Improve compass"
-                android:textColor="@color/accent_yellow"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:text="@string/compass_improve_title"
+                android:textColor="@color/text_primary"
+                android:textSize="20sp" />
 
             <TextView
                 android:id="@+id/compassImproveHint"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="8dp"
                 android:fontFamily="@font/source_sans3_regular"
                 android:gravity="center"
                 android:lineSpacingExtra="3dp"
-                android:text="Move the phone in a figure-8 pattern and tilt it. Stay away from metal and magnets."
-                android:textColor="#DDFFFFFF"
+                android:text="@string/compass_improve_hint"
+                android:textColor="@color/text_muted"
                 android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/compassImproveStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/bg_cal_state_needed"
                 android:fontFamily="@font/source_sans3_semibold"
                 android:gravity="center"
@@ -359,11 +418,11 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="10dp"
                 android:fontFamily="@font/source_sans3_regular"
                 android:gravity="center"
                 android:text="@string/compass_improve_offset_hint"
-                android:textColor="@color/text_muted"
+                android:textColor="@color/text_dim"
                 android:textSize="12sp" />
 
             <com.google.android.material.button.MaterialButton
@@ -381,26 +440,14 @@
                 android:layout_height="48dp"
                 android:layout_marginTop="8dp"
                 android:text="@string/compass_calibrate_tower" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:background="#CC0B1C2C"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="28dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/compassImproveDoneButton"
                 style="@style/Widget.TowerScope.Button.Primary"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="Done" />
+                android:layout_marginTop="14dp"
+                android:text="@string/compass_improve_done" />
         </LinearLayout>
     </FrameLayout>
 
@@ -414,23 +461,30 @@
         android:padding="28dp"
         android:visibility="gone">
 
+        <ImageView
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_compass_rose"
+            android:tint="@color/accent_yellow" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:fontFamily="@font/source_sans3_semibold"
-            android:text="@string/hud_title"
-            android:textColor="@color/accent_yellow"
-            android:textSize="26sp"
-            android:textStyle="bold" />
+            android:text="@string/compass_hud_title"
+            android:textColor="@color/text_primary"
+            android:textSize="24sp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:fontFamily="@font/source_sans3_regular"
             android:gravity="center"
             android:lineSpacingExtra="3dp"
-            android:text="High-accuracy location is required to show tower directions on the compass."
+            android:text="@string/compass_permission_body"
             android:textColor="@color/text_muted"
             android:textSize="14sp" />
 
@@ -440,6 +494,6 @@
             android:layout_width="wrap_content"
             android:layout_height="48dp"
             android:layout_marginTop="20dp"
-            android:text="Grant permissions" />
+            android:text="@string/compass_grant_permissions" />
     </LinearLayout>
 </FrameLayout>
