@@ -1,9 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="@color/surface_elevated" />
-    <corners android:radius="28dp" />
-    <stroke
-        android:width="1dp"
-        android:color="@color/border_luminous" />
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/surface_glass" />
+            <corners android:radius="0dp" />
+        </shape>
+    </item>
+    <item android:gravity="top">
+        <shape android:shape="rectangle">
+            <size android:height="1dp" />
+            <gradient
+                android:angle="0"
+                android:endColor="#009B8AFF"
+                android:startColor="#00FF6B8A"
+                android:centerColor="#559B8AFF"
+                android:type="linear" />
+        </shape>
+    </item>
+</layer-list>

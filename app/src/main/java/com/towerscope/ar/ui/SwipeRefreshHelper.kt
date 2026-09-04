@@ -12,7 +12,7 @@ object SwipeRefreshHelper {
         scope: CoroutineScope,
         onRefresh: suspend () -> Unit
     ) {
-        swipeRefresh.setColorSchemeResources(R.color.accent_teal, R.color.accent_yellow)
+        swipeRefresh.setColorSchemeResources(R.color.accent_yellow, R.color.accent_teal, R.color.accent_cyan)
         swipeRefresh.setProgressBackgroundColorSchemeResource(R.color.surface_elevated)
         swipeRefresh.setOnRefreshListener {
             scope.launch {

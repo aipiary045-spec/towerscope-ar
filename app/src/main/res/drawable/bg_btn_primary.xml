@@ -3,8 +3,12 @@
     android:color="#33FFFFFF">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/accent_yellow" />
-            <corners android:radius="12dp" />
+            <gradient
+                android:angle="0"
+                android:endColor="@color/hero_compass_end"
+                android:startColor="@color/hero_compass_start"
+                android:type="linear" />
+            <corners android:radius="@dimen/radius_md" />
         </shape>
     </item>
 </ripple>

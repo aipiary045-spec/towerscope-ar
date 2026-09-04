@@ -7,19 +7,19 @@
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
     android:gravity="center_vertical"
-    android:minHeight="88dp"
+    android:minHeight="100dp"
     android:orientation="horizontal"
-    android:padding="16dp">
+    android:padding="@dimen/card_padding">
 
     <FrameLayout
-        android:layout_width="52dp"
-        android:layout_height="52dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:background="@drawable/bg_hero_icon_well">
 
         <ImageView
             android:id="@+id/heroActionIcon"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:layout_gravity="center"
             android:contentDescription="@null"
             android:src="@drawable/ic_compass_rose"
@@ -29,7 +29,7 @@
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="14dp"
+        android:layout_marginStart="16dp"
         android:layout_weight="1"
         android:orientation="vertical">
 
@@ -40,25 +40,28 @@
             android:fontFamily="@font/source_sans3_semibold"
             android:text="@string/home_hero_compass_title"
             android:textColor="@color/text_on_accent"
-            android:textSize="18sp" />
+            android:textSize="20sp" />
 
         <TextView
             android:id="@+id/heroActionSubtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="4dp"
             android:fontFamily="@font/source_sans3_regular"
             android:text="@string/home_hero_compass_sub"
-            android:textColor="#D9FFFFFF"
+            android:textColor="@color/text_on_hero_subtle"
             android:textSize="13sp" />
 
         <TextView
             android:id="@+id/heroActionMeta"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_hero_icon_well"
             android:fontFamily="@font/source_sans3_semibold"
-            android:textColor="#E6FFFFFF"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="5dp"
+            android:textColor="@color/text_on_accent"
             android:textSize="12sp"
             android:visibility="gone" />
     </LinearLayout>
@@ -68,6 +71,6 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/source_sans3_semibold"
         android:text="›"
-        android:textColor="#B3FFFFFF"
-        android:textSize="28sp" />
+        android:textColor="@color/text_on_hero_dim"
+        android:textSize="32sp" />
 </LinearLayout>

@@ -15,7 +15,7 @@
         android:fontFamily="@font/source_sans3_semibold"
         android:text="@string/install_dashboard_title"
         android:textColor="@color/text_primary"
-        android:textSize="28sp"
+        android:textSize="@dimen/screen_title"
         android:textStyle="bold" />
 
     <TextView

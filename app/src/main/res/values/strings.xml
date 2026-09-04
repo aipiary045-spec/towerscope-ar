@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">WispEaze</string>
     <string name="hud_title">WispEaze</string>
-    <string name="home_tagline">Your field install companion</string>
+    <string name="home_tagline">Field tools, reimagined</string>
     <string name="home_greeting_morning">Good morning — ready on site?</string>
     <string name="home_greeting_afternoon">Afternoon check-in</string>
     <string name="home_greeting_evening">Evening sweep</string>

@@ -5,7 +5,7 @@
     android:layout_marginEnd="6dp"
     android:background="@drawable/bg_field_card"
     android:orientation="vertical"
-    android:padding="10dp">
+    android:padding="12dp">
 
     <TextView
         android:id="@+id/homeMetricLabel"
@@ -28,7 +28,7 @@
         android:fontFamily="@font/source_sans3_semibold"
         android:maxLines="1"
         android:text="—"
-        android:textColor="@color/accent_teal"
+        android:textColor="@color/accent_yellow"
         android:textSize="18sp" />
 
     <TextView

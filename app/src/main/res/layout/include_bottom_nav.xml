@@ -2,20 +2,18 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:clipToPadding="false"
-    android:paddingHorizontal="12dp"
-    android:paddingTop="4dp"
-    android:paddingBottom="10dp">
+    android:background="@drawable/bg_nav_floating"
+    android:clipToPadding="false">
 
     <LinearLayout
         android:id="@+id/bottomNavBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/bg_nav_floating"
+        android:layout_height="@dimen/nav_dock_height"
         android:gravity="center_vertical"
-        android:minHeight="60dp"
         android:orientation="horizontal"
-        android:padding="5dp">
+        android:paddingHorizontal="8dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
 
         <LinearLayout
             android:id="@+id/navHome"
@@ -27,12 +25,12 @@
             android:focusable="true"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="6dp">
+            android:paddingVertical="4dp">
 
             <ImageView
                 android:id="@+id/navHomeIcon"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:contentDescription="@string/nav_home"
                 android:src="@drawable/ic_nav_home" />
 
@@ -40,10 +38,10 @@
                 android:id="@+id/navHomeLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="4dp"
                 android:fontFamily="@font/source_sans3_semibold"
                 android:text="@string/nav_home"
-                android:textSize="10sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -56,12 +54,12 @@
             android:focusable="true"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="6dp">
+            android:paddingVertical="4dp">
 
             <ImageView
                 android:id="@+id/navNetworkIcon"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:contentDescription="@string/nav_network"
                 android:src="@drawable/ic_wifi_signal" />
 
@@ -69,10 +67,10 @@
                 android:id="@+id/navNetworkLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="4dp"
                 android:fontFamily="@font/source_sans3_regular"
                 android:text="@string/nav_network"
-                android:textSize="10sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -85,12 +83,12 @@
             android:focusable="true"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="6dp">
+            android:paddingVertical="4dp">
 
             <ImageView
                 android:id="@+id/navInstallIcon"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:contentDescription="@string/nav_install"
                 android:src="@drawable/ic_compass_rose" />
 
@@ -98,10 +96,10 @@
                 android:id="@+id/navInstallLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="4dp"
                 android:fontFamily="@font/source_sans3_regular"
                 android:text="@string/nav_install"
-                android:textSize="10sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -114,12 +112,12 @@
             android:focusable="true"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="6dp">
+            android:paddingVertical="4dp">
 
             <ImageView
                 android:id="@+id/navSettingsIcon"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:contentDescription="@string/nav_settings"
                 android:src="@drawable/ic_settings_cog" />
 
@@ -127,10 +125,10 @@
                 android:id="@+id/navSettingsLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="4dp"
                 android:fontFamily="@font/source_sans3_regular"
                 android:text="@string/nav_settings"
-                android:textSize="10sp" />
+                android:textSize="11sp" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>
