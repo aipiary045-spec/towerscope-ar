@@ -24,7 +24,6 @@ import com.towerscope.ar.network.TestResultExport
 import com.towerscope.ar.network.WifiMonitor
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.ToolScaffold
-import com.towerscope.ar.ui.ToolTopology
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
@@ -56,7 +55,6 @@ class SignalWalkActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_signal_walk)
         SystemBars.apply(findViewById(R.id.signalWalkRoot))
-        ToolTopology.bindWhenResumed(this, findViewById(R.id.signalWalkRoot))
         fusedLocation = LocationServices.getFusedLocationProviderClient(this)
         monitor = WifiMonitor(this)
 

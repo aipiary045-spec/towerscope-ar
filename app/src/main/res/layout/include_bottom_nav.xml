@@ -11,45 +11,16 @@
         android:layout_height="@dimen/nav_dock_height"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="8dp"
+        android:paddingHorizontal="12dp"
         android:paddingTop="6dp"
         android:paddingBottom="6dp">
-
-        <LinearLayout
-            android:id="@+id/navHome"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/bg_nav_item_selected"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingVertical="4dp">
-
-            <ImageView
-                android:id="@+id/navHomeIcon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:contentDescription="@string/nav_home"
-                android:src="@drawable/ic_nav_home" />
-
-            <TextView
-                android:id="@+id/navHomeLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:fontFamily="@font/source_sans3_semibold"
-                android:text="@string/nav_home"
-                android:textSize="11sp" />
-        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/navNetwork"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="@drawable/bg_nav_item_idle"
+            android:background="@drawable/bg_nav_item_selected"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
@@ -68,7 +39,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:fontFamily="@font/source_sans3_regular"
+                android:fontFamily="@font/source_sans3_semibold"
                 android:text="@string/nav_network"
                 android:textSize="11sp" />
         </LinearLayout>

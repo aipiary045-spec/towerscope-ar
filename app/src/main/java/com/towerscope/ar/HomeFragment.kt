@@ -50,7 +50,6 @@ class HomeFragment : Fragment(R.layout.activity_home) {
     private lateinit var internetMetric: HomeLiveMetrics.MetricViews
     private lateinit var speedMetric: HomeLiveMetrics.MetricViews
     private val internetMonitor = InternetLiveMonitor()
-    private var networkTopology: View? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -64,7 +63,6 @@ class HomeFragment : Fragment(R.layout.activity_home) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        networkTopology = view.findViewById(R.id.homeNetworkTopology)
         wifiMetric = HomeLiveMetrics.views(view, R.id.homeMetricWifi)
         internetMetric = HomeLiveMetrics.views(view, R.id.homeMetricInternet)
         speedMetric = HomeLiveMetrics.views(view, R.id.homeMetricSpeed)
@@ -135,13 +133,11 @@ class HomeFragment : Fragment(R.layout.activity_home) {
         wifiMonitor: WifiMonitor? = null,
         forceInternetSpeed: Boolean = false
     ) {
-        val topo = networkTopology ?: return
         val monitor = wifiMonitor ?: WifiMonitor(requireContext())
         val live = internetMonitor.tick(requireContext(), forceQuickSpeed = forceInternetSpeed)
         HomeLiveMetrics.refresh(
             context = requireContext(),
             wifiMonitor = monitor,
-            topologyRoot = topo,
             wifi = wifiMetric,
             internet = internetMetric,
             speed = speedMetric,

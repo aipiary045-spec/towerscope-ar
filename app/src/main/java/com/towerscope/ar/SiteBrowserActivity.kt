@@ -25,7 +25,6 @@ import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.SiteBrowserAdapter
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.ToolScaffold
-import com.towerscope.ar.ui.ToolTopology
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.GeoUtils
@@ -73,7 +72,6 @@ class SiteBrowserActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_site_browser)
         SystemBars.apply(findViewById(R.id.siteBrowserRoot))
-        ToolTopology.bindWhenResumed(this, findViewById(R.id.siteBrowserRoot))
         viewModel = ViewModelProvider(this)[TowerScopeViewModel::class.java]
 
         searchField = findViewById(R.id.siteBrowserSearch)

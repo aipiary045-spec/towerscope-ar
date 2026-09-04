@@ -9,14 +9,7 @@
     android:paddingTop="12dp">
 
     <include layout="@layout/include_tool_scaffold_header" />
-
-    <include
-        layout="@layout/include_wifi_topology"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp" />
-
-    <include
+<include
         android:id="@+id/siteBrowserLocationChip"
         layout="@layout/include_location_source_chip"
         android:layout_width="wrap_content"

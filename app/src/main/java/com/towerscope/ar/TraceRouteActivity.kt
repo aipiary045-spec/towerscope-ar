@@ -11,7 +11,6 @@ import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.TraceRoute
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.ToolScaffold
-import com.towerscope.ar.ui.ToolTopology
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
@@ -31,7 +30,6 @@ class TraceRouteActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_traceroute)
         SystemBars.apply(findViewById(R.id.traceRoot))
-        ToolTopology.bindWhenResumed(this, findViewById(R.id.traceRoot))
 
         ToolScaffold.bind(
             activity = this,

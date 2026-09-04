@@ -57,7 +57,6 @@ object NetworkHubPreviews {
     val snapshot = withContext(Dispatchers.IO) {
       ConnectionSnapshotCollector.collect(context, fetchPublicIp = false)
     }
-    NetworkTopologyBinder.bind(root, snapshot)
     bindConnection(context, snapshot, connection)
     val link = wifiMonitor.currentLink()
     wifiMonitor.startScan()

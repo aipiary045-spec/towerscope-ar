@@ -9,7 +9,7 @@ import com.towerscope.ar.ui.BottomNavTab
 class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        startActivity(MainHostActivity.intent(this, BottomNavTab.HOME))
+        startActivity(MainHostActivity.intent(this, BottomNavTab.NETWORK))
         finish()
     }
 }

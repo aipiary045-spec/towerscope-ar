@@ -52,11 +52,6 @@ class WifiMonitorActivity : AppCompatActivity() {
     private lateinit var scanStatus: TextView
     private lateinit var scanAdapter: WifiScanAdapter
     private lateinit var scanButton: MaterialButton
-    private lateinit var topoInternetDetail: TextView
-    private lateinit var topoInternetStatus: TextView
-    private lateinit var topoApDetail: TextView
-    private lateinit var topoDeviceLabel: TextView
-    private lateinit var topoDeviceDetail: TextView
     private lateinit var factorSpectrum: View
     private lateinit var factorRadio: View
     private lateinit var factorChannel: View
@@ -102,11 +97,6 @@ class WifiMonitorActivity : AppCompatActivity() {
         plannerResult = findViewById(R.id.wifiPlannerResult)
         scanStatus = findViewById(R.id.wifiScanStatus)
         scanButton = findViewById(R.id.wifiScanButton)
-        topoInternetDetail = findViewById(R.id.wifiTopoInternetDetail)
-        topoInternetStatus = findViewById(R.id.wifiTopoInternetStatus)
-        topoApDetail = findViewById(R.id.wifiTopoApDetail)
-        topoDeviceLabel = findViewById(R.id.wifiTopoDeviceLabel)
-        topoDeviceDetail = findViewById(R.id.wifiTopoDeviceDetail)
         factorSpectrum = findViewById(R.id.wifiFactorSpectrum)
         factorRadio = findViewById(R.id.wifiFactorRadio)
         factorChannel = findViewById(R.id.wifiFactorChannel)
@@ -217,32 +207,8 @@ class WifiMonitorActivity : AppCompatActivity() {
         )
         interferenceHints.text = analysis.interferenceHints.joinToString("\n")
         interferenceHints.isVisible = analysis.interferenceHints.isNotEmpty()
-        updateTopology(link)
         updateFactorCards(link, analysis)
         updateChannelPlanner(annotated)
-    }
-
-    private fun updateTopology(link: WifiLinkStatus) {
-        topoInternetDetail.text = if (link.connected) {
-            getString(R.string.wifi_topo_available)
-        } else {
-            getString(R.string.wifi_topo_offline)
-        }
-        topoInternetStatus.text = topoInternetDetail.text
-        topoInternetStatus.setTextColor(
-            ContextCompat.getColor(
-                this,
-                if (link.connected) R.color.status_clear else R.color.chip_poor
-            )
-        )
-        topoApDetail.text = when {
-            link.ssid != null -> link.ssid
-            link.connected -> getString(R.string.wifi_topo_access_point)
-            else -> "—"
-        }
-        val deviceName = Build.MODEL?.takeIf { it.isNotBlank() } ?: getString(R.string.wifi_topo_device)
-        topoDeviceLabel.text = deviceName
-        topoDeviceDetail.text = link.bssid ?: "—"
     }
 
     private fun updateFactorCards(link: WifiLinkStatus, analysis: WifiChannelAnalysis) {

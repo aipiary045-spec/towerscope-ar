@@ -20,6 +20,7 @@ import com.towerscope.ar.ui.InstallHubPreviews
 import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.NetworkHubPreviews
 import com.towerscope.ar.ui.SwipeRefreshHelper
+import com.towerscope.ar.ui.InstallHubTab
 import com.towerscope.ar.ui.WfmSegmentTabs
 import com.towerscope.ar.util.DisplayUnits
 import com.towerscope.ar.util.GeoUtils
@@ -67,7 +68,7 @@ class InstallDashboardFragment : Fragment(R.layout.activity_install_dashboard) {
             .setText(R.string.install_tab_overview)
         view.findViewById<View>(R.id.installTabTools).findViewById<TextView>(R.id.wfmTabLabel)
             .setText(R.string.install_tab_tools)
-        WfmSegmentTabs.bindInstallHub(view)
+        WfmSegmentTabs.bindInstallHub(view, InstallHubTab.TOOLS)
 
         HeroActionCardBinder.bind(
             heroRoot = view.findViewById(R.id.installHeroCompass),

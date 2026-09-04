@@ -15,7 +15,6 @@ import com.towerscope.ar.NetworkHubActivity
 import com.towerscope.ar.R
 
 enum class BottomNavTab {
-    HOME,
     NETWORK,
     INSTALL,
     SETTINGS
@@ -51,26 +50,17 @@ object BottomNav {
     fun bind(activity: FragmentActivity, selected: BottomNavTab) {
         val root = activity.findViewById<android.view.View>(R.id.bottomNavBar) ?: return
 
-        styleHostTab(root, selected, BottomNavTab.HOME, R.id.navHome, R.id.navHomeIcon, R.id.navHomeLabel)
         styleHostTab(root, selected, BottomNavTab.NETWORK, R.id.navNetwork, R.id.navNetworkIcon, R.id.navNetworkLabel)
         styleHostTab(root, selected, BottomNavTab.INSTALL, R.id.navInstall, R.id.navInstallIcon, R.id.navInstallLabel)
         styleHostTab(root, selected, BottomNavTab.SETTINGS, R.id.navSettings, R.id.navSettingsIcon, R.id.navSettingsLabel)
 
-        root.findViewById<android.view.View>(R.id.navHome).setOnClickListener {
-            if (activity is HomeActivity) return@setOnClickListener
-            activity.startActivity(
-                Intent(activity, HomeActivity::class.java)
-                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            )
-            if (activity !is HomeActivity) activity.finish()
-        }
         root.findViewById<android.view.View>(R.id.navNetwork).setOnClickListener {
             if (activity is NetworkHubActivity) return@setOnClickListener
-            go(activity, NetworkHubActivity::class.java, clearHomeStack = activity is HomeActivity)
+            go(activity, NetworkHubActivity::class.java)
         }
         root.findViewById<android.view.View>(R.id.navInstall).setOnClickListener {
             if (activity is InstallDashboardActivity) return@setOnClickListener
-            go(activity, InstallDashboardActivity::class.java, clearHomeStack = activity is HomeActivity)
+            go(activity, InstallDashboardActivity::class.java)
         }
         root.findViewById<android.view.View>(R.id.navSettings).setOnClickListener {
             if (activity.supportFragmentManager.findFragmentByTag(SettingsBottomSheet.TAG) == null) {
@@ -83,14 +73,10 @@ object BottomNav {
     fun bindHost(activity: MainHostActivity, selected: BottomNavTab) {
         val root = activity.findViewById<android.view.View>(R.id.mainHostBottomNav) ?: return
 
-        styleHostTab(root, selected, BottomNavTab.HOME, R.id.navHome, R.id.navHomeIcon, R.id.navHomeLabel)
         styleHostTab(root, selected, BottomNavTab.NETWORK, R.id.navNetwork, R.id.navNetworkIcon, R.id.navNetworkLabel)
         styleHostTab(root, selected, BottomNavTab.INSTALL, R.id.navInstall, R.id.navInstallIcon, R.id.navInstallLabel)
         styleHostTab(root, selected, BottomNavTab.SETTINGS, R.id.navSettings, R.id.navSettingsIcon, R.id.navSettingsLabel)
 
-        root.findViewById<android.view.View>(R.id.navHome).setOnClickListener {
-            if (selected != BottomNavTab.HOME) activity.showTab(BottomNavTab.HOME)
-        }
         root.findViewById<android.view.View>(R.id.navNetwork).setOnClickListener {
             if (selected != BottomNavTab.NETWORK) activity.showTab(BottomNavTab.NETWORK)
         }
@@ -105,19 +91,18 @@ object BottomNav {
         }
     }
 
-    private fun go(activity: Activity, clazz: Class<*>, clearHomeStack: Boolean) {
+    private fun go(activity: Activity, clazz: Class<*>) {
         if (activity is MainHostActivity) {
             val tab = when (clazz) {
                 NetworkHubActivity::class.java -> BottomNavTab.NETWORK
                 InstallDashboardActivity::class.java -> BottomNavTab.INSTALL
-                else -> BottomNavTab.HOME
+                else -> BottomNavTab.NETWORK
             }
             activity.showTab(tab)
             return
         }
-        val intent = Intent(activity, clazz)
-        activity.startActivity(intent)
-        if (!clearHomeStack && activity !is HomeActivity) {
+        activity.startActivity(Intent(activity, clazz))
+        if (activity !is HomeActivity) {
             activity.finish()
         }
     }

@@ -36,13 +36,9 @@ class MainHostNavTest {
         flushFragments(activity)
         activity.showTab(BottomNavTab.INSTALL)
         flushFragments(activity)
-        activity.showTab(BottomNavTab.HOME)
-        flushFragments(activity)
         activity.findViewById<android.view.View>(R.id.navNetwork)?.performClick()
         flushFragments(activity)
         activity.findViewById<android.view.View>(R.id.navInstall)?.performClick()
-        flushFragments(activity)
-        activity.findViewById<android.view.View>(R.id.navHome)?.performClick()
         flushFragments(activity)
     }
 

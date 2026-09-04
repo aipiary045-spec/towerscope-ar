@@ -8,7 +8,6 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.network.ConnectionSnapshotCollector
 import com.towerscope.ar.network.TestResultExport
-import com.towerscope.ar.ui.NetworkTopologyBinder
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.ToolScaffold
 import kotlinx.coroutines.launch
@@ -42,7 +41,6 @@ class ConnectionSnapshotActivity : AppCompatActivity() {
         statusView.text = "Refreshing…"
         lifecycleScope.launch {
             val snapshot = ConnectionSnapshotCollector.collect(this@ConnectionSnapshotActivity)
-            NetworkTopologyBinder.bind(findViewById(R.id.connectionRoot), snapshot)
             lastReport = ConnectionSnapshotCollector.format(snapshot)
             detailView.text = lastReport
             statusView.text = if (snapshot.isConnected) {
