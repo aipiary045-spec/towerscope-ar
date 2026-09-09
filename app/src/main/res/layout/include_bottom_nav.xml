@@ -27,7 +27,7 @@
             android:layout_width="22dp"
             android:layout_height="22dp"
             android:contentDescription="@string/nav_home"
-            android:src="@drawable/ic_nav_home"
+            android:src="@drawable/ic_nav_grid"
             android:tint="@color/accent_teal" />
 
         <TextView

@@ -22,25 +22,15 @@
         <activity
             android:name=".HomeActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.TowerScopeAR">
+            android:theme="@style/Theme.TowerScopeAR"
+            android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".NetworkHubActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.TowerScopeAR" />
-
-        <activity
-            android:name=".InstallationHubActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
             android:name=".MainActivity"

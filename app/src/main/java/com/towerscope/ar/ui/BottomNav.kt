@@ -1,15 +1,12 @@
 package com.towerscope.ar.ui
 
-import android.app.Activity
-import android.content.Intent
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.towerscope.ar.HomeActivity
-import com.towerscope.ar.InstallationHubActivity
-import com.towerscope.ar.NetworkHubActivity
 import com.towerscope.ar.R
+import com.towerscope.ar.util.ToolFocus
 
 enum class BottomNavTab {
     HOME,
@@ -36,20 +33,13 @@ object BottomNav {
         style(BottomNavTab.SETTINGS, R.id.navSettingsIcon, R.id.navSettingsLabel)
 
         root.findViewById<android.view.View>(R.id.navHome).setOnClickListener {
-            if (activity is HomeActivity) return@setOnClickListener
-            activity.startActivity(
-                Intent(activity, HomeActivity::class.java)
-                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            )
-            if (activity !is HomeActivity) activity.finish()
+            openTools(activity, ToolFocus.ALL)
         }
         root.findViewById<android.view.View>(R.id.navNetwork).setOnClickListener {
-            if (activity is NetworkHubActivity) return@setOnClickListener
-            go(activity, NetworkHubActivity::class.java, clearHomeStack = activity is HomeActivity)
+            openTools(activity, ToolFocus.NETWORK)
         }
         root.findViewById<android.view.View>(R.id.navInstall).setOnClickListener {
-            if (activity is InstallationHubActivity) return@setOnClickListener
-            go(activity, InstallationHubActivity::class.java, clearHomeStack = activity is HomeActivity)
+            openTools(activity, ToolFocus.INSTALL)
         }
         root.findViewById<android.view.View>(R.id.navSettings).setOnClickListener {
             if (activity.supportFragmentManager.findFragmentByTag(SettingsBottomSheet.TAG) == null) {
@@ -59,11 +49,12 @@ object BottomNav {
         }
     }
 
-    private fun go(activity: Activity, clazz: Class<*>, clearHomeStack: Boolean) {
-        val intent = Intent(activity, clazz)
-        activity.startActivity(intent)
-        if (!clearHomeStack && activity !is HomeActivity) {
-            activity.finish()
+    private fun openTools(activity: FragmentActivity, focus: ToolFocus) {
+        if (activity is HomeActivity) {
+            activity.applyFocus(focus)
+            return
         }
+        activity.startActivity(HomeActivity.intent(activity, focus))
+        activity.finish()
     }
 }
