@@ -7,9 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import com.towerscope.ar.BandwidthMonitorActivity
 import com.towerscope.ar.DataMenuActivity
-import com.towerscope.ar.DnsLookupActivity
 import com.towerscope.ar.LosProfilesActivity
 import com.towerscope.ar.MainActivity
 import com.towerscope.ar.MapActivity
@@ -76,15 +74,6 @@ object FieldTools {
             extraKeywords = "path doctor http tls"
         ),
         FieldTool(
-            id = "dns",
-            group = ToolGroup.NETWORK,
-            iconRes = R.drawable.ic_dns_lookup,
-            titleRes = R.string.home_job_dns,
-            subtitleRes = R.string.home_job_dns_sub,
-            target = DnsLookupActivity::class.java,
-            extraKeywords = "lookup resolver ptr"
-        ),
-        FieldTool(
             id = "trace",
             group = ToolGroup.NETWORK,
             iconRes = R.drawable.ic_traceroute,
@@ -92,15 +81,6 @@ object FieldTools {
             subtitleRes = R.string.home_job_traceroute_sub,
             target = TraceRouteActivity::class.java,
             extraKeywords = "hops ttl path"
-        ),
-        FieldTool(
-            id = "bandwidth",
-            group = ToolGroup.NETWORK,
-            iconRes = R.drawable.ic_bandwidth,
-            titleRes = R.string.home_job_bandwidth,
-            subtitleRes = R.string.home_job_bandwidth_sub,
-            target = BandwidthMonitorActivity::class.java,
-            extraKeywords = "rx tx live traffic"
         ),
         FieldTool(
             id = "subnet",

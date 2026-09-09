@@ -10,7 +10,7 @@
     <string name="home_section_network">Network</string>
     <string name="home_section_install">Install</string>
     <string name="home_hub_network">Network</string>
-    <string name="home_hub_network_sub">Wi‑Fi · speed · ping · DNS · path</string>
+    <string name="home_hub_network_sub">Wi‑Fi · speed · ping · path</string>
     <string name="home_hub_install">Install</string>
     <string name="home_hub_install_sub">Compass · locate · LOS clearance</string>
     <string name="home_no_sites">No network sites loaded</string>
@@ -30,12 +30,8 @@
     <string name="home_job_ping_sub">ICMP multi‑IP · optional TCP :port</string>
     <string name="home_job_subnet">Subnet scanner</string>
     <string name="home_job_subnet_sub">IPs · MAC · ports · IPv6 · tap URL</string>
-    <string name="home_job_dns">DNS lookup</string>
-    <string name="home_job_dns_sub">A / AAAA · reverse PTR</string>
     <string name="home_job_traceroute">Traceroute</string>
     <string name="home_job_traceroute_sub">Hop path · TTL probes</string>
-    <string name="home_job_bandwidth">Bandwidth</string>
-    <string name="home_job_bandwidth_sub">Live RX/TX · Wi‑Fi · mobile</string>
     <string name="home_job_diagnose">Path Doctor</string>
     <string name="home_job_diagnose_sub">Link · DNS · TCP · TLS · HTTP</string>
     <string name="home_job_sites">Sites</string>
