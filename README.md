@@ -2,19 +2,20 @@
 
 Android field toolkit for WISP / wireless install techs.
 
-**Network Hub** — on-device checks without an account  
-**Installation Hub** — site aiming, locate map, and line-of-sight clearance
+**Tools** — every field tool on one screen (search or filter Network / Install)  
+**Network** — on-device checks without an account  
+**Install** — site aiming, locate map, and line-of-sight clearance
 
 ## Features
 
-### Network Hub
+### Network
 - **Wi‑Fi signal** — live RSSI, active channel, overlapping APs, RF interference hints
 - **Speed test** — Cloudflare download / upload / latency
 - **Ping & loss** — ping multiple IPs at once with a live log
 - **Path Doctor** — layered path check (link → DNS → TCP → TLS → HTTP) that shows where it failed
 - **Subnet scanner** — live LAN hosts, MAC when available, tap IP to open in a browser
 
-### Installation Hub
+### Install
 - **Compass** — high-precision bearings to nearby sites (KML/KMZ)
 - **Locate** — satellite map, install pin, nearby or all-sites view
 - **Line of sight** — Fresnel clearance ranking + elevation profiles (LiDAR/DEM when configured)
@@ -43,8 +44,8 @@ Older builds stay under dated `sideload-*` release tags if you need to roll back
 
 ## Quick start
 
-1. Open **Home** → choose **Network Hub** or **Installation Hub**
-2. Import sites from Home / Installation Hub / Settings when using install tools
+1. Open **Tools** and tap a tool (or filter **Network** / **Install**, or type to find)
+2. Import sites from **Sites** on Tools / Install, or from Settings, when using install tools
 3. Grant **precise Location** (and nearby Wi‑Fi when scanning)
 4. Use **Settings** (accordion) for theme, units, compass improve, RF params, and range
 
@@ -63,7 +64,7 @@ LOS_ELEVATION_API_BASE_URL=https://your-elevation-host
 
 | Path | Role |
 |------|------|
-| `HomeActivity` | Hub launcher (Network / Installation) |
+| `HomeActivity` | Tools launcher (all tools, one tap) |
 | `network/` | Wi‑Fi, speed, ping, Path Doctor, subnet |
 | `MapActivity` | Satellite locate map (osmdroid + Esri) |
 | `ui/CompassRadarView.kt` | Hybrid rotating radar compass |
