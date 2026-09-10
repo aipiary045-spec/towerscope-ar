@@ -65,6 +65,13 @@
                     android:layout_marginTop="16dp" />
 
                 <include
+                    android:id="@+id/hubChannelRow"
+                    layout="@layout/item_hub_tool_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" />
+
+                <include
                     android:id="@+id/hubSpeedRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="match_parent"

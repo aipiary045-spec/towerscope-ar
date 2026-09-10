@@ -32,8 +32,16 @@ class NetworkHubActivity : AppCompatActivity() {
         ) { startActivity(Intent(this, WifiMonitorActivity::class.java)) }
 
         bindTile(
-            rowId = R.id.hubSpeedRow,
+            rowId = R.id.hubChannelRow,
             index = "02",
+            icon = R.drawable.ic_layers,
+            title = R.string.home_job_channel_plan,
+            subtitle = R.string.home_job_channel_plan_sub
+        ) { startActivity(Intent(this, ChannelPlannerActivity::class.java)) }
+
+        bindTile(
+            rowId = R.id.hubSpeedRow,
+            index = "03",
             icon = R.drawable.ic_speed_test,
             title = R.string.home_job_speed,
             subtitle = R.string.home_job_speed_sub
@@ -41,7 +49,7 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubPingRow,
-            index = "03",
+            index = "04",
             icon = R.drawable.ic_ping_graph,
             title = R.string.home_job_ping,
             subtitle = R.string.home_job_ping_sub
@@ -49,7 +57,7 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubSubnetRow,
-            index = "04",
+            index = "05",
             icon = R.drawable.ic_subnet_scan,
             title = R.string.home_job_subnet,
             subtitle = R.string.home_job_subnet_sub
@@ -57,7 +65,7 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubDnsRow,
-            index = "05",
+            index = "06",
             icon = R.drawable.ic_dns_lookup,
             title = R.string.home_job_dns,
             subtitle = R.string.home_job_dns_sub
@@ -65,7 +73,7 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubTraceRow,
-            index = "06",
+            index = "07",
             icon = R.drawable.ic_traceroute,
             title = R.string.home_job_traceroute,
             subtitle = R.string.home_job_traceroute_sub
@@ -73,7 +81,7 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubBandwidthRow,
-            index = "07",
+            index = "08",
             icon = R.drawable.ic_bandwidth,
             title = R.string.home_job_bandwidth,
             subtitle = R.string.home_job_bandwidth_sub
@@ -81,7 +89,7 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubDiagnoseRow,
-            index = "08",
+            index = "09",
             icon = R.drawable.ic_network_diagnose,
             title = R.string.home_job_diagnose,
             subtitle = R.string.home_job_diagnose_sub

@@ -9,8 +9,8 @@
     <string name="home_hero_value">RF + AIM</string>
     <string name="home_hero_badge">LIVE</string>
     <string name="home_hub_network">RF</string>
-    <string name="home_hub_network_sub">Wi‑Fi · speed · ping · DNS · path</string>
-    <string name="home_hub_network_tools">Wi‑Fi · Speed · Ping · DNS\nPath Doctor · LAN · Trace · Bandwidth</string>
+    <string name="home_hub_network_sub">Wi‑Fi · channels · speed · ping · path</string>
+    <string name="home_hub_network_tools">Wi‑Fi · Channels · Speed · Ping · DNS\nPath Doctor · LAN · Trace · Bandwidth</string>
     <string name="home_hub_install">AIM</string>
     <string name="home_hub_install_sub">Locate · LOS · sites</string>
     <string name="home_hub_install_tools">Locate · Line of sight · Sites</string>
@@ -28,6 +28,8 @@
     <string name="home_job_los_sub">Clearance · terrain profile</string>
     <string name="home_job_wifi">Wi‑Fi signal</string>
     <string name="home_job_wifi_sub">Live channel · overlap · RF hints</string>
+    <string name="home_job_channel_plan">Channel planner</string>
+    <string name="home_job_channel_plan_sub">Recommended 2.4 / 5 / 6 GHz channels</string>
     <string name="home_job_speed">Speed test</string>
     <string name="home_job_speed_sub">Multi-server · streams · jitter</string>
     <string name="home_job_ping">Ping &amp; loss</string>
