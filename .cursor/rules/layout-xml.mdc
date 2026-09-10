@@ -1,0 +1,17 @@
+---
+description: Layout XML changes must be structural, not a colors.xml restyle. Preserve bound view IDs.
+globs: app/src/main/res/layout/**/*.xml
+alwaysApply: false
+---
+
+# Layout XML
+
+When the user asked for a new look (not “theme only”):
+
+- Change this file’s **structure** (hierarchy, density, type, chrome). Recoloring `colors.xml` is not enough.
+- Do not rebuild Home / hubs as hero card + 2 rounded tiles + icon-in-circle rows unless they explicitly want that recipe.
+- Keep `android:id` values that Activities find, or update Kotlin in the same change.
+- Prefer existing button styles over a one-off `Button` drawable.
+- After the screen, name the structural change vs the old card layout. If you cannot, redo it.
+
+For the full redesign process (directions → mockups → implement), read `.cursor/skills/visual-redesign/SKILL.md`.

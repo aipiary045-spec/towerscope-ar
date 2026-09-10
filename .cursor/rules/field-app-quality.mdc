@@ -1,0 +1,31 @@
+---
+description: Durable field-app quality — contrast, reuse existing widgets, how to run. Not aesthetics.
+alwaysApply: true
+---
+
+# Field-app quality
+
+Outdoor WISP toolkit. Readability and working tools beat decoration.
+
+## Contrast and gloves
+
+- Text and status must read in sun. No pale grey-on-blue, no pastel chips as the only status cue. Pair color with shape or label.
+- Hit targets ≥ `@dimen/tap_min` (48dp). Primary actions on the thumb edge.
+- Night theme must be actually dark. Day / high-contrast must stay distinct. Keep all three working.
+
+## Reuse chrome, do not fork it
+
+- Buttons: `Widget.TowerScope.Button.Primary` / `.Secondary` / `.Ghost` in `styles.xml`. Do not invent a fourth button component.
+- Preserve `android:id` values Kotlin binds, or update the Activity in the same change.
+- Package `com.towerscope.ar`. Kotlin + XML. `minSdk 33`. No Compose unless one screen is justified.
+- Do not break site import (KML/KMZ/CSV), location permissions, compass, or LOS math.
+
+## How to run
+
+- Open this folder in Android Studio, sync Gradle, run the `app` configuration on a **physical device** (GPS + magnetometer). Emulator is OK for layout screenshots only.
+- `./gradlew :app:assembleDebug` for a compile check.
+- Sideload notes and LOS API: `README.md`.
+
+## Visual identity stays out of this rule
+
+Taste, palettes, and “make it unique” live in `.cursor/skills/visual-redesign/SKILL.md`. Do not lock in the current card grid from this rule.
