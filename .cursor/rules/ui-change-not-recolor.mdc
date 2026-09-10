@@ -1,0 +1,15 @@
+---
+description: UI changes must alter layout, type, density, and motion — not only colors.xml.
+globs: app/src/main/res/**/*
+alwaysApply: false
+---
+
+# UI change is not a recolor
+
+When the user asks for a UI change, do not only recolor.
+Change layout, typography, density, and motion unless they say "theme only."
+If they did not attach a visual reference, generate 2 mockups and wait.
+
+Banned defaults: Inter, indigo-600, rounded-2xl card grids, generic hero + 3 features, `bg_nav_tile` + icon-in-circle hub chrome.
+
+For a new visual identity, follow `.cursor/skills/visual-redesign/SKILL.md` and wait for a direction pick before writing production layouts.

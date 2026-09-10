@@ -1,0 +1,18 @@
+---
+description: Durable field-toolkit quality — contrast, tap targets, existing buttons, stack. Not aesthetics.
+alwaysApply: true
+---
+
+# Field toolkit quality
+
+Outdoor readability beats decoration. Status uses color and shape, not pastel chips. Contrast must work in sun.
+
+Hit targets stay at least `@dimen/tap_min` (48dp). Put primary actions on the thumb edge.
+
+Reuse `Widget.TowerScope.Button`, `.Primary`, `.Secondary`, and `.Ghost`. Do not invent a second button component.
+
+Keep Kotlin + XML, package `com.towerscope.ar`, minSdk 33. Do not add Compose unless one screen is justified. Do not set theme-wide `fontFamily` on `Theme.TowerScopeAR` (Material inflate crash). Set fonts on text appearances, widgets, or views.
+
+Do not rip out features, navigation paths, ViewModels, parsers, location, compass, site import, or LOS math to make a screen pretty.
+
+Verify in emulator or device: Home, both hubs, one network tool, Compass, settings sheet, and day / night / high-contrast. Design Mode does not drive this Android XML UI — use screenshots.
