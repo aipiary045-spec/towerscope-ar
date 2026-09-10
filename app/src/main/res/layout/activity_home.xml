@@ -117,7 +117,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:fontFamily="@font/data_mono"
-                    android:text="—"
+                    android:text="---"
                     android:textColor="@color/accent_yellow"
                     android:textSize="52sp" />
 
@@ -185,7 +185,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:fontFamily="@font/data_mono"
-                    android:text="—"
+                    android:text="---"
                     android:textColor="@color/accent_teal"
                     android:textSize="52sp" />
 
