@@ -365,7 +365,7 @@ class TowerDetailsBottomSheet : BottomSheetDialogFragment() {
                 losStatus.text = String.format(
                     Locale.US,
                     "%s · %s · %s · %s",
-                    LinkEstimate.formatReceiveLevel(dbm),
+                    LinkEstimate.formatReceiveLevel(dbm, distance),
                     quality.label,
                     pathNote,
                     sourceLabel

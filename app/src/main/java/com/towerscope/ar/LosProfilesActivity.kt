@@ -194,7 +194,11 @@ class LosProfilesActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     locationSourceChip.render(state, this@LosProfilesActivity)
-                    subtitle.text = "Heat map button / tap row · long-press details"
+                    subtitle.text = losOriginSubtitle(state)
+                    if (viewModel.losOriginMovedEnoughToRescan()) {
+                        startedScan = false
+                        maybeStartScan(force = true)
+                    }
                     status.text = state.losRangeStatus.orEmpty()
                     linkSettingsSummary.text = String.format(
                         Locale.US,
@@ -324,6 +328,20 @@ class LosProfilesActivity : AppCompatActivity() {
             maybeStartScan()
         } else {
             permissionLauncher.launch(LocationPermissions.REQUEST)
+        }
+    }
+
+    private fun losOriginSubtitle(state: TowerUiState): String {
+        val pinGap = state.metersBetweenGpsAndSavedPin()
+        return when {
+            state.usesCustomLocation() ->
+                "Estimating from dropped pin · tap row for details"
+            pinGap != null && pinGap >= 150.0 ->
+                "Estimating from GPS · ${GeoUtils.formatDistance(pinGap)} from saved pin"
+            state.locationMode == LocationMode.CURRENT_GPS ->
+                "Estimating from your GPS · tap row for details"
+            else ->
+                "Heat map button / tap row · long-press details"
         }
     }
 
@@ -473,7 +491,7 @@ class LosProfilesActivity : AppCompatActivity() {
                             clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
                         }
                     }
-                    clearanceView.text = LinkEstimate.formatReceiveLevel(dbm)
+                    clearanceView.text = LinkEstimate.formatReceiveLevel(dbm, row.distanceMeters)
                     linkEstimateView.isVisible = true
                     val pathNote = when {
                         obstruction >= 20.0 -> " · path blocked"

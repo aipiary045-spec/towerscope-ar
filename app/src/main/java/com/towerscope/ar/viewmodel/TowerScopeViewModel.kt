@@ -149,6 +149,14 @@ data class TowerUiState(
     fun usesCustomLocation(): Boolean =
         locationMode == LocationMode.CUSTOM && hasInstallSite
 
+    /** How far live GPS is from the saved pin, when both exist. */
+    fun metersBetweenGpsAndSavedPin(): Double? {
+        val user = userLocation ?: return null
+        val lat = installLatitude ?: return null
+        val lon = installLongitude ?: return null
+        return GeoUtils.haversineMeters(user.latitude, user.longitude, lat, lon)
+    }
+
     /**
      * Facing heading from the device compass, plus optional manual offset.
      * Never uses GPS course — that is travel direction, not facing.
@@ -359,6 +367,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     private var losJob: Job? = null
     private var losRangeJob: Job? = null
     private var losLoadingTowerId: String? = null
+    private var losScanLatitude: Double? = null
+    private var losScanLongitude: Double? = null
 
     init {
         // Drop any leftover on-device LOS profile files from older builds.
@@ -734,6 +744,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         losRangeJob?.cancel()
         val location = _uiState.value.positioningLocation()
         if (location == null) {
+            losScanLatitude = null
+            losScanLongitude = null
             _uiState.update {
                 it.copy(
                     losRangeRows = emptyList(),
@@ -747,6 +759,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             }
             return
         }
+        losScanLatitude = location.latitude
+        losScanLongitude = location.longitude
         val targets = _uiState.value.towersInRangeForLos()
         if (targets.isEmpty()) {
             _uiState.update {
@@ -841,6 +855,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     fun clearLosRangeProfiles() {
         losRangeJob?.cancel()
         losRangeJob = null
+        losScanLatitude = null
+        losScanLongitude = null
         _uiState.update {
             it.copy(
                 losRangeRows = emptyList(),
@@ -848,6 +864,20 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 losRangeStatus = null
             )
         }
+    }
+
+    /** True when GPS/pin moved enough that baked LOS distances are stale. */
+    fun losOriginMovedEnoughToRescan(minMeters: Double = 100.0): Boolean {
+        if (_uiState.value.losRangeLoading) return false
+        val current = _uiState.value.positioningLocation() ?: return false
+        val lat = losScanLatitude ?: return false
+        val lon = losScanLongitude ?: return false
+        return GeoUtils.haversineMeters(
+            lat,
+            lon,
+            current.latitude,
+            current.longitude
+        ) >= minMeters
     }
 
     fun cycleHudTheme() {

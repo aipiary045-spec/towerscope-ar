@@ -406,7 +406,7 @@ class MainActivity : AppCompatActivity() {
                 apGainDbi = state.apAntennaGainDbi.toDouble(),
                 cpeGainDbi = state.cpeAntennaGainDbi.toDouble()
             )
-            aimSignalLabel.text = LinkEstimate.formatReceiveLevel(dbm)
+            aimSignalLabel.text = LinkEstimate.formatReceiveLevel(dbm, distance)
             val quality = LinkEstimate.signalQuality(dbm)
             aimSignalLabel.setTextColor(
                 ContextCompat.getColor(

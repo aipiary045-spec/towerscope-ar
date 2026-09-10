@@ -65,6 +65,17 @@ class LocationModeTest {
     }
 
     @Test
+    fun metersBetweenGpsAndSavedPin_reportsGap() {
+        val state = TowerUiState(
+            userLocation = gps,
+            installLatitude = 30.2672,
+            installLongitude = -97.7331
+        )
+        val gap = state.metersBetweenGpsAndSavedPin()
+        assertTrue(gap != null && gap > 800.0 && gap < 1_200.0)
+    }
+
+    @Test
     fun fromStored_defaultsToCurrentGpsForUnknownValue() {
         assertEquals(LocationMode.CURRENT_GPS, LocationMode.fromStored("invalid"))
         assertEquals(LocationMode.CUSTOM, LocationMode.fromStored("CUSTOM"))
