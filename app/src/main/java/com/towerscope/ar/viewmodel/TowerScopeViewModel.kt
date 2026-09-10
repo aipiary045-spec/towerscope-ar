@@ -64,11 +64,16 @@ data class TowerUiState(
     val selectedTowerId: String? = null,
     val userLocation: UserLocation? = null,
     /**
-     * Optional fixed install / customer site. When set, bearings, range, and LOS
-     * use this instead of live GPS (GPS marker still available on the map).
+     * Optional dropped pin (customer / other GPS). Saved so it can be switched to;
+     * does not override live GPS until the user selects Other location.
      */
     val installLatitude: Double? = null,
     val installLongitude: Double? = null,
+    /**
+     * Session-only. Always starts as [LocationMode.CURRENT_GPS] so a saved pin
+     * cannot silently take over after relaunch.
+     */
+    val locationMode: LocationMode = LocationMode.CURRENT_GPS,
     /** Link frequency for Fresnel (GHz). */
     val frequencyGhz: Float = DEFAULT_FREQUENCY_GHZ,
     /** CPE / customer antenna height above ground (meters). */
@@ -123,12 +128,13 @@ data class TowerUiState(
 
     /**
      * Location used for bearings, distances, and LOS.
-     * Prefers a pinned install site when set; otherwise live GPS.
+     * Live GPS unless the user switched to a dropped pin this session.
+     * Custom mode without a pin still falls back to GPS so screens keep working.
      */
     fun positioningLocation(): UserLocation? {
-        val lat = installLatitude
-        val lon = installLongitude
-        if (lat != null && lon != null) {
+        if (locationMode == LocationMode.CUSTOM && hasInstallSite) {
+            val lat = installLatitude ?: return userLocation
+            val lon = installLongitude ?: return userLocation
             return UserLocation(
                 latitude = lat,
                 longitude = lon,
@@ -139,6 +145,9 @@ data class TowerUiState(
         }
         return userLocation
     }
+
+    fun usesCustomLocation(): Boolean =
+        locationMode == LocationMode.CUSTOM && hasInstallSite
 
     /**
      * Facing heading from the device compass, plus optional manual offset.
@@ -337,7 +346,8 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             installLatitude = prefs.getFloat(KEY_INSTALL_LAT, Float.NaN)
                 .takeIf { !it.isNaN() }?.toDouble(),
             installLongitude = prefs.getFloat(KEY_INSTALL_LON, Float.NaN)
-                .takeIf { !it.isNaN() }?.toDouble()
+                .takeIf { !it.isNaN() }?.toDouble(),
+            locationMode = LocationMode.CURRENT_GPS
         )
     ).also { flow ->
         DisplayUnits.apply(flow.value.distanceUnitSystem, flow.value.coordinateFormat)
@@ -353,6 +363,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     init {
         // Drop any leftover on-device LOS profile files from older builds.
         runCatching { LosProfileDiskCache(application).clearAll() }
+        // Older builds persisted CUSTOM mode; always start from live GPS.
+        if (prefs.contains(KEY_LOCATION_MODE)) {
+            prefs.edit().remove(KEY_LOCATION_MODE).apply()
+        }
         restorePersistedTowers()
     }
 
@@ -399,8 +413,11 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun startLocationUpdates() {
-        if (locationJob?.isActive == true) return
+    fun startLocationUpdates(includeHeading: Boolean = true) {
+        if (locationJob?.isActive == true) {
+            if (includeHeading) startDeviceHeadingUpdates()
+            return
+        }
         if (!locationClient.hasLocationPermission()) {
             _uiState.update {
                 it.copy(errorMessage = "Location permission is required for high-accuracy positioning.")
@@ -417,7 +434,9 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 _uiState.update { it.copy(userLocation = location) }
             }
         }
-        startDeviceHeadingUpdates()
+        if (includeHeading) {
+            startDeviceHeadingUpdates()
+        }
     }
 
     fun startDeviceHeadingUpdates() {
@@ -542,11 +561,29 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             it.copy(
                 installLatitude = latitude,
                 installLongitude = longitude,
-                statusMessage = "Install site set"
+                locationMode = LocationMode.CUSTOM,
+                statusMessage = "Working from dropped pin"
             )
         }
         clearLosProfile()
         clearLosRangeProfiles()
+        _uiState.value.selectedTowerId?.let { loadLosProfile(it) }
+    }
+
+    fun setLocationMode(mode: LocationMode) {
+        if (_uiState.value.locationMode == mode) return
+        val message = when (mode) {
+            LocationMode.CURRENT_GPS -> "Using your GPS"
+            LocationMode.CUSTOM -> if (_uiState.value.hasInstallSite) {
+                "Using dropped pin"
+            } else {
+                "Set a pin on the map or paste coordinates"
+            }
+        }
+        _uiState.update { it.copy(locationMode = mode, statusMessage = message) }
+        clearLosProfile()
+        clearLosRangeProfiles()
+        _uiState.value.selectedTowerId?.let { loadLosProfile(it) }
     }
 
     fun setInstallSiteFromGps() {
@@ -563,11 +600,13 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
             it.copy(
                 installLatitude = null,
                 installLongitude = null,
-                statusMessage = "Install site cleared — using live GPS"
+                locationMode = LocationMode.CURRENT_GPS,
+                statusMessage = "Pin cleared — using live GPS"
             )
         }
         clearLosProfile()
         clearLosRangeProfiles()
+        _uiState.value.selectedTowerId?.let { loadLosProfile(it) }
     }
 
     fun cycleDistanceUnitSystem() {
@@ -634,10 +673,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 it.copy(
                     losProfile = null,
                     losProfileLoading = false,
-                    losProfileError = if (_uiState.value.hasInstallSite) {
-                        "Install site required for LOS profile"
+                    losProfileError = if (_uiState.value.usesCustomLocation()) {
+                        "Dropped pin required for LOS profile"
                     } else {
-                        "Need GPS (or set install site on Locate) for LOS"
+                        "Need GPS (or drop a pin on Locate) for LOS"
                     }
                 )
             }
@@ -700,10 +739,10 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
                 it.copy(
                     losRangeRows = emptyList(),
                     losRangeLoading = false,
-                    losRangeStatus = if (it.hasInstallSite) {
-                        "Install site missing coordinates"
+                    losRangeStatus = if (it.locationMode == LocationMode.CUSTOM && !it.hasInstallSite) {
+                        "Set a pin on Locate or paste coordinates"
                     } else {
-                        "Waiting for GPS… (or set install site on Locate)"
+                        "Waiting for GPS…"
                     }
                 )
             }
@@ -724,7 +763,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         val seed = targets.map { (tower, distance) ->
             LosRangeRow(tower = tower, distanceMeters = distance, loading = true)
         }
-        val originLabel = if (_uiState.value.hasInstallSite) "install site" else "GPS"
+        val originLabel = if (_uiState.value.usesCustomLocation()) "dropped pin" else "your GPS"
         _uiState.update {
             it.copy(
                 losRangeRows = seed,
@@ -1058,6 +1097,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
         private const val KEY_CPE_GAIN_DBI = "cpe_antenna_gain_dbi"
         private const val KEY_INSTALL_LAT = "install_latitude"
         private const val KEY_INSTALL_LON = "install_longitude"
+        private const val KEY_LOCATION_MODE = "location_mode"
         private const val KEY_DISTANCE_UNITS = "distance_unit_system"
         private const val KEY_COORD_FORMAT = "coordinate_format"
         private const val MAX_LOS_RANGE_TOWERS = 40

@@ -22,8 +22,6 @@
     <string name="home_no_sites">No network sites loaded</string>
     <string name="home_import_hint">Import a KML or KMZ to get started</string>
     <string name="home_import_sites">Import network sites</string>
-    <string name="home_job_aim">Compass</string>
-    <string name="home_job_aim_sub">High-precision bearings to nearby sites</string>
     <string name="home_job_locate">Locate</string>
     <string name="home_job_locate_sub">Pin install · nearby or all sites</string>
     <string name="home_job_los">Line of sight</string>
@@ -52,4 +50,21 @@
     <string name="nav_settings">CFG</string>
     <string name="map_range_nearby">Nearby only</string>
     <string name="map_range_all">Show all sites</string>
+    <string name="location_mode_label">CHECK FROM</string>
+    <string name="location_mode_gps">My location</string>
+    <string name="location_mode_custom">Other location</string>
+    <string name="location_mode_gps_hint">Using your GPS · %1$s</string>
+    <string name="location_mode_gps_waiting">Waiting for GPS fix…</string>
+    <string name="location_mode_custom_set">Checking from %1$s</string>
+    <string name="location_mode_custom_unset">Long-press the map, paste GPS coords, or tap the pin button</string>
+    <string name="location_chip_gps">My GPS</string>
+    <string name="location_chip_gps_waiting">My GPS · waiting</string>
+    <string name="location_chip_custom">Custom · %1$s</string>
+    <string name="location_chip_custom_unset">Custom · tap to set</string>
+    <string name="location_sheet_title">Check from</string>
+    <string name="location_sheet_map_hint">Long-press the map to pin · pin FAB snaps to GPS</string>
+    <string name="coordinate_entry_label">GPS COORDINATES</string>
+    <string name="coordinate_entry_hint">30.2672, -97.7431 · long-press to paste</string>
+    <string name="coordinate_entry_apply">Set location</string>
+    <string name="coordinate_entry_invalid">Use decimal degrees, e.g. 30.2672, -97.7431</string>
 </resources>
