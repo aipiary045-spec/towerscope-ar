@@ -12,7 +12,10 @@
     <dimen name="section_gap">20dp</dimen>
     <dimen name="section_gap_sm">10dp</dimen>
     <dimen name="item_gap">8dp</dimen>
-    <dimen name="border_hairline">1dp</dimen>
+    <dimen name="border_hairline">2dp</dimen>
+    <dimen name="outline_stroke">2.25dp</dimen>
+    <dimen name="faceplate_tick_stroke">1.6dp</dimen>
+    <dimen name="faceplate_bracket_stroke">2.4dp</dimen>
     <dimen name="metric_value">48sp</dimen>
     <dimen name="screen_title">22sp</dimen>
     <dimen name="key_min">56dp</dimen>

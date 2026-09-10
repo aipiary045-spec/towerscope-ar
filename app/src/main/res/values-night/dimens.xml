@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="border_hairline">1dp</dimen>
+    <dimen name="outline_stroke">1dp</dimen>
+    <dimen name="faceplate_tick_stroke">1.1dp</dimen>
+    <dimen name="faceplate_bracket_stroke">1.6dp</dimen>
+</resources>

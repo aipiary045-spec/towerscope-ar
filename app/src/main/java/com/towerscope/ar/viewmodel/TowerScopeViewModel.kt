@@ -88,7 +88,7 @@ data class TowerUiState(
     val coordinateFormat: CoordinateFormat = CoordinateFormat.DECIMAL,
     val deviceHeadingDegrees: Double? = null,
     val compassSensorAccuracy: Int = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM,
-    val hudTheme: HudTheme = HudTheme.DARK,
+    val hudTheme: HudTheme = HudTheme.LIGHT,
     /** Bottom HUD search/range/controls expanded. */
     val hudExpanded: Boolean = true,
     /**
@@ -371,8 +371,7 @@ class TowerScopeViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun loadHudTheme(): HudTheme {
-        val raw = prefs.getString(KEY_HUD_THEME, HudTheme.DARK.name)
-        return HudTheme.fromStored(raw)
+        return HudTheme.loadFromPrefs(prefs)
     }
 
     private fun loadMaxDistanceMeters(): Float {

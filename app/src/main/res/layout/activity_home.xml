@@ -98,8 +98,8 @@
                         android:fontFamily="@font/stamp_semibold"
                         android:letterSpacing="0.12"
                         android:text="@string/home_open_rf"
-                        android:textColor="@color/text_dim"
-                        android:textSize="11sp" />
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <TextView
@@ -161,7 +161,7 @@
                         android:fontFamily="@font/stamp_semibold"
                         android:letterSpacing="0.12"
                         android:text="@string/home_open_aim"
-                        android:textColor="@color/text_dim"
+                        android:textColor="@color/text_primary"
                         android:textSize="11sp" />
                 </LinearLayout>
 

@@ -54,7 +54,7 @@ class LocationModeControls(
             button.background = null
             button.setBackgroundColor(ContextCompat.getColor(context, android.R.color.transparent))
             button.setTextColor(ContextCompat.getColor(context, R.color.text_primary))
-            button.strokeWidth = (1 * context.resources.displayMetrics.density).toInt()
+            button.strokeWidth = context.resources.getDimensionPixelSize(R.dimen.outline_stroke)
             button.strokeColor = ContextCompat.getColorStateList(context, R.color.border_strong)
         }
     }

@@ -252,7 +252,7 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                 viewModel.uiState.collect { state ->
                     themeButton.text = state.hudTheme.label
                     view.findViewById<TextView>(R.id.settingsSummaryAppearance).text =
-                        state.hudTheme.label
+                        state.hudTheme.outdoorHint
                     distanceUnitsButton.text = when (state.distanceUnitSystem) {
                         DistanceUnitSystem.IMPERIAL -> "mi / ft"
                         DistanceUnitSystem.METRIC -> "km / m"

@@ -24,12 +24,12 @@ class FaceplateView @JvmOverloads constructor(
     }
     private val tickPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = resources.displayMetrics.density * 1.1f
+        strokeWidth = resources.getDimension(R.dimen.faceplate_tick_stroke)
         color = ContextCompat.getColor(context, R.color.grid_faint)
     }
     private val bracketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = resources.displayMetrics.density * 1.6f
+        strokeWidth = resources.getDimension(R.dimen.faceplate_bracket_stroke)
         color = ContextCompat.getColor(context, R.color.border_strong)
         strokeCap = Paint.Cap.SQUARE
     }

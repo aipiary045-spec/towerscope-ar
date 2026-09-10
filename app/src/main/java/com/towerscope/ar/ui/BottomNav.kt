@@ -22,7 +22,7 @@ object BottomNav {
     fun bind(activity: FragmentActivity, selected: BottomNavTab) {
         val root = activity.findViewById<android.view.View>(R.id.bottomNavBar) ?: return
         val active = ContextCompat.getColor(activity, R.color.accent_yellow)
-        val idle = ContextCompat.getColor(activity, R.color.text_dim)
+        val idle = ContextCompat.getColor(activity, R.color.text_muted)
 
         fun style(tab: BottomNavTab, tabId: Int, iconId: Int, labelId: Int) {
             val on = tab == selected
