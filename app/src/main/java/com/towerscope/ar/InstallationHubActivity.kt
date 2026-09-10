@@ -24,16 +24,8 @@ class InstallationHubActivity : AppCompatActivity() {
         BottomNav.bind(this, BottomNavTab.INSTALL)
 
         bindRow(
-            rowId = R.id.hubCompassRow,
-            index = "01",
-            icon = R.drawable.ic_compass_rose,
-            title = R.string.home_job_aim,
-            subtitle = R.string.home_job_aim_sub
-        ) { startActivity(Intent(this, MainActivity::class.java)) }
-
-        bindRow(
             rowId = R.id.hubLocateRow,
-            index = "02",
+            index = "01",
             icon = R.drawable.ic_satellite_map,
             title = R.string.home_job_locate,
             subtitle = R.string.home_job_locate_sub
@@ -41,7 +33,7 @@ class InstallationHubActivity : AppCompatActivity() {
 
         bindRow(
             rowId = R.id.hubLosRow,
-            index = "03",
+            index = "02",
             icon = R.drawable.ic_terrain_profile,
             title = R.string.home_job_los,
             subtitle = R.string.home_job_los_sub
@@ -49,7 +41,7 @@ class InstallationHubActivity : AppCompatActivity() {
 
         bindRow(
             rowId = R.id.installHubImportButton,
-            index = "04",
+            index = "03",
             icon = R.drawable.ic_tower_lattice,
             title = R.string.home_import_sites,
             subtitle = R.string.home_import_hint

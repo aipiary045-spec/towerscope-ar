@@ -53,23 +53,16 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:fontFamily="@font/stamp_regular"
-                    android:text="Compass, locate, and path clearance"
+                    android:text="Locate, path clearance, and site import"
                     android:textColor="@color/text_muted"
                     android:textSize="13sp" />
-
-                <include
-                    android:id="@+id/hubCompassRow"
-                    layout="@layout/item_hub_tool_row"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp" />
 
                 <include
                     android:id="@+id/hubLocateRow"
                     layout="@layout/item_hub_tool_row"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp" />
+                    android:layout_marginTop="16dp" />
 
                 <include
                     android:id="@+id/hubLosRow"

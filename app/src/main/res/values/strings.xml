@@ -10,12 +10,12 @@
     <string name="home_hero_badge">LIVE</string>
     <string name="home_hub_network">RF</string>
     <string name="home_hub_network_sub">Wi‑Fi · speed · ping · DNS · path</string>
+    <string name="home_hub_network_tools">Wi‑Fi · Speed · Ping · DNS\nPath Doctor · LAN · Trace · Bandwidth</string>
     <string name="home_hub_install">AIM</string>
-    <string name="home_hub_install_sub">Compass · locate · LOS clearance</string>
+    <string name="home_hub_install_sub">Locate · LOS · sites</string>
+    <string name="home_hub_install_tools">Locate · Line of sight · Sites</string>
     <string name="home_rf_channel">CH RF</string>
     <string name="home_aim_channel">CH AIM</string>
-    <string name="home_rf_metric">dBm</string>
-    <string name="home_aim_metric">HDG</string>
     <string name="home_open_rf">OPEN RF BAY</string>
     <string name="home_open_aim">OPEN AIM BAY</string>
     <string name="home_config_strip">CFG</string>
@@ -45,7 +45,7 @@
     <string name="home_job_diagnose">Path Doctor</string>
     <string name="home_job_diagnose_sub">Link · DNS · TCP · TLS · HTTP</string>
     <string name="home_settings">Settings</string>
-    <string name="home_settings_hint">Sites import, range, theme, compass</string>
+    <string name="home_settings_hint">Sites import, range, theme</string>
     <string name="nav_home">FACE</string>
     <string name="nav_network">RF</string>
     <string name="nav_install">AIM</string>

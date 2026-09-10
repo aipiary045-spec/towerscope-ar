@@ -53,17 +53,6 @@
                         android:textColor="@color/text_muted"
                         android:textSize="11sp" />
                 </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_readout"
-                    android:fontFamily="@font/data_mono"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="6dp"
-                    android:text="@string/home_hero_badge"
-                    android:textColor="@color/accent_teal"
-                    android:textSize="12sp" />
             </LinearLayout>
 
             <View
@@ -82,9 +71,10 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
                 android:minHeight="@dimen/tap_min"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:padding="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -113,32 +103,25 @@
                 </LinearLayout>
 
                 <TextView
-                    android:id="@+id/homeRfReadout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:fontFamily="@font/data_mono"
-                    android:text="---"
-                    android:textColor="@color/accent_yellow"
-                    android:textSize="52sp" />
+                    android:fontFamily="@font/stamp_semibold"
+                    android:letterSpacing="0.06"
+                    android:text="@string/home_hub_network"
+                    android:textColor="@color/text_primary"
+                    android:textSize="36sp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
                     android:fontFamily="@font/stamp_regular"
-                    android:letterSpacing="0.18"
-                    android:text="@string/home_rf_metric"
+                    android:letterSpacing="0.04"
+                    android:lineSpacingExtra="4dp"
+                    android:text="@string/home_hub_network_tools"
                     android:textColor="@color/text_muted"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:fontFamily="@font/stamp_regular"
-                    android:text="@string/home_hub_network_sub"
-                    android:textColor="@color/text_muted"
-                    android:textSize="13sp" />
+                    android:textSize="16sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -151,9 +134,10 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
                 android:minHeight="@dimen/tap_min"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:padding="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -182,32 +166,25 @@
                 </LinearLayout>
 
                 <TextView
-                    android:id="@+id/homeAimReadout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:fontFamily="@font/data_mono"
-                    android:text="---"
-                    android:textColor="@color/accent_teal"
-                    android:textSize="52sp" />
+                    android:fontFamily="@font/stamp_semibold"
+                    android:letterSpacing="0.06"
+                    android:text="@string/home_hub_install"
+                    android:textColor="@color/text_primary"
+                    android:textSize="36sp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
                     android:fontFamily="@font/stamp_regular"
-                    android:letterSpacing="0.18"
-                    android:text="@string/home_aim_metric"
+                    android:letterSpacing="0.04"
+                    android:lineSpacingExtra="4dp"
+                    android:text="@string/home_hub_install_tools"
                     android:textColor="@color/text_muted"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:fontFamily="@font/stamp_regular"
-                    android:text="@string/home_hub_install_sub"
-                    android:textColor="@color/text_muted"
-                    android:textSize="13sp" />
+                    android:textSize="16sp" />
             </LinearLayout>
 
             <LinearLayout
