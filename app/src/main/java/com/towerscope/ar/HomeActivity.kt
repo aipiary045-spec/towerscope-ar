@@ -3,17 +3,23 @@ package com.towerscope.ar
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.towerscope.ar.ui.BottomNav
 import com.towerscope.ar.ui.BottomNavTab
 import com.towerscope.ar.ui.SettingsBottomSheet
 import com.towerscope.ar.ui.SystemBars
+import com.towerscope.ar.util.LocationPermissions
 
 /**
- * WispEaze home dashboard: Network + Install hubs with bottom navigation.
+ * Hub launcher: Network and Install are equal entries, not a featured-tool dashboard.
  */
 class HomeActivity : AppCompatActivity() {
+
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { /* Locate / LOS start updates once granted. */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +40,9 @@ class HomeActivity : AppCompatActivity() {
             openSettings()
         }
         BottomNav.bind(this, BottomNavTab.HOME)
+        if (!LocationPermissions.granted(this)) {
+            permissionLauncher.launch(LocationPermissions.REQUEST)
+        }
     }
 
     private fun openSettings() {

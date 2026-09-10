@@ -33,7 +33,7 @@ class TowerScopeApp : Application() {
     private fun applyStoredTheme() {
         val prefs = getSharedPreferences("towerscope_prefs", Context.MODE_PRIVATE)
         // Keep key in sync with TowerScopeViewModel.KEY_HUD_THEME
-        val theme = HudTheme.fromStored(prefs.getString("hud_theme", HudTheme.DARK.name))
+        val theme = HudTheme.loadFromPrefs(prefs)
         AppCompatDelegate.setDefaultNightMode(theme.nightMode)
         AppTheme.apply(theme)
     }

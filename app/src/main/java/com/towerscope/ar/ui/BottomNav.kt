@@ -21,19 +21,21 @@ enum class BottomNavTab {
 object BottomNav {
     fun bind(activity: FragmentActivity, selected: BottomNavTab) {
         val root = activity.findViewById<android.view.View>(R.id.bottomNavBar) ?: return
-        val active = ContextCompat.getColor(activity, R.color.accent_teal)
-        val idle = ContextCompat.getColor(activity, R.color.text_dim)
+        val active = ContextCompat.getColor(activity, R.color.accent_yellow)
+        val idle = ContextCompat.getColor(activity, R.color.text_muted)
 
-        fun style(tab: BottomNavTab, iconId: Int, labelId: Int) {
+        fun style(tab: BottomNavTab, tabId: Int, iconId: Int, labelId: Int) {
             val on = tab == selected
+            val key = root.findViewById<android.view.View>(tabId)
+            key.setBackgroundResource(if (on) R.drawable.bg_key_selected else R.drawable.bg_key)
             root.findViewById<ImageView>(iconId).setColorFilter(if (on) active else idle)
             root.findViewById<TextView>(labelId).setTextColor(if (on) active else idle)
         }
 
-        style(BottomNavTab.HOME, R.id.navHomeIcon, R.id.navHomeLabel)
-        style(BottomNavTab.NETWORK, R.id.navNetworkIcon, R.id.navNetworkLabel)
-        style(BottomNavTab.INSTALL, R.id.navInstallIcon, R.id.navInstallLabel)
-        style(BottomNavTab.SETTINGS, R.id.navSettingsIcon, R.id.navSettingsLabel)
+        style(BottomNavTab.HOME, R.id.navHome, R.id.navHomeIcon, R.id.navHomeLabel)
+        style(BottomNavTab.NETWORK, R.id.navNetwork, R.id.navNetworkIcon, R.id.navNetworkLabel)
+        style(BottomNavTab.INSTALL, R.id.navInstall, R.id.navInstallIcon, R.id.navInstallLabel)
+        style(BottomNavTab.SETTINGS, R.id.navSettings, R.id.navSettingsIcon, R.id.navSettingsLabel)
 
         root.findViewById<android.view.View>(R.id.navHome).setOnClickListener {
             if (activity is HomeActivity) return@setOnClickListener

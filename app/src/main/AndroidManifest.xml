@@ -68,6 +68,12 @@
             android:theme="@style/Theme.TowerScopeAR" />
 
         <activity
+            android:name=".ChannelPlannerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TowerScopeAR" />
+
+        <activity
             android:name=".SpeedTestActivity"
             android:exported="false"
             android:screenOrientation="portrait"

@@ -25,13 +25,23 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubWifiRow,
+            index = "01",
             icon = R.drawable.ic_wifi_signal,
             title = R.string.home_job_wifi,
             subtitle = R.string.home_job_wifi_sub
         ) { startActivity(Intent(this, WifiMonitorActivity::class.java)) }
 
         bindTile(
+            rowId = R.id.hubChannelRow,
+            index = "02",
+            icon = R.drawable.ic_layers,
+            title = R.string.home_job_channel_plan,
+            subtitle = R.string.home_job_channel_plan_sub
+        ) { startActivity(Intent(this, ChannelPlannerActivity::class.java)) }
+
+        bindTile(
             rowId = R.id.hubSpeedRow,
+            index = "03",
             icon = R.drawable.ic_speed_test,
             title = R.string.home_job_speed,
             subtitle = R.string.home_job_speed_sub
@@ -39,6 +49,7 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubPingRow,
+            index = "04",
             icon = R.drawable.ic_ping_graph,
             title = R.string.home_job_ping,
             subtitle = R.string.home_job_ping_sub
@@ -46,6 +57,7 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubSubnetRow,
+            index = "05",
             icon = R.drawable.ic_subnet_scan,
             title = R.string.home_job_subnet,
             subtitle = R.string.home_job_subnet_sub
@@ -53,6 +65,7 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubDnsRow,
+            index = "06",
             icon = R.drawable.ic_dns_lookup,
             title = R.string.home_job_dns,
             subtitle = R.string.home_job_dns_sub
@@ -60,6 +73,7 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubTraceRow,
+            index = "07",
             icon = R.drawable.ic_traceroute,
             title = R.string.home_job_traceroute,
             subtitle = R.string.home_job_traceroute_sub
@@ -67,6 +81,7 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubBandwidthRow,
+            index = "08",
             icon = R.drawable.ic_bandwidth,
             title = R.string.home_job_bandwidth,
             subtitle = R.string.home_job_bandwidth_sub
@@ -74,14 +89,23 @@ class NetworkHubActivity : AppCompatActivity() {
 
         bindTile(
             rowId = R.id.hubDiagnoseRow,
+            index = "09",
             icon = R.drawable.ic_network_diagnose,
             title = R.string.home_job_diagnose,
             subtitle = R.string.home_job_diagnose_sub
         ) { startActivity(Intent(this, NetworkDiagnoseActivity::class.java)) }
     }
 
-    private fun bindTile(rowId: Int, icon: Int, title: Int, subtitle: Int, onClick: () -> Unit) {
+    private fun bindTile(
+        rowId: Int,
+        index: String,
+        icon: Int,
+        title: Int,
+        subtitle: Int,
+        onClick: () -> Unit
+    ) {
         val row = findViewById<View>(rowId)
+        row.findViewById<TextView>(R.id.hubToolIndex).text = index
         row.findViewById<ImageView>(R.id.hubToolIcon).setImageResource(icon)
         row.findViewById<TextView>(R.id.hubToolTitle).setText(title)
         row.findViewById<TextView>(R.id.hubToolSubtitle).setText(subtitle)

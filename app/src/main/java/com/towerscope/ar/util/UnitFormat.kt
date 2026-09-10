@@ -111,19 +111,22 @@ object LinkEstimate {
 
     /**
      * Extra loss when the path is Fresnel-tight or geometrically blocked.
-     * [geometricClearanceMeters] / [fresnelClearanceMeters] may be null when unknown.
+     * Grazing nicks inside typical 3DEP noise are a few dB, not a dead path.
      */
     fun obstructionLossDb(
         geometricClearanceMeters: Double?,
         fresnelClearanceMeters: Double?
     ): Double {
         if (geometricClearanceMeters != null && geometricClearanceMeters <= 0.0) {
-            // Rough diffraction / blockage penalty — enough to look unusable.
-            return 25.0 + (abs(geometricClearanceMeters).coerceAtMost(20.0) * 0.5)
+            val depth = abs(geometricClearanceMeters)
+            // 3DEP / DEM vertical error is often 1–3 m. Do not treat that as 25 dB dead.
+            if (depth <= DEM_NOISE_METERS) {
+                return (3.0 + depth * 2.0).coerceAtMost(8.0)
+            }
+            return (20.0 + (depth - DEM_NOISE_METERS) * 0.8).coerceAtMost(35.0)
         }
         if (fresnelClearanceMeters != null && fresnelClearanceMeters <= 0.0) {
-            // Partial first-Fresnel intrusion.
-            return (6.0 + abs(fresnelClearanceMeters).coerceAtMost(15.0)).coerceAtMost(20.0)
+            return (4.0 + abs(fresnelClearanceMeters).coerceAtMost(12.0) * 0.6).coerceAtMost(12.0)
         }
         return 0.0
     }
@@ -146,8 +149,13 @@ object LinkEstimate {
         return txPowerDbm + apGainDbi + cpeGainDbi - fspl - obstruction
     }
 
-    fun formatReceiveLevel(dbm: Double): String =
-        String.format(Locale.US, "Est.  %+.0f dBm", dbm)
+    fun formatReceiveLevel(dbm: Double, distanceMeters: Double? = null): String {
+        val distance = distanceMeters
+            ?.takeIf { it.isFinite() && it >= 0.0 }
+            ?.let { " · ${UnitFormat.formatDistance(it)}" }
+            .orEmpty()
+        return String.format(Locale.US, "Est.  %+.0f dBm%s", dbm, distance)
+    }
 
     fun formatReceiveLevelDetailed(
         dbm: Double,
@@ -182,4 +190,6 @@ object LinkEstimate {
         WEAK("WEAK"),
         POOR("POOR")
     }
+
+    private const val DEM_NOISE_METERS = 2.5
 }

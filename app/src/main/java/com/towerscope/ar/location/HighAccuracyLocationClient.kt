@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Looper
+import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -21,8 +22,20 @@ data class UserLocation(
     val longitude: Double,
     val altitudeMeters: Double?,
     val accuracyMeters: Float,
-    val bearingDegrees: Float?
-)
+    val bearingDegrees: Float?,
+    val elapsedRealtimeNanos: Long = 0L
+) {
+    /** Stale last-known fixes (other city, coarse-only) throw off range and signal. */
+    fun isUsableFix(
+        maxAgeMs: Long = 20_000L,
+        maxAccuracyMeters: Float = 75f
+    ): Boolean {
+        if (accuracyMeters > maxAccuracyMeters) return false
+        if (elapsedRealtimeNanos <= 0L) return true
+        val ageMs = (SystemClock.elapsedRealtimeNanos() - elapsedRealtimeNanos) / 1_000_000L
+        return ageMs in 0..maxAgeMs
+    }
+}
 
 /**
  * High-accuracy fused GPS updates via Google Play Services Location.
@@ -73,7 +86,8 @@ class HighAccuracyLocationClient(context: Context) {
 
         fusedClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
         fusedClient.lastLocation.addOnSuccessListener { location ->
-            location?.let { trySend(it.toUserLocation()) }
+            val user = location?.toUserLocation() ?: return@addOnSuccessListener
+            if (user.isUsableFix()) trySend(user)
         }
 
         awaitClose {
@@ -86,7 +100,8 @@ class HighAccuracyLocationClient(context: Context) {
         longitude = longitude,
         altitudeMeters = if (hasAltitude()) altitude else null,
         accuracyMeters = if (hasAccuracy()) accuracy else Float.MAX_VALUE,
-        bearingDegrees = if (hasBearing()) bearing else null
+        bearingDegrees = if (hasBearing()) bearing else null,
+        elapsedRealtimeNanos = elapsedRealtimeNanos
     )
 
     companion object {

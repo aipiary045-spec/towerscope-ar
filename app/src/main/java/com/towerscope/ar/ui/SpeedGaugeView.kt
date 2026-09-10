@@ -27,19 +27,19 @@ class SpeedGaugeView @JvmOverloads constructor(
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 18f
-        strokeCap = Paint.Cap.ROUND
+        strokeCap = Paint.Cap.SQUARE
         color = ContextCompat.getColor(context, R.color.border_luminous)
     }
     private val progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 18f
-        strokeCap = Paint.Cap.ROUND
+        strokeCap = Paint.Cap.SQUARE
         color = ContextCompat.getColor(context, R.color.accent_teal)
     }
     private val needlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 4f
-        strokeCap = Paint.Cap.ROUND
+        strokeCap = Paint.Cap.SQUARE
         color = ContextCompat.getColor(context, R.color.accent_yellow)
     }
     private val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {

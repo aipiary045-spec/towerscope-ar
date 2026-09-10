@@ -252,7 +252,7 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                 viewModel.uiState.collect { state ->
                     themeButton.text = state.hudTheme.label
                     view.findViewById<TextView>(R.id.settingsSummaryAppearance).text =
-                        state.hudTheme.label
+                        state.hudTheme.outdoorHint
                     distanceUnitsButton.text = when (state.distanceUnitSystem) {
                         DistanceUnitSystem.IMPERIAL -> "mi / ft"
                         DistanceUnitSystem.METRIC -> "km / m"
@@ -342,13 +342,13 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
                     if (state.hasInstallSite) {
                         installStatus.text = String.format(
                             java.util.Locale.US,
-                            "Install site · %.5f, %.5f",
+                            "Saved pin · %.5f, %.5f · Locate starts on your GPS",
                             state.installLatitude,
                             state.installLongitude
                         )
                         clearInstallButton.isVisible = true
                     } else {
-                        installStatus.text = "Install site · using live GPS (set on Locate map)"
+                        installStatus.text = "Using live GPS · drop a pin on Locate to switch"
                         clearInstallButton.isVisible = false
                     }
 

@@ -39,6 +39,29 @@ class LinkEstimateTest {
         assertEquals(-41.7, clear, 1.5)
         assertTrue(blocked < clear - 20.0)
         assertTrue(LinkEstimate.formatReceiveLevel(clear).contains("dBm"))
+        assertTrue(LinkEstimate.formatReceiveLevel(clear, 1_609.0).contains("dBm"))
+    }
+
+    @Test
+    fun obstruction_grazingDemNoiseIsNotADeadPath() {
+        val graze = LinkEstimate.obstructionLossDb(-0.6, -0.6)
+        val deep = LinkEstimate.obstructionLossDb(-5.0, -5.0)
+        assertTrue(graze < 9.0)
+        assertTrue(deep >= 20.0)
+    }
+
+    @Test
+    fun receiveLevel_twoMile5ghzDishIsUsableWhenClear() {
+        val dbm = LinkEstimate.estimatedReceiveLevelDbm(
+            distanceMeters = 3_218.0,
+            frequencyGhz = 5.8,
+            txPowerDbm = 20.0,
+            apGainDbi = 20.0,
+            cpeGainDbi = 20.0,
+            geometricClearanceMeters = 8.0,
+            fresnelClearanceMeters = 4.0
+        )
+        assertEquals(-58.0, dbm, 3.0)
     }
 }
 

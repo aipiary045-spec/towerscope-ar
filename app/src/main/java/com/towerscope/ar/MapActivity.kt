@@ -1,8 +1,6 @@
 package com.towerscope.ar
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
@@ -19,10 +17,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
+import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.CardinalSector
 import com.towerscope.ar.util.GeoUtils
+import com.towerscope.ar.util.LocationPermissions
+import com.towerscope.ar.viewmodel.LocationMode
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -54,6 +55,7 @@ class MapActivity : AppCompatActivity() {
     private lateinit var metaLabel: TextView
     private lateinit var towerChips: LinearLayout
     private lateinit var rangeToggle: MaterialButton
+    private lateinit var locationSourceChip: LocationSourceChip
 
     private var losLine: Polyline? = null
     private val towerMarkers = mutableMapOf<String, Marker>()
@@ -65,14 +67,16 @@ class MapActivity : AppCompatActivity() {
     private var lastSectorTowerId: String? = null
     private var lastActiveSector: CardinalSector? = null
     private var lastSectorRadiusMeters: Double = -1.0
+    private var lastSnappedCustomLat: Double? = null
+    private var lastSnappedCustomLon: Double? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
-        val fineOk = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
-        val coarseOk = result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        val fineOk = result[android.Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseOk = result[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (fineOk || coarseOk) {
-            viewModel.startLocationUpdates()
+            viewModel.startLocationUpdates(includeHeading = false)
             render(viewModel.uiState.value)
         } else {
             focusLabel.text = "Location permission required"
@@ -96,6 +100,15 @@ class MapActivity : AppCompatActivity() {
         metaLabel = findViewById(R.id.mapMetaLabel)
         towerChips = findViewById(R.id.mapTowerChips)
         rangeToggle = findViewById(R.id.mapRangeToggle)
+        locationSourceChip = LocationSourceChip(
+            chip = findViewById(R.id.mapLocationChip),
+            fragmentManager = supportFragmentManager,
+            viewModel = viewModel,
+            onCoordinatesApplied = { latitude, longitude ->
+                snapToCustomLocation(latitude, longitude)
+                metaLabel.text = "Custom location set from coordinates"
+            }
+        )
 
         setupMap()
 
@@ -111,15 +124,16 @@ class MapActivity : AppCompatActivity() {
             fitToYouAndFocus()
         }
         findViewById<android.widget.ImageButton>(R.id.mapMyLocationButton).setOnClickListener {
+            viewModel.setLocationMode(LocationMode.CURRENT_GPS)
             centerOnUser()
         }
         findViewById<android.widget.ImageButton>(R.id.mapInstallButton).setOnClickListener {
             viewModel.setInstallSiteFromGps()
-            metaLabel.text = "Install site set to GPS · long-press map to move"
+            metaLabel.text = "Dropped pin at GPS · long-press map to move it"
         }
         findViewById<android.widget.ImageButton>(R.id.mapInstallButton).setOnLongClickListener {
             viewModel.clearInstallSite()
-            metaLabel.text = "Install site cleared · using live GPS"
+            metaLabel.text = "Pin cleared · using live GPS"
             true
         }
         findViewById<android.widget.ImageButton>(R.id.mapBasemapButton).setOnClickListener {
@@ -173,7 +187,8 @@ class MapActivity : AppCompatActivity() {
             override fun longPressHelper(p: GeoPoint?): Boolean {
                 if (p == null) return false
                 viewModel.setInstallSite(p.latitude, p.longitude)
-                metaLabel.text = "Install site pinned · Check LOS ranks from here"
+                snapToCustomLocation(p.latitude, p.longitude)
+                metaLabel.text = "Dropped pin · range and LOS now use this point"
                 return true
             }
         }
@@ -202,8 +217,8 @@ class MapActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (hasLocationPermission()) {
-            viewModel.startLocationUpdates()
+        if (LocationPermissions.granted(this)) {
+            viewModel.startLocationUpdates(includeHeading = false)
         }
     }
 
@@ -213,23 +228,11 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun ensureLocationPermission() {
-        if (hasLocationPermission()) {
-            viewModel.startLocationUpdates()
+        if (LocationPermissions.granted(this)) {
+            viewModel.startLocationUpdates(includeHeading = false)
         } else {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
+            permissionLauncher.launch(LocationPermissions.REQUEST)
         }
-    }
-
-    private fun hasLocationPermission(): Boolean {
-        val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-        val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-        return fine == PackageManager.PERMISSION_GRANTED ||
-            coarse == PackageManager.PERMISSION_GRANTED
     }
 
     private fun render(state: TowerUiState) {
@@ -248,8 +251,12 @@ class MapActivity : AppCompatActivity() {
             focus == null -> "No AP in range"
             else -> focus.name
         }
+        locationSourceChip.render(state, this)
         metaLabel.text = buildString {
-            if (state.hasInstallSite) append("From install  ·  ")
+            when (state.locationMode) {
+                LocationMode.CURRENT_GPS -> append("From your GPS  ·  ")
+                LocationMode.CUSTOM -> append("From custom pin  ·  ")
+            }
             if (distance != null) append(GeoUtils.formatDistance(distance))
             if (bearing != null) {
                 if (isNotEmpty() && !endsWith("  ·  ")) append("  ·  ")
@@ -271,12 +278,10 @@ class MapActivity : AppCompatActivity() {
 
         renderChips(state)
         renderMapOverlays(state)
+        snapToCustomLocationIfNeeded(state)
 
-        if (!hasFittedOnce && state.userLocation != null && focus != null) {
-            fitToYouAndFocus()
-        } else if (!hasFittedOnce && state.userLocation != null) {
+        if (!hasFittedOnce && state.userLocation != null) {
             centerOnUser()
-            hasFittedOnce = true
         }
     }
 
@@ -603,8 +608,36 @@ class MapActivity : AppCompatActivity() {
         hasFittedOnce = true
     }
 
+    private fun snapToCustomLocationIfNeeded(state: TowerUiState) {
+        if (state.locationMode != LocationMode.CUSTOM) {
+            lastSnappedCustomLat = null
+            lastSnappedCustomLon = null
+            return
+        }
+        val lat = state.installLatitude ?: return
+        val lon = state.installLongitude ?: return
+        if (lat == lastSnappedCustomLat && lon == lastSnappedCustomLon) return
+        snapToCustomLocation(lat, lon)
+    }
+
+    private fun snapToCustomLocation(latitude: Double, longitude: Double) {
+        lastSnappedCustomLat = latitude
+        lastSnappedCustomLon = longitude
+        mapView.post {
+            val point = GeoPoint(latitude, longitude)
+            mapView.controller.setCenter(point)
+            if (mapView.zoomLevelDouble < 14.0) {
+                mapView.controller.setZoom(15.5)
+            }
+            hasFittedOnce = true
+            mapView.invalidate()
+        }
+    }
+
     private fun centerOnUser() {
         val user = viewModel.uiState.value.userLocation ?: return
+        lastSnappedCustomLat = null
+        lastSnappedCustomLon = null
         mapView.controller.animateTo(GeoPoint(user.latitude, user.longitude))
         mapView.controller.setZoom(15.5)
         hasFittedOnce = true

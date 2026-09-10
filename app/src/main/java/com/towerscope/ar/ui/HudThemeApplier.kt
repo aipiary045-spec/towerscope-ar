@@ -69,7 +69,7 @@ object HudThemeApplier {
     fun statusChipBackground(view: View, fillColor: Int): android.graphics.drawable.GradientDrawable {
         return android.graphics.drawable.GradientDrawable().apply {
             shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-            cornerRadius = 10f * view.resources.displayMetrics.density
+            cornerRadius = 2f * view.resources.displayMetrics.density
             setColor(fillColor)
         }
     }

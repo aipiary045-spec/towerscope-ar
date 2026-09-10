@@ -1,9 +1,7 @@
 package com.towerscope.ar
 
-import android.Manifest
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -22,12 +20,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.towerscope.ar.data.LosProfileBuilder
+import com.towerscope.ar.ui.LocationSourceChip
 import com.towerscope.ar.ui.LosProfileChartView
 import com.towerscope.ar.ui.SystemBars
 import com.towerscope.ar.ui.TowerDetailsBottomSheet
 import com.towerscope.ar.util.CardinalSector
 import com.towerscope.ar.util.GeoUtils
 import com.towerscope.ar.util.LinkEstimate
+import com.towerscope.ar.util.LocationPermissions
+import com.towerscope.ar.viewmodel.LocationMode
 import com.towerscope.ar.viewmodel.TowerScopeViewModel
 import com.towerscope.ar.viewmodel.TowerUiState
 import kotlinx.coroutines.launch
@@ -55,6 +56,7 @@ class LosProfilesActivity : AppCompatActivity() {
     private lateinit var linkSettingsSummary: TextView
     private lateinit var linkSettingsToggle: TextView
     private lateinit var linkSettingsExpanded: View
+    private lateinit var locationSourceChip: LocationSourceChip
     private var linkSettingsOpen = false
     private var startedScan = false
     private var lastCpeHeight: Float? = null
@@ -65,10 +67,10 @@ class LosProfilesActivity : AppCompatActivity() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
-        val fineOk = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
-        val coarseOk = result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        val fineOk = result[android.Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseOk = result[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (fineOk || coarseOk) {
-            viewModel.startLocationUpdates()
+            viewModel.startLocationUpdates(includeHeading = false)
             maybeStartScan()
         } else {
             status.text = "Location permission is required for elevation profiles"
@@ -101,6 +103,19 @@ class LosProfilesActivity : AppCompatActivity() {
         linkSettingsSummary = findViewById(R.id.losLinkSettingsSummary)
         linkSettingsToggle = findViewById(R.id.losLinkSettingsToggle)
         linkSettingsExpanded = findViewById(R.id.losLinkSettingsExpanded)
+        locationSourceChip = LocationSourceChip(
+            chip = findViewById(R.id.losLocationChip),
+            fragmentManager = supportFragmentManager,
+            viewModel = viewModel,
+            onModeChanged = {
+                startedScan = false
+                maybeStartScan(force = true)
+            },
+            onCoordinatesApplied = { _, _ ->
+                startedScan = false
+                maybeStartScan(force = true)
+            }
+        )
 
         frequencySlider.max = frequencyPresets.lastIndex
         cpeHeightSlider.max =
@@ -178,10 +193,11 @@ class LosProfilesActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    subtitle.text = if (state.hasInstallSite) {
-                        "Heat map button / tap row · long-press details · install site"
-                    } else {
-                        "Heat map button / tap row · long-press details · GPS"
+                    locationSourceChip.render(state, this@LosProfilesActivity)
+                    subtitle.text = losOriginSubtitle(state)
+                    if (viewModel.losOriginMovedEnoughToRescan()) {
+                        startedScan = false
+                        maybeStartScan(force = true)
                     }
                     status.text = state.losRangeStatus.orEmpty()
                     linkSettingsSummary.text = String.format(
@@ -275,6 +291,8 @@ class LosProfilesActivity : AppCompatActivity() {
             append('|')
             append(state.clutterHeightMeters)
             append('|')
+            append(state.locationMode)
+            append('|')
             append(state.hasInstallSite)
             append('|')
             append(state.losRangeStatus)
@@ -288,8 +306,8 @@ class LosProfilesActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (hasLocationPermission()) {
-            viewModel.startLocationUpdates()
+        if (LocationPermissions.granted(this)) {
+            viewModel.startLocationUpdates(includeHeading = false)
         }
     }
 
@@ -305,30 +323,36 @@ class LosProfilesActivity : AppCompatActivity() {
     }
 
     private fun ensureLocationPermission() {
-        if (hasLocationPermission()) {
-            viewModel.startLocationUpdates()
+        if (LocationPermissions.granted(this)) {
+            viewModel.startLocationUpdates(includeHeading = false)
             maybeStartScan()
         } else {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
+            permissionLauncher.launch(LocationPermissions.REQUEST)
         }
     }
 
-    private fun hasLocationPermission(): Boolean {
-        val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-        val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-        return fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED
+    private fun losOriginSubtitle(state: TowerUiState): String {
+        val pinGap = state.metersBetweenGpsAndSavedPin()
+        return when {
+            state.usesCustomLocation() ->
+                "Estimating from dropped pin · tap row for details"
+            pinGap != null && pinGap >= 150.0 ->
+                "Estimating from GPS · ${GeoUtils.formatDistance(pinGap)} from saved pin"
+            state.locationMode == LocationMode.CURRENT_GPS ->
+                "Estimating from your GPS · tap row for details"
+            else ->
+                "Heat map button / tap row · long-press details"
+        }
     }
 
     private fun maybeStartScan(force: Boolean = false) {
         val state = viewModel.uiState.value
         if (!force && (startedScan || state.losRangeLoading || state.losRangeRows.isNotEmpty())) return
         if (state.positioningLocation() == null) {
-            status.text = "Waiting for GPS…"
+            status.text = when (state.locationMode) {
+                LocationMode.CUSTOM -> "Set a pin on Locate or paste coordinates"
+                LocationMode.CURRENT_GPS -> "Waiting for GPS…"
+            }
             return
         }
         startedScan = true
@@ -467,7 +491,7 @@ class LosProfilesActivity : AppCompatActivity() {
                             clearanceView.setTextColor(ContextCompat.getColor(this, R.color.status_blocked))
                         }
                     }
-                    clearanceView.text = LinkEstimate.formatReceiveLevel(dbm)
+                    clearanceView.text = LinkEstimate.formatReceiveLevel(dbm, row.distanceMeters)
                     linkEstimateView.isVisible = true
                     val pathNote = when {
                         obstruction >= 20.0 -> " · path blocked"
