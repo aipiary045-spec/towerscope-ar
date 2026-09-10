@@ -24,11 +24,11 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/source_sans3_semibold"
-            android:text="Settings"
-            android:textColor="@color/text_primary"
-            android:textSize="@dimen/screen_title"
-            android:textStyle="bold" />
+            android:fontFamily="@font/stamp_semibold"
+            android:letterSpacing="0.12"
+            android:text="CFG"
+            android:textColor="@color/accent_yellow"
+            android:textSize="@dimen/screen_title" />
 
         <TextView
             android:id="@+id/settingsStatus"

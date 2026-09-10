@@ -11,12 +11,12 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fontFamily="@font/source_sans3_semibold"
-        android:letterSpacing="0.01"
+        android:fontFamily="@font/stamp_semibold"
+        android:letterSpacing="0.08"
         android:text="@string/home_job_wifi"
+        android:textAllCaps="true"
         android:textColor="@color/text_primary"
-        android:textSize="@dimen/screen_title"
-        android:textStyle="bold" />
+        android:textSize="@dimen/screen_title" />
 
     <TextView
         android:layout_width="match_parent"
@@ -75,12 +75,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:fontFamily="monospace"
+                    android:fontFamily="@font/data_mono"
                     android:letterSpacing="-0.02"
                     android:text="—"
-                    android:textColor="@color/accent_teal"
-                    android:textSize="40sp"
-                    android:textStyle="bold" />
+                    android:textColor="@color/accent_yellow"
+                    android:textSize="52sp" />
 
                 <TextView
                     android:id="@+id/wifiQuality"

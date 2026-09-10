@@ -6,46 +6,57 @@
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
-    android:gravity="center"
-    android:minHeight="132dp"
-    android:orientation="vertical"
-    android:padding="14dp">
-
-    <FrameLayout
-        android:layout_width="52dp"
-        android:layout_height="52dp"
-        android:background="@drawable/bg_job_icon">
-
-        <ImageView
-            android:id="@+id/hubToolIcon"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_gravity="center"
-            android:contentDescription="@null"
-            android:src="@drawable/ic_wifi_signal" />
-    </FrameLayout>
+    android:gravity="center_vertical"
+    android:minHeight="64dp"
+    android:orientation="horizontal"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="10dp">
 
     <TextView
-        android:id="@+id/hubToolTitle"
-        android:layout_width="match_parent"
+        android:id="@+id/hubToolIndex"
+        android:layout_width="36dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:fontFamily="@font/source_sans3_semibold"
-        android:gravity="center"
-        android:text="Tool"
-        android:textColor="@color/text_primary"
-        android:textSize="15sp"
-        android:textStyle="bold" />
+        android:fontFamily="@font/data_mono"
+        android:text="01"
+        android:textColor="@color/accent_yellow"
+        android:textSize="16sp" />
 
-    <TextView
-        android:id="@+id/hubToolSubtitle"
-        android:layout_width="match_parent"
+    <ImageView
+        android:id="@+id/hubToolIcon"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_marginEnd="10dp"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_wifi_signal"
+        android:tint="@color/text_muted" />
+
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:fontFamily="@font/source_sans3_regular"
-        android:gravity="center"
-        android:maxLines="2"
-        android:text="Subtitle"
-        android:textColor="@color/text_muted"
-        android:textSize="11sp" />
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/hubToolTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/stamp_semibold"
+            android:letterSpacing="0.08"
+            android:text="Tool"
+            android:textAllCaps="true"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/hubToolSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/stamp_regular"
+            android:maxLines="1"
+            android:text="Subtitle"
+            android:textColor="@color/text_muted"
+            android:textSize="12sp" />
+    </LinearLayout>
 </LinearLayout>

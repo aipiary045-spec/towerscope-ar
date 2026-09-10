@@ -95,11 +95,11 @@
                 android:id="@+id/headingLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:letterSpacing="0.02"
+                android:fontFamily="@font/data_mono"
+                android:letterSpacing="0.04"
                 android:text="HEADING  —"
-                android:textColor="@color/accent_teal"
-                android:textSize="17sp"
+                android:textColor="@color/accent_yellow"
+                android:textSize="28sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -132,7 +132,7 @@
                     android:fontFamily="@font/source_sans3_semibold"
                     android:text="—"
                     android:textColor="@color/accent_yellow"
-                    android:textSize="24sp"
+                    android:textSize="32sp"
                     android:textStyle="bold" />
 
                 <LinearLayout

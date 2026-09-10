@@ -5,57 +5,64 @@
     android:layout_height="wrap_content"
     android:background="@drawable/bg_bottom_nav"
     android:gravity="center_vertical"
-    android:minHeight="68dp"
+    android:minHeight="72dp"
     android:orientation="horizontal"
     android:paddingHorizontal="8dp"
-    android:paddingTop="10dp"
-    android:paddingBottom="10dp">
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
     <LinearLayout
         android:id="@+id/navHome"
         android:layout_width="0dp"
         android:layout_height="match_parent"
+        android:layout_marginEnd="4dp"
         android:layout_weight="1"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/bg_key"
         android:clickable="true"
         android:focusable="true"
         android:gravity="center"
-        android:orientation="vertical">
+        android:minHeight="@dimen/key_min"
+        android:orientation="vertical"
+        android:paddingVertical="6dp">
 
         <ImageView
             android:id="@+id/navHomeIcon"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:contentDescription="@string/nav_home"
             android:src="@drawable/ic_nav_home"
-            android:tint="@color/accent_teal" />
+            android:tint="@color/accent_yellow" />
 
         <TextView
             android:id="@+id/navHomeLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:fontFamily="@font/source_sans3_semibold"
+            android:fontFamily="@font/stamp_semibold"
+            android:letterSpacing="0.16"
             android:text="@string/nav_home"
-            android:textColor="@color/accent_teal"
-            android:textSize="10sp" />
+            android:textColor="@color/accent_yellow"
+            android:textSize="11sp" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/navNetwork"
         android:layout_width="0dp"
         android:layout_height="match_parent"
+        android:layout_marginHorizontal="4dp"
         android:layout_weight="1"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/bg_key"
         android:clickable="true"
         android:focusable="true"
         android:gravity="center"
-        android:orientation="vertical">
+        android:minHeight="@dimen/key_min"
+        android:orientation="vertical"
+        android:paddingVertical="6dp">
 
         <ImageView
             android:id="@+id/navNetworkIcon"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:contentDescription="@string/nav_network"
             android:src="@drawable/ic_wifi_signal"
             android:tint="@color/text_dim" />
@@ -65,27 +72,31 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:fontFamily="@font/source_sans3_regular"
+            android:fontFamily="@font/stamp_semibold"
+            android:letterSpacing="0.16"
             android:text="@string/nav_network"
             android:textColor="@color/text_dim"
-            android:textSize="10sp" />
+            android:textSize="11sp" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/navInstall"
         android:layout_width="0dp"
         android:layout_height="match_parent"
+        android:layout_marginHorizontal="4dp"
         android:layout_weight="1"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/bg_key"
         android:clickable="true"
         android:focusable="true"
         android:gravity="center"
-        android:orientation="vertical">
+        android:minHeight="@dimen/key_min"
+        android:orientation="vertical"
+        android:paddingVertical="6dp">
 
         <ImageView
             android:id="@+id/navInstallIcon"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:contentDescription="@string/nav_install"
             android:src="@drawable/ic_compass_rose"
             android:tint="@color/text_dim" />
@@ -95,27 +106,31 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:fontFamily="@font/source_sans3_regular"
+            android:fontFamily="@font/stamp_semibold"
+            android:letterSpacing="0.16"
             android:text="@string/nav_install"
             android:textColor="@color/text_dim"
-            android:textSize="10sp" />
+            android:textSize="11sp" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/navSettings"
         android:layout_width="0dp"
         android:layout_height="match_parent"
+        android:layout_marginStart="4dp"
         android:layout_weight="1"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/bg_key"
         android:clickable="true"
         android:focusable="true"
         android:gravity="center"
-        android:orientation="vertical">
+        android:minHeight="@dimen/key_min"
+        android:orientation="vertical"
+        android:paddingVertical="6dp">
 
         <ImageView
             android:id="@+id/navSettingsIcon"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:contentDescription="@string/nav_settings"
             android:src="@drawable/ic_settings_cog"
             android:tint="@color/text_dim" />
@@ -125,9 +140,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:fontFamily="@font/source_sans3_regular"
+            android:fontFamily="@font/stamp_semibold"
+            android:letterSpacing="0.16"
             android:text="@string/nav_settings"
             android:textColor="@color/text_dim"
-            android:textSize="10sp" />
+            android:textSize="11sp" />
     </LinearLayout>
 </LinearLayout>

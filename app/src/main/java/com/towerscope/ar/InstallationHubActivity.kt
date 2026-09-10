@@ -25,6 +25,7 @@ class InstallationHubActivity : AppCompatActivity() {
 
         bindRow(
             rowId = R.id.hubCompassRow,
+            index = "01",
             icon = R.drawable.ic_compass_rose,
             title = R.string.home_job_aim,
             subtitle = R.string.home_job_aim_sub
@@ -32,6 +33,7 @@ class InstallationHubActivity : AppCompatActivity() {
 
         bindRow(
             rowId = R.id.hubLocateRow,
+            index = "02",
             icon = R.drawable.ic_satellite_map,
             title = R.string.home_job_locate,
             subtitle = R.string.home_job_locate_sub
@@ -39,18 +41,31 @@ class InstallationHubActivity : AppCompatActivity() {
 
         bindRow(
             rowId = R.id.hubLosRow,
+            index = "03",
             icon = R.drawable.ic_terrain_profile,
             title = R.string.home_job_los,
             subtitle = R.string.home_job_los_sub
         ) { startActivity(Intent(this, LosProfilesActivity::class.java)) }
 
-        findViewById<View>(R.id.installHubImportButton).setOnClickListener {
-            startActivity(Intent(this, DataMenuActivity::class.java))
-        }
+        bindRow(
+            rowId = R.id.installHubImportButton,
+            index = "04",
+            icon = R.drawable.ic_tower_lattice,
+            title = R.string.home_import_sites,
+            subtitle = R.string.home_import_hint
+        ) { startActivity(Intent(this, DataMenuActivity::class.java)) }
     }
 
-    private fun bindRow(rowId: Int, icon: Int, title: Int, subtitle: Int, onClick: () -> Unit) {
+    private fun bindRow(
+        rowId: Int,
+        index: String,
+        icon: Int,
+        title: Int,
+        subtitle: Int,
+        onClick: () -> Unit
+    ) {
         val row = findViewById<View>(rowId)
+        row.findViewById<TextView>(R.id.hubToolIndex).text = index
         row.findViewById<ImageView>(R.id.hubToolIcon).setImageResource(icon)
         row.findViewById<TextView>(R.id.hubToolTitle).setText(title)
         row.findViewById<TextView>(R.id.hubToolSubtitle).setText(subtitle)

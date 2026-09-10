@@ -1,62 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- WispEaze light — cool slate with electric blue accents -->
-    <color name="bg_deep">#E8EEF8</color>
-    <color name="bg_navy">#F2F5FB</color>
-    <color name="bg_mid">#E4EAF4</color>
-    <color name="surface_slate">#FFFFFF</color>
-    <color name="surface_elevated">#FFFFFF</color>
-    <color name="surface_glass">#F7FFFFFF</color>
-    <color name="border_luminous">#332F6BFF</color>
-    <color name="border_strong">#552F6BFF</color>
-    <color name="grid_faint">#142F6BFF</color>
+    <!-- Day / sun — clipboard stock, ink, caution amber. Not grey-blue SaaS. -->
+    <color name="bg_deep">#D9C7A1</color>
+    <color name="bg_navy">#E6D5B0</color>
+    <color name="bg_mid">#CDB892</color>
+    <color name="surface_slate">#F3E6C8</color>
+    <color name="surface_elevated">#F7EDD6</color>
+    <color name="surface_glass">#E6F3E6C8</color>
+    <color name="border_luminous">#663F2A12</color>
+    <color name="border_strong">#993F2A12</color>
+    <color name="grid_faint">#263F2A12</color>
 
-    <color name="accent_yellow">#2A5BE0</color>
-    <color name="accent_yellow_dim">#592A5BE0</color>
-    <color name="accent_teal">#0E7A9A</color>
-    <color name="accent_cyan">#0E7A9A</color>
-    <color name="accent_teal_dim">#400E7A9A</color>
-    <color name="accent_teal_soft">#1A0E7A9A</color>
-    <color name="accent_glow">#332A5BE0</color>
+    <color name="accent_yellow">#B45309</color>
+    <color name="accent_yellow_dim">#59B45309</color>
+    <color name="accent_teal">#3F5D3A</color>
+    <color name="accent_cyan">#3F5D3A</color>
+    <color name="accent_teal_dim">#403F5D3A</color>
+    <color name="accent_teal_soft">#1A3F5D3A</color>
+    <color name="accent_glow">#33B45309</color>
 
-    <color name="forest">#0E1628</color>
-    <color name="sage">#5A6A88</color>
-    <color name="sand">#D5DEE7</color>
-    <color name="clay">#2A5BE0</color>
-    <color name="mist">#C5D0DA</color>
+    <color name="forest">#1A140C</color>
+    <color name="sage">#5C5346</color>
+    <color name="sand">#C4B089</color>
+    <color name="clay">#B45309</color>
+    <color name="mist">#B9A57E</color>
 
-    <color name="text_primary">#0E1628</color>
-    <color name="text_muted">#5C6B88</color>
-    <color name="text_dim">#8FA3B5</color>
-    <color name="text_on_accent">#FFFFFF</color>
-    <color name="text_on_forest">#F2F5FB</color>
+    <color name="text_primary">#1A140C</color>
+    <color name="text_muted">#5C5346</color>
+    <color name="text_dim">#7A6F5D</color>
+    <color name="text_on_accent">#FFF6E5</color>
+    <color name="text_on_forest">#F3E6C8</color>
 
-    <color name="status_clear">#1B9E6E</color>
-    <color name="status_blocked">#C45B5B</color>
-    <color name="status_clear_bg">#261B9E6E</color>
-    <color name="status_blocked_bg">#26C45B5B</color>
-    <color name="status_warn_bg">#332A5BE0</color>
+    <color name="status_clear">#2F6A32</color>
+    <color name="status_blocked">#9B2C2C</color>
+    <color name="status_clear_bg">#262F6A32</color>
+    <color name="status_blocked_bg">#269B2C2C</color>
+    <color name="status_warn_bg">#33B45309</color>
 
-    <color name="ic_launcher_background">#070B16</color>
-    <color name="hud_panel">#F2FFFFFF</color>
-    <color name="chip_good">#1B9E6E</color>
-    <color name="chip_fair">#2A5BE0</color>
-    <color name="chip_poor">#C45B5B</color>
-    <color name="chip_off">#8FA3B5</color>
-    <color name="chip_text_on_dark">#F2F5FB</color>
+    <color name="ic_launcher_background">#0C0B09</color>
+    <color name="hud_panel">#E6F3E6C8</color>
+    <color name="chip_good">#2F6A32</color>
+    <color name="chip_fair">#B45309</color>
+    <color name="chip_poor">#9B2C2C</color>
+    <color name="chip_off">#7A6F5D</color>
+    <color name="chip_text_on_dark">#F3E6C8</color>
 
-    <color name="theme_night_panel">#E00C1220</color>
-    <color name="theme_night_text">#F4F7FF</color>
-    <color name="theme_night_accent">#2F6BFF</color>
-    <color name="theme_night_secondary">#4CC9FF</color>
+    <color name="theme_night_panel">#E012100C</color>
+    <color name="theme_night_text">#F4EBD0</color>
+    <color name="theme_night_accent">#E8A317</color>
+    <color name="theme_night_secondary">#C6E35B</color>
 
-    <color name="theme_day_panel">#F2FFFFFF</color>
-    <color name="theme_day_text">#0E1628</color>
-    <color name="theme_day_accent">#2A5BE0</color>
-    <color name="theme_day_secondary">#0E7A9A</color>
+    <color name="theme_day_panel">#E6F3E6C8</color>
+    <color name="theme_day_text">#1A140C</color>
+    <color name="theme_day_accent">#B45309</color>
+    <color name="theme_day_secondary">#3F5D3A</color>
 
     <color name="theme_hc_panel">#F2000000</color>
     <color name="theme_hc_text">#FFFFFFFF</color>
-    <color name="theme_hc_accent">#4CC9FF</color>
-    <color name="theme_hc_secondary">#2F6BFF</color>
+    <color name="theme_hc_accent">#E8A317</color>
+    <color name="theme_hc_secondary">#C6E35B</color>
 </resources>
